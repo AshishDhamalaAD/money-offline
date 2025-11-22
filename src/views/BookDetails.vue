@@ -204,7 +204,7 @@ async function saveBookName() {
 
 <template>
   <PageLayout>
-    <PageHeader :title="book?.name || 'Book Details'">
+    <PageHeader :title="book?.name || 'Book Details'" :back-route="{ name: 'dashboard' }">
       <template #actions>
         <button @click="router.push({ name: 'book-settings', params: { bookId } })" class="rounded-full bg-gray-100 p-2 text-gray-600 hover:bg-gray-200">
           <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

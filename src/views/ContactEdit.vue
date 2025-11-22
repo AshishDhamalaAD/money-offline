@@ -71,7 +71,10 @@ function goBack() {
 
 <template>
   <PageLayout>
-    <PageHeader :title="isNew ? 'New Contact' : 'Edit Contact'">
+    <PageHeader 
+      :title="isNew ? 'New Contact' : 'Edit Contact'"
+      :back-route="{ name: 'settings' }"
+    >
       <template #actions>
         <button 
           v-if="!isNew" 

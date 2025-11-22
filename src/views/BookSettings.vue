@@ -70,7 +70,10 @@ const tabs = [
 
 <template>
   <PageLayout>
-    <PageHeader :title="`${book?.name || 'Book'} Settings`" />
+    <PageHeader 
+      :title="`${book?.name || 'Book'} Settings`" 
+      :back-route="{ name: 'book-details', params: { id: bookId } }"
+    />
 
     <main class="p-4 space-y-6">
       <!-- Tabs -->

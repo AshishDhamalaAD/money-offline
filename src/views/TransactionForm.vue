@@ -249,7 +249,10 @@ async function saveNewProduct() {
 
 <template>
   <PageLayout>
-    <PageHeader :title="isEdit ? 'Edit Transaction' : 'New Transaction'">
+    <PageHeader 
+      :title="isEdit ? 'Edit Transaction' : 'New Transaction'"
+      :back-route="{ name: 'book-details', params: { id: bookId } }"
+    >
       <template #actions>
         <button 
           v-if="isEdit" 

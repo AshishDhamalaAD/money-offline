@@ -101,7 +101,10 @@ function goBack() {
 
 <template>
   <PageLayout>
-    <PageHeader :title="title" @back="goBack">
+    <PageHeader 
+      :title="title" 
+      :back-route="{ name: 'book-settings', params: { bookId }, query: route.query }"
+    >
       <template #actions>
         <button 
           v-if="!isNew" 
