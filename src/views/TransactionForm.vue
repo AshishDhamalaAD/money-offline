@@ -33,7 +33,8 @@ const saving = ref(false)
 
 onMounted(async () => {
   await masterStore.initDefaults()
-  masterStore.watchCategories(bookId) // Load categories for this book
+  await masterStore.initDefaults()
+  masterStore.watchBookData(bookId) // Load categories, products, payment modes for this book
   
   if (isEdit) {
     const id = parseInt(route.params.id)
