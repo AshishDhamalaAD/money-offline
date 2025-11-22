@@ -18,8 +18,23 @@ const transactionStore = useTransactionStore()
 
 const book = ref(null)
 const filter = ref('month') // Default to month
+const customStartDate = ref('')
+const customEndDate = ref('')
 const showDeleteModal = ref(false)
 const transactionToDelete = ref(null)
+
+const filterOptions = [
+    { label: 'This Month', value: 'month' },
+    { label: 'Last Month', value: 'last-month' },
+    { label: 'Today', value: 'today' },
+    { label: 'Yesterday', value: 'yesterday' },
+    { label: 'This Week', value: 'this-week' },
+    { label: 'Last Week', value: 'last-week' },
+    { label: 'This Year', value: 'this-year' },
+    { label: 'Last Year', value: 'last-year' },
+    { label: 'All', value: 'all' },
+  { label: 'Custom Date Range', value: 'custom' }
+]
 
 // Edit Book
 const showEditBookModal = ref(false)
@@ -35,10 +50,20 @@ onMounted(async () => {
 
 const filteredTransactions = ref([])
 
-watch([() => transactionStore.transactions, filter], () => {
+watch([() => transactionStore.transactions, filter, customStartDate, customEndDate], () => {
   // Simple filter logic for now
   if (filter.value === 'all') {
     filteredTransactions.value = transactionStore.transactions
+  } else if (filter.value === 'custom') {
+    if (customStartDate.value && customEndDate.value) {
+      filteredTransactions.value = transactionStore.getFilteredTransactions({ 
+        dateRange: 'custom', 
+        startDate: customStartDate.value, 
+        endDate: customEndDate.value 
+      })
+    } else {
+      filteredTransactions.value = transactionStore.transactions
+    }
   } else {
     filteredTransactions.value = transactionStore.getFilteredTransactions({ dateRange: filter.value })
   }
@@ -90,8 +115,25 @@ const filteredStats = computed(() => {
     } else if (filter.value === 'week') {
       filterStartDate = new Date(now)
       filterStartDate.setDate(filterStartDate.getDate() - 6)
+    } else if (filter.value === 'this-week') {
+      const dayOfWeek = now.getDay()
+      filterStartDate = new Date(now)
+      filterStartDate.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1))
+    } else if (filter.value === 'last-week') {
+      const dayOfWeek = now.getDay()
+      filterStartDate = new Date(now)
+      filterStartDate.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1) - 7)
     } else if (filter.value === 'month') {
       filterStartDate = new Date(now.getFullYear(), now.getMonth(), 1)
+    } else if (filter.value === 'last-month') {
+      filterStartDate = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+    } else if (filter.value === 'this-year') {
+      filterStartDate = new Date(now.getFullYear(), 0, 1)
+    } else if (filter.value === 'last-year') {
+      filterStartDate = new Date(now.getFullYear() - 1, 0, 1)
+    } else if (filter.value === 'custom' && customStartDate.value) {
+      filterStartDate = new Date(customStartDate.value)
+      filterStartDate.setHours(0, 0, 0, 0)
     }
     
     // Calculate balance from all transactions before the filter start date
@@ -197,18 +239,43 @@ async function saveBookName() {
       <StatsSummary :stats="filteredStats" />
 
       <!-- Filters -->
-      <div class="flex items-center gap-2 overflow-x-auto pb-2 pt-1 no-scrollbar">
-        <button 
-          v-for="opt in ['all', 'today', 'yesterday', 'week', 'month']" 
-          :key="opt"
-          @click="filter = opt"
-          :class="[
-            'rounded-full px-4 py-1.5 text-sm font-medium whitespace-nowrap transition-colors',
-            filter === opt ? 'bg-indigo-600 text-white shadow-md' : 'bg-white text-gray-600 ring-1 ring-gray-200 shadow-sm'
-          ]"
-        >
-          {{ opt.charAt(0).toUpperCase() + opt.slice(1) }}
-        </button>
+      <div class="space-y-3">
+        <div class="flex items-center gap-2 overflow-x-auto pb-2 pt-1 no-scrollbar">
+          <button 
+            v-for="opt in filterOptions.slice(0, -1)" 
+            :key="opt.value"
+            @click="filter = opt.value"
+            :class="[
+              'rounded-full px-4 py-1.5 text-sm font-medium whitespace-nowrap transition-colors',
+              filter === opt.value ? 'bg-indigo-600 text-white shadow-md' : 'bg-white text-gray-600 ring-1 ring-gray-200 shadow-sm'
+            ]"
+          >
+            {{ opt.label }}
+          </button>
+          <button 
+            @click="filter = 'custom'"
+            :class="[
+              'rounded-full px-4 py-1.5 text-sm font-medium whitespace-nowrap transition-colors',
+              filter === 'custom' ? 'bg-indigo-600 text-white shadow-md' : 'bg-white text-gray-600 ring-1 ring-gray-200 shadow-sm'
+            ]"
+          >
+            Custom
+          </button>
+        </div>
+        
+        <!-- Custom Date Range Pickers -->
+        <div v-if="filter === 'custom'" class="grid grid-cols-2 gap-3">
+          <BaseInput 
+            v-model="customStartDate" 
+            type="date" 
+            label="Start Date"
+          />
+          <BaseInput 
+            v-model="customEndDate" 
+            type="date" 
+            label="End Date"
+          />
+        </div>
       </div>
 
       <!-- Transactions -->

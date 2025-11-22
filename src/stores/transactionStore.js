@@ -78,7 +78,7 @@ export const useTransactionStore = defineStore('transaction', () => {
 
     // Filtering (Client-side for now as we load all transactions for a book)
     function getFilteredTransactions(filters) {
-        // filters: { dateRange: 'today' | 'week' | 'month' | 'year' | 'custom', startDate, endDate, type, category }
+        // filters: { dateRange: 'today' | 'yesterday' | 'week' | 'this-week' | 'last-week' | 'month' | 'last-month' | 'this-year' | 'last-year' | 'custom', startDate, endDate, type, category }
         return transactions.value.filter(t => {
             let match = true
             const tDate = new Date(t.date)
@@ -100,11 +100,49 @@ export const useTransactionStore = defineStore('transaction', () => {
                     const weekAgo = new Date(now)
                     weekAgo.setDate(weekAgo.getDate() - 6) // 6 days ago + today = 7 days
                     match = match && tDate >= weekAgo && tDate <= now
+                } else if (filters.dateRange === 'this-week') {
+                    // Current week (Monday to Sunday)
+                    const dayOfWeek = now.getDay()
+                    const monday = new Date(now)
+                    monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1))
+                    const sunday = new Date(monday)
+                    sunday.setDate(monday.getDate() + 6)
+                    match = match && tDate >= monday && tDate <= sunday
+                } else if (filters.dateRange === 'last-week') {
+                    // Previous week (Monday to Sunday)
+                    const dayOfWeek = now.getDay()
+                    const lastMonday = new Date(now)
+                    lastMonday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1) - 7)
+                    const lastSunday = new Date(lastMonday)
+                    lastSunday.setDate(lastMonday.getDate() + 6)
+                    match = match && tDate >= lastMonday && tDate <= lastSunday
                 } else if (filters.dateRange === 'month') {
                     // Current month
                     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
                     const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0)
                     match = match && tDate >= monthStart && tDate <= monthEnd
+                } else if (filters.dateRange === 'last-month') {
+                    // Previous month
+                    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+                    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0)
+                    match = match && tDate >= lastMonthStart && tDate <= lastMonthEnd
+                } else if (filters.dateRange === 'this-year') {
+                    // Current year
+                    const yearStart = new Date(now.getFullYear(), 0, 1)
+                    const yearEnd = new Date(now.getFullYear(), 11, 31)
+                    match = match && tDate >= yearStart && tDate <= yearEnd
+                } else if (filters.dateRange === 'last-year') {
+                    // Previous year
+                    const lastYearStart = new Date(now.getFullYear() - 1, 0, 1)
+                    const lastYearEnd = new Date(now.getFullYear() - 1, 11, 31)
+                    match = match && tDate >= lastYearStart && tDate <= lastYearEnd
+                } else if (filters.dateRange === 'custom' && filters.startDate && filters.endDate) {
+                    // Custom date range
+                    const startDate = new Date(filters.startDate)
+                    const endDate = new Date(filters.endDate)
+                    startDate.setHours(0, 0, 0, 0)
+                    endDate.setHours(23, 59, 59, 999)
+                    match = match && tDate >= startDate && tDate <= endDate
                 }
             }
 
