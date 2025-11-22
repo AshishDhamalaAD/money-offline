@@ -60,15 +60,15 @@ onMounted(async () => {
 
 const filterOptions = computed(() => {
     return [
+        { label: 'All', value: 'all' },
         { label: 'This Month', value: 'month' },
         { label: 'Last Month', value: 'last-month' },
         { label: 'Today', value: 'today' },
         { label: 'Yesterday', value: 'yesterday' },
-        { label: 'This Week', value: 'this-week' },
-        { label: 'Last Week', value: 'last-week' },
+        // { label: 'This Week', value: 'this-week' },
+        // { label: 'Last Week', value: 'last-week' },
         { label: 'This Year', value: 'this-year' },
         { label: 'Last Year', value: 'last-year' },
-        { label: 'All', value: 'all' },
         { label: 'Custom Date Range', value: 'custom' }
     ]
 })
