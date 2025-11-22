@@ -155,27 +155,34 @@ const showProductModal = ref(false)
 const newProductName = ref('')
 const newProductDescription = ref('')
 const newProductRate = ref(0)
+const newProductQuantityType = ref('')
+
+const quantityTypes = [
+  { label: 'Kilogram (kg)', value: 'kg' },
+  { label: 'Gram (g)', value: 'g' },
+  { label: 'Liter (l)', value: 'l' },
+  { label: 'Milliliter (ml)', value: 'ml' },
+  { label: 'Pieces (pcs)', value: 'pcs' },
+  { label: 'Box', value: 'box' },
+  { label: 'Dozen', value: 'dozen' }
+]
 
 async function saveNewProduct() {
   if (!newProductName.value.trim()) return
 
   try {
-    await masterStore.addProduct(newProductName.value, newProductRate.value, newProductDescription.value)
+    await masterStore.addProduct(
+      newProductName.value, 
+      newProductRate.value, 
+      newProductDescription.value, 
+      newProductQuantityType.value, 
+      bookId
+    )
     showProductModal.value = false
     newProductName.value = ''
     newProductDescription.value = ''
     newProductRate.value = 0
-    // We don't auto-select product here because products are in a list (line items), 
-    // but user can now select it in the line item.
-    // Maybe we can auto-add a line item with this product?
-    // "when created, it must auto select the currently created category" was for category.
-    // For product, "add a new product directly from the transaction page just like category" implies similar flow.
-    // Let's auto-add a line item with this product.
-    const newProduct = masterStore.products[masterStore.products.length - 1] // Wait, liveQuery might not have updated yet.
-    // We can't easily get the ID unless addProduct returns it (it does).
-    // But we need the full object for the UI if we want to be fancy, or just the ID.
-    // Actually, let's just let the user select it. Or better, add a line item.
-    // Let's just close modal for now, user can select it.
+    newProductQuantityType.value = ''
   } catch (e) {
     console.error(e)
     alert('Failed to add product')
@@ -363,19 +370,29 @@ async function saveNewProduct() {
           v-model="newProductName" 
           label="Product Name" 
           placeholder="e.g. Milk" 
+          required
           autoFocus
         />
         
         <BaseInput 
-          v-model="newProductDescription" 
-          label="Description" 
-          placeholder="Optional" 
+          v-model="newProductRate" 
+          type="number" 
+          label="Rate" 
+          required
+        />
+        
+        <SearchableSelect
+          v-model="newProductQuantityType"
+          :options="quantityTypes"
+          label="Quantity Type"
+          placeholder="Select quantity type"
+          required
         />
 
         <BaseInput 
-          v-model="newProductRate" 
-          type="number" 
-          label="Default Rate" 
+          v-model="newProductDescription" 
+          label="Description" 
+          placeholder="Optional" 
         />
 
         <div class="flex justify-end gap-3 mt-6">
