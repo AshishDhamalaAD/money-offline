@@ -70,6 +70,23 @@ const groupedTransactions = computed(() => {
   return Object.values(groups).sort((a, b) => b.timestamp - a.timestamp)
 })
 
+const filteredStats = computed(() => {
+  let totalIn = 0
+  let totalOut = 0
+
+  filteredTransactions.value.forEach(t => {
+    const amount = parseFloat(t.amount) || 0
+    if (t.type === 'in') totalIn += amount
+    else if (t.type === 'out') totalOut += amount
+  })
+
+  return {
+    totalIn,
+    totalOut,
+    netBalance: totalIn - totalOut
+  }
+})
+
 function goBack() {
   router.push({ name: 'dashboard' })
 }
@@ -136,7 +153,7 @@ async function saveBookName() {
     <!-- Content -->
     <main class="p-4 space-y-6">
       <!-- Stats -->
-      <StatsSummary :stats="transactionStore.stats" />
+      <StatsSummary :stats="filteredStats" />
 
       <!-- Filters -->
       <div class="flex items-center gap-2 overflow-x-auto pb-2 pt-1 no-scrollbar">
