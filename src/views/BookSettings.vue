@@ -4,6 +4,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { useBookStore } from '../stores/bookStore'
 import { useMasterStore } from '../stores/masterStore'
 import BaseButton from '../components/ui/BaseButton.vue'
+import PageLayout from '../components/layout/PageLayout.vue'
+import PageHeader from '../components/layout/PageHeader.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -67,17 +69,8 @@ const tabs = [
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 pb-20">
-    <header class="bg-white px-4 py-4 shadow-sm sticky top-0 z-20 flex items-center gap-3">
-      <button @click="goBack" class="rounded-full p-1 text-gray-600 hover:bg-gray-100">
-        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-        </svg>
-      </button>
-      <h1 class="text-xl font-bold text-gray-900">
-        {{ book?.name }} Settings
-      </h1>
-    </header>
+  <PageLayout>
+    <PageHeader :title="`${book?.name || 'Book'} Settings`" />
 
     <main class="p-4 space-y-6">
       <!-- Tabs -->
@@ -170,5 +163,5 @@ const tabs = [
 
       </div>
     </main>
-  </div>
+  </PageLayout>
 </template>

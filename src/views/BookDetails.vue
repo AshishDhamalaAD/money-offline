@@ -1,29 +1,47 @@
 <script setup>
-import { ref, onMounted, watch, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useBookStore } from '../stores/bookStore'
 import { useTransactionStore } from '../stores/transactionStore'
-import StatsSummary from '../components/StatsSummary.vue'
+import { useMasterStore } from '../stores/masterStore'
 import TransactionCard from '../components/TransactionCard.vue'
-import BaseSelect from '../components/ui/BaseSelect.vue'
+import StatsSummary from '../components/StatsSummary.vue'
+import SearchableSelect from '../components/ui/SearchableSelect.vue'
 import BaseInput from '../components/ui/BaseInput.vue'
-
 import Modal from '../components/ui/Modal.vue'
+import PageLayout from '../components/layout/PageLayout.vue'
+import PageHeader from '../components/layout/PageHeader.vue'
 import BaseButton from '../components/ui/BaseButton.vue'
 
 const route = useRoute()
 const router = useRouter()
 const bookStore = useBookStore()
 const transactionStore = useTransactionStore()
+const masterStore = useMasterStore()
 
 const book = ref(null)
-const filter = ref('month') // Default to month
-const customStartDate = ref('')
-const customEndDate = ref('')
+const bookId = ref(null)
+const selectedFilter = ref('month') // Default to month
+const startDate = ref('')
+const endDate = ref('')
 const showDeleteModal = ref(false)
 const transactionToDelete = ref(null)
 
-const filterOptions = [
+// Edit Book
+const showEditBookModal = ref(false)
+const editBookName = ref('')
+
+onMounted(async () => {
+  const bookIdParam = parseInt(route.params.id)
+  if (!bookIdParam) return
+  
+  bookId.value = bookIdParam
+  book.value = await bookStore.getBook(bookId.value)
+  transactionStore.setBookId(bookId.value)
+})
+
+const filterOptions = computed(() => {
+  return [
     { label: 'This Month', value: 'month' },
     { label: 'Last Month', value: 'last-month' },
     { label: 'Today', value: 'today' },
@@ -33,41 +51,27 @@ const filterOptions = [
     { label: 'This Year', value: 'this-year' },
     { label: 'Last Year', value: 'last-year' },
     { label: 'All', value: 'all' },
-  { label: 'Custom Date Range', value: 'custom' }
-]
-
-// Edit Book
-const showEditBookModal = ref(false)
-const editBookName = ref('')
-
-onMounted(async () => {
-  const bookId = parseInt(route.params.id)
-  if (!bookId) return
-  
-  book.value = await bookStore.getBook(bookId)
-  transactionStore.setBookId(bookId)
+    { label: 'Custom Date Range', value: 'custom' }
+  ]
 })
 
-const filteredTransactions = ref([])
-
-watch([() => transactionStore.transactions, filter, customStartDate, customEndDate], () => {
-  // Simple filter logic for now
-  if (filter.value === 'all') {
-    filteredTransactions.value = transactionStore.transactions
-  } else if (filter.value === 'custom') {
-    if (customStartDate.value && customEndDate.value) {
-      filteredTransactions.value = transactionStore.getFilteredTransactions({ 
+const filteredTransactions = computed(() => {
+  if (selectedFilter.value === 'all') {
+    return transactionStore.transactions
+  } else if (selectedFilter.value === 'custom') {
+    if (startDate.value && endDate.value) {
+      return transactionStore.getFilteredTransactions({ 
         dateRange: 'custom', 
-        startDate: customStartDate.value, 
-        endDate: customEndDate.value 
+        startDate: startDate.value, 
+        endDate: endDate.value 
       })
     } else {
-      filteredTransactions.value = transactionStore.transactions
+      return transactionStore.transactions
     }
   } else {
-    filteredTransactions.value = transactionStore.getFilteredTransactions({ dateRange: filter.value })
+    return transactionStore.getFilteredTransactions({ dateRange: selectedFilter.value })
   }
-}, { immediate: true })
+})
 
 const groupedTransactions = computed(() => {
   const groups = {}
@@ -101,38 +105,38 @@ const filteredStats = computed(() => {
   let openingBalance = 0
 
   // Calculate opening balance (net balance from transactions before the filter period)
-  if (filter.value !== 'all') {
+  if (selectedFilter.value !== 'all') {
     const now = new Date()
     now.setHours(0, 0, 0, 0)
     
     let filterStartDate = null
     
-    if (filter.value === 'today') {
+    if (selectedFilter.value === 'today') {
       filterStartDate = new Date(now)
-    } else if (filter.value === 'yesterday') {
+    } else if (selectedFilter.value === 'yesterday') {
       filterStartDate = new Date(now)
       filterStartDate.setDate(filterStartDate.getDate() - 1)
-    } else if (filter.value === 'week') {
+    } else if (selectedFilter.value === 'week') {
       filterStartDate = new Date(now)
       filterStartDate.setDate(filterStartDate.getDate() - 6)
-    } else if (filter.value === 'this-week') {
+    } else if (selectedFilter.value === 'this-week') {
       const dayOfWeek = now.getDay()
       filterStartDate = new Date(now)
       filterStartDate.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1))
-    } else if (filter.value === 'last-week') {
+    } else if (selectedFilter.value === 'last-week') {
       const dayOfWeek = now.getDay()
       filterStartDate = new Date(now)
       filterStartDate.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1) - 7)
-    } else if (filter.value === 'month') {
+    } else if (selectedFilter.value === 'month') {
       filterStartDate = new Date(now.getFullYear(), now.getMonth(), 1)
-    } else if (filter.value === 'last-month') {
+    } else if (selectedFilter.value === 'last-month') {
       filterStartDate = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-    } else if (filter.value === 'this-year') {
+    } else if (selectedFilter.value === 'this-year') {
       filterStartDate = new Date(now.getFullYear(), 0, 1)
-    } else if (filter.value === 'last-year') {
+    } else if (selectedFilter.value === 'last-year') {
       filterStartDate = new Date(now.getFullYear() - 1, 0, 1)
-    } else if (filter.value === 'custom' && customStartDate.value) {
-      filterStartDate = new Date(customStartDate.value)
+    } else if (selectedFilter.value === 'custom' && startDate.value) {
+      filterStartDate = new Date(startDate.value)
       filterStartDate.setHours(0, 0, 0, 0)
     }
     
@@ -170,12 +174,8 @@ const filteredStats = computed(() => {
   }
 })
 
-function goBack() {
-  router.push({ name: 'dashboard' })
-}
-
 function goToCreateTransaction() {
-  router.push({ name: 'create-transaction', params: { bookId: book.value.id } })
+  router.push({ name: 'create-transaction', params: { bookId: bookId.value } })
 }
 
 function confirmDelete(transaction) {
@@ -198,43 +198,32 @@ function openEditBook() {
 
 async function saveBookName() {
   if (!editBookName.value.trim()) return
-  await bookStore.updateBook(book.value.id, { name: editBookName.value })
+  await bookStore.updateBook(bookId.value, { name: editBookName.value })
   book.value.name = editBookName.value
   showEditBookModal.value = false
 }
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 pb-20">
-    <!-- Header -->
-    <header class="bg-white px-4 py-4 shadow-sm sticky top-0 z-20">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <button @click="goBack" class="rounded-full p-1 text-gray-600 hover:bg-gray-100">
-            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <h1 class="text-xl font-bold text-gray-900 truncate max-w-[200px]">{{ book?.name || 'Loading...' }}</h1>
-        </div>
-        <div class="flex gap-2">
-          <button @click="router.push({ name: 'book-settings', params: { bookId: book.id } })" class="text-gray-500 hover:text-indigo-600 p-2">
-            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-          </button>
-          <button @click="openEditBook" class="text-gray-500 hover:text-indigo-600 p-2">
-            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
-          </button>
-        </div>
-      </div>
-    </header>
+  <PageLayout>
+    <PageHeader :title="book?.name || 'Book Details'">
+      <template #actions>
+        <button @click="router.push({ name: 'book-settings', params: { bookId } })" class="rounded-full bg-gray-100 p-2 text-gray-600 hover:bg-gray-200">
+          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+        </button>
+        <button @click="openEditBook" class="rounded-full bg-gray-100 p-2 text-gray-600 hover:bg-gray-200">
+          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          </svg>
+        </button>
+      </template>
+    </PageHeader>
 
     <!-- Content -->
-    <main class="p-4 space-y-6">
+    <main class="p-4 space-y-4">
       <!-- Stats -->
       <StatsSummary :stats="filteredStats" />
 
@@ -244,19 +233,19 @@ async function saveBookName() {
           <button 
             v-for="opt in filterOptions.slice(0, -1)" 
             :key="opt.value"
-            @click="filter = opt.value"
+            @click="selectedFilter = opt.value"
             :class="[
               'rounded-full px-4 py-1.5 text-sm font-medium whitespace-nowrap transition-colors',
-              filter === opt.value ? 'bg-indigo-600 text-white shadow-md' : 'bg-white text-gray-600 ring-1 ring-gray-200 shadow-sm'
+              selectedFilter === opt.value ? 'bg-indigo-600 text-white shadow-md' : 'bg-white text-gray-600 ring-1 ring-gray-200 shadow-sm'
             ]"
           >
             {{ opt.label }}
           </button>
           <button 
-            @click="filter = 'custom'"
+            @click="selectedFilter = 'custom'"
             :class="[
               'rounded-full px-4 py-1.5 text-sm font-medium whitespace-nowrap transition-colors',
-              filter === 'custom' ? 'bg-indigo-600 text-white shadow-md' : 'bg-white text-gray-600 ring-1 ring-gray-200 shadow-sm'
+              selectedFilter === 'custom' ? 'bg-indigo-600 text-white shadow-md' : 'bg-white text-gray-600 ring-1 ring-gray-200 shadow-sm'
             ]"
           >
             Custom
@@ -264,7 +253,7 @@ async function saveBookName() {
         </div>
         
         <!-- Custom Date Range Pickers -->
-        <div v-if="filter === 'custom'" class="grid grid-cols-2 gap-3">
+        <div v-if="selectedFilter === 'custom'" class="grid grid-cols-2 gap-3">
           <BaseInput 
             v-model="customStartDate" 
             type="date" 
@@ -335,5 +324,5 @@ async function saveBookName() {
         </div>
       </div>
     </Modal>
-  </div>
+  </PageLayout>
 </template>

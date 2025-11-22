@@ -1,10 +1,12 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useMasterStore } from '../stores/masterStore'
 import BaseButton from '../components/ui/BaseButton.vue'
 import BaseInput from '../components/ui/BaseInput.vue'
 import Modal from '../components/ui/Modal.vue'
+import PageLayout from '../components/layout/PageLayout.vue'
+import PageHeader from '../components/layout/PageHeader.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -19,8 +21,6 @@ const form = ref({
 })
 
 const showDeleteModal = ref(false)
-
-const title = computed(() => isNew ? 'New Contact' : 'Edit Contact')
 
 onMounted(async () => {
   if (!isNew) {
@@ -70,22 +70,19 @@ function goBack() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 pb-20">
-    <header class="bg-white px-4 py-4 shadow-sm sticky top-0 z-20 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <button @click="goBack" class="rounded-full p-1 text-gray-600 hover:bg-gray-100">
-          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-          </svg>
+  <PageLayout>
+    <PageHeader :title="isNew ? 'New Contact' : 'Edit Contact'">
+      <template #actions>
+        <button 
+          v-if="!isNew" 
+          @click="showDeleteModal = true" 
+          class="rounded-lg px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+        >
+          Delete
         </button>
-        <h1 class="text-xl font-bold text-gray-900">{{ title }}</h1>
-      </div>
-      <button v-if="!isNew" @click="showDeleteModal = true" class="text-red-500 hover:bg-red-50 p-2 rounded-full transition-colors">
-        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-        </svg>
-      </button>
-    </header>
+        <BaseButton size="sm" @click="save">Save</BaseButton>
+      </template>
+    </PageHeader>
 
     <main class="p-4 space-y-6">
       <div class="bg-white p-4 rounded-xl shadow-sm space-y-4">
@@ -106,5 +103,5 @@ function goBack() {
         <BaseButton variant="danger" @click="handleDelete">Delete</BaseButton>
       </div>
     </Modal>
-  </div>
+  </PageLayout>
 </template>
