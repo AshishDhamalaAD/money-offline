@@ -23,7 +23,19 @@ const isEdit = !!route.params.id
 
 const form = ref({
   type: 'out',
-  date: new Date().toISOString().slice(0, 16),
+  date: (() => {
+    // Get current time in Nepal (UTC+5:45)
+    const now = new Date()
+    const nepalTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kathmandu' }))
+    
+    const year = nepalTime.getFullYear()
+    const month = String(nepalTime.getMonth() + 1).padStart(2, '0')
+    const day = String(nepalTime.getDate()).padStart(2, '0')
+    const hours = String(nepalTime.getHours()).padStart(2, '0')
+    const minutes = String(nepalTime.getMinutes()).padStart(2, '0')
+    
+    return `${year}-${month}-${day}T${hours}:${minutes}`
+  })(),
   category_id: '',
   contact_id: '',
   payment_mode_id: '',

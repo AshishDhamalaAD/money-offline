@@ -12,6 +12,7 @@ import Modal from '../components/ui/Modal.vue'
 import PageLayout from '../components/layout/PageLayout.vue'
 import PageHeader from '../components/layout/PageHeader.vue'
 import BaseButton from '../components/ui/BaseButton.vue'
+import { formatDate, getNepalDate } from '../utils/dateUtils'
 
 const route = useRoute()
 const router = useRouter()
@@ -73,16 +74,13 @@ const filteredTransactions = computed(() => {
   }
 })
 
+
 const groupedTransactions = computed(() => {
   const groups = {}
   
   filteredTransactions.value.forEach(transaction => {
     const date = new Date(transaction.date)
-    const dateKey = date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    })
+    const dateKey = formatDate(date)
     
     if (!groups[dateKey]) {
       groups[dateKey] = {
@@ -106,7 +104,7 @@ const filteredStats = computed(() => {
 
   // Calculate opening balance (net balance from transactions before the filter period)
   if (selectedFilter.value !== 'all') {
-    const now = new Date()
+    const now = getNepalDate()
     now.setHours(0, 0, 0, 0)
     
     let filterStartDate = null

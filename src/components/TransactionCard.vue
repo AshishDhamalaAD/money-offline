@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onMounted } from 'vue'
 import { useMasterStore } from '../stores/masterStore'
+import { formatTime } from '../utils/dateUtils'
 
 const props = defineProps({
   transaction: {
@@ -10,12 +11,7 @@ const props = defineProps({
 })
 
 const formattedTime = computed(() => {
-  const date = new Date(props.transaction.date)
-  return date.toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true
-  })
+  return formatTime(props.transaction.date)
 })
 
 const masterStore = useMasterStore()

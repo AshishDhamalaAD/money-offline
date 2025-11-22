@@ -2,6 +2,8 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 
+import { formatDate } from '../utils/dateUtils'
+
 const props = defineProps({
   book: {
     type: Object,
@@ -16,7 +18,7 @@ function openBook() {
 }
 
 const formattedDate = computed(() => {
-  return new Date(props.book.created_at).toLocaleDateString()
+  return formatDate(props.book.created_at)
 })
 </script>
 
