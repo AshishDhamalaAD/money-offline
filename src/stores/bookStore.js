@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { db } from '../db'
 import { liveQuery } from 'dexie'
 import { ref } from 'vue'
+import { formatDateTimeForDB } from '../utils/dateUtils'
 
 export const useBookStore = defineStore('book', () => {
     const books = ref([])
@@ -19,8 +20,8 @@ export const useBookStore = defineStore('book', () => {
     async function createBook(name) {
         const id = await db.books.add({
             name,
-            created_at: new Date(),
-            updated_at: new Date(),
+            created_at: formatDateTimeForDB(),
+            updated_at: formatDateTimeForDB(),
             sync_status: 'pending'
         })
         return id
@@ -39,7 +40,7 @@ export const useBookStore = defineStore('book', () => {
     async function updateBook(id, updates) {
         await db.books.update(id, {
             ...updates,
-            updated_at: new Date(),
+            updated_at: formatDateTimeForDB(),
             sync_status: 'pending'
         })
     }

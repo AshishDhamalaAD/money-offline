@@ -24,15 +24,13 @@ const isEdit = !!route.params.id
 const form = ref({
     type: 'out',
     date: (() => {
-        // Get current time in Nepal (UTC+5:45)
+        // Use local time without timezone conversion
         const now = new Date()
-        const nepalTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kathmandu' }))
-
-        const year = nepalTime.getFullYear()
-        const month = String(nepalTime.getMonth() + 1).padStart(2, '0')
-        const day = String(nepalTime.getDate()).padStart(2, '0')
-        const hours = String(nepalTime.getHours()).padStart(2, '0')
-        const minutes = String(nepalTime.getMinutes()).padStart(2, '0')
+        const year = now.getFullYear()
+        const month = String(now.getMonth() + 1).padStart(2, '0')
+        const day = String(now.getDate()).padStart(2, '0')
+        const hours = String(now.getHours()).padStart(2, '0')
+        const minutes = String(now.getMinutes()).padStart(2, '0')
 
         return `${year}-${month}-${day}T${hours}:${minutes}`
     })(),
@@ -59,6 +57,15 @@ onMounted(async () => {
         // Better to fetch from DB to be safe
         const t = await db.transactions.get(id)
         if (t) {
+            // Convert date from 'YYYY-MM-DD HH:mm:ss' to 'YYYY-MM-DDTHH:mm' for datetime-local input
+            const dateStr = t.date
+            if (dateStr) {
+                // Parse the date string and convert to datetime-local format
+                const dateParts = dateStr.split(' ')
+                const datePart = dateParts[0] // YYYY-MM-DD
+                const timePart = dateParts[1] ? dateParts[1].substring(0, 5) : '00:00' // HH:mm
+                t.date = `${datePart}T${timePart}`
+            }
             form.value = { ...t }
         }
     } else {

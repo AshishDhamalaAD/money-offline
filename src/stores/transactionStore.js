@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { db } from '../db'
 import { liveQuery } from 'dexie'
 import { ref, computed } from 'vue'
+import { formatDateTimeForDB } from '../utils/dateUtils'
 
 export const useTransactionStore = defineStore('transaction', () => {
     const transactions = ref([])
@@ -31,13 +32,18 @@ export const useTransactionStore = defineStore('transaction', () => {
         // type, date, amount, category_id, contact_id, payment_mode_id, description, products (array)
         // Convert to plain object to avoid DataCloneError with Vue reactive proxies
         const plainTransaction = JSON.parse(JSON.stringify(transaction))
+
+        // Convert date from datetime-local format to database format
+        const transactionDate = plainTransaction.date ? formatDateTimeForDB(new Date(plainTransaction.date)) : formatDateTimeForDB()
+
         const id = await db.transactions.add({
             book_id: currentBookId.value, // Default to current
             ...plainTransaction,
+            date: transactionDate,
             discount: plainTransaction.discount || 0,
             charge: plainTransaction.charge || 0,
-            created_at: new Date(),
-            updated_at: new Date(),
+            created_at: formatDateTimeForDB(),
+            updated_at: formatDateTimeForDB(),
             sync_status: 'pending'
         })
         return id
@@ -45,13 +51,21 @@ export const useTransactionStore = defineStore('transaction', () => {
 
     async function updateTransaction(id, updates) {
         const plainUpdates = JSON.parse(JSON.stringify(updates))
-        await db.transactions.update(id, {
+
+        // Convert date from datetime-local format to database format if present
+        const updateData = {
             ...plainUpdates,
             discount: plainUpdates.discount || 0,
             charge: plainUpdates.charge || 0,
-            updated_at: new Date(),
+            updated_at: formatDateTimeForDB(),
             sync_status: 'pending'
-        })
+        }
+
+        if (plainUpdates.date) {
+            updateData.date = formatDateTimeForDB(new Date(plainUpdates.date))
+        }
+
+        await db.transactions.update(id, updateData)
     }
 
     async function deleteTransaction(id) {
