@@ -84,15 +84,28 @@ export const useTransactionStore = defineStore('transaction', () => {
             const tDate = new Date(t.date)
             const now = new Date()
 
+            // Set to start of day for accurate comparison
+            now.setHours(0, 0, 0, 0)
+            tDate.setHours(0, 0, 0, 0)
+
             if (filters.dateRange) {
                 if (filters.dateRange === 'today') {
-                    match = match && tDate.toDateString() === now.toDateString()
+                    match = match && tDate.getTime() === now.getTime()
                 } else if (filters.dateRange === 'yesterday') {
                     const yest = new Date(now)
                     yest.setDate(yest.getDate() - 1)
-                    match = match && tDate.toDateString() === yest.toDateString()
+                    match = match && tDate.getTime() === yest.getTime()
+                } else if (filters.dateRange === 'week') {
+                    // Last 7 days including today
+                    const weekAgo = new Date(now)
+                    weekAgo.setDate(weekAgo.getDate() - 6) // 6 days ago + today = 7 days
+                    match = match && tDate >= weekAgo && tDate <= now
+                } else if (filters.dateRange === 'month') {
+                    // Current month
+                    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+                    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+                    match = match && tDate >= monthStart && tDate <= monthEnd
                 }
-                // Add more date logic here
             }
 
             if (filters.type && filters.type !== 'all') {
