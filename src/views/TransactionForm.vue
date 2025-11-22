@@ -340,9 +340,6 @@ async function saveNewProduct() {
         <div class="flex items-center justify-between">
           <h3 class="font-medium text-gray-900">Products</h3>
           <div class="flex gap-2">
-            <button @click="addProduct" class="text-sm font-medium text-indigo-600 hover:text-indigo-700">
-              + Add Item
-            </button>
             <button 
               @click="showProductModal = true"
               class="mb-0.5 flex h-[42px] w-[42px] items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 hover:bg-indigo-100 active:scale-95 transition-all"
@@ -360,11 +357,17 @@ async function saveNewProduct() {
             :key="p.id"
             :model-value="p"
             :products="masterStore.products"
+            :product-index="index"
             @update:model-value="updateProduct(index, $event)"
             @remove="removeProduct(index)"
           />
           <div v-if="form.products.length === 0" class="text-center text-gray-500 py-4 text-sm">
             No items added.
+          </div>
+          <div class="pt-2 text-center">
+              <button @click="addProduct" class="w-full text-sm font-medium text-indigo-600 hover:text-indigo-700">
+                  + Add Item
+              </button>
           </div>
         </div>
       </div>
