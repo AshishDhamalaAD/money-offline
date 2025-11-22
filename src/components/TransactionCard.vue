@@ -24,12 +24,15 @@ onMounted(() => {
     masterStore.watchBookData(props.transaction.book_id)
 })
 
-const formattedAmount = computed(() => {
+// Currency formatting function
+function formatCurrency(amount) {
   return new Intl.NumberFormat('en-IN', { 
     minimumFractionDigits: 0,
     maximumFractionDigits: 2 
-  }).format(props.transaction.amount)
-})
+  }).format(amount || 0)
+}
+
+const formattedAmount = computed(() => formatCurrency(props.transaction.amount))
 
 const category = computed(() => {
   return masterStore.categories.find(c => c.id === props.transaction.category_id)
@@ -80,9 +83,9 @@ const hasCalculation = computed(() => {
       <!-- Calculation / Final Amount -->
       <div class="text-right">
         <div class="text-sm text-gray-600">
-          <span :class="transaction.type === 'in' ? 'text-green-600' : 'text-red-600'">{{ productsTotal }}</span>
-          <span v-if="discount > 0" class="text-red-600"> - {{ discount }}</span>
-          <span v-if="charge > 0" class="text-green-600"> + {{ charge }}</span>
+          <span :class="transaction.type === 'in' ? 'text-green-600' : 'text-red-600'">{{ formatCurrency(productsTotal) }}</span>
+          <span v-if="discount > 0" class="text-red-600"> - {{ formatCurrency(discount) }}</span>
+          <span v-if="charge > 0" class="text-green-600"> + {{ formatCurrency(charge) }}</span>
           <span v-if="productsTotal !== transaction.amount" :class="transaction.type === 'in' ? 'text-green-600' : 'text-red-600'"> = {{ formattedAmount }}</span>
         </div>
       </div>
@@ -97,9 +100,9 @@ const hasCalculation = computed(() => {
       >
         <div class="flex items-center gap-2 text-gray-700">
           <span class="font-medium">{{ product.name }}</span>
-          <span class="text-gray-500">{{ product.quantity }} × {{ product.rate }}</span>
+          <span v-if="product.quantity > 1" class="text-gray-500">{{ product.quantity }} × {{ formatCurrency(product.rate) }}</span>
         </div>
-        <span class="text-gray-900 font-medium">{{ product.amount }}</span>
+        <span class="text-gray-900 font-medium">{{ formatCurrency(product.amount) }}</span>
       </div>
     </div>
     
