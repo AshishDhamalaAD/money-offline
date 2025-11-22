@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { db } from '../db'
 import { liveQuery } from 'dexie'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { formatDateTimeForDB } from '../utils/dateUtils'
 
 export const useBookStore = defineStore('book', () => {
@@ -16,6 +16,10 @@ export const useBookStore = defineStore('book', () => {
     liveQuery(() => db.books.orderBy('created_at').reverse().toArray()).subscribe(data => {
         books.value = data
     })
+
+    const sortedBooks = computed(() => {
+        return books.value.sort((a, b) => a.id - b.id)
+    });
 
     async function createBook(name) {
         const id = await db.books.add({
@@ -47,6 +51,7 @@ export const useBookStore = defineStore('book', () => {
 
     return {
         books,
+        sortedBooks,
         createBook,
         deleteBook,
         getBook,
