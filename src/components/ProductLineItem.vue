@@ -56,15 +56,12 @@ function onProductSelect(productId) {
 </script>
 
 <template>
-  <div class="rounded-xl bg-gray-50 p-3 ring-1 ring-gray-200">
-    <div class="flex justify-between items-start mb-2">
-      <h4 class="text-sm font-medium text-gray-700">Item</h4>
-      <button @click="$emit('remove')" class="text-red-500 hover:text-red-700">
-        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-    </div>
+  <div class="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-200 relative">
+    <button @click="$emit('remove')" class="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors">
+      <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
     
     <div class="grid grid-cols-1 gap-3">
       <!-- Product Select or Name Input -->

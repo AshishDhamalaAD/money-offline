@@ -1,33 +1,17 @@
 <script setup>
-import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMasterStore } from '../stores/masterStore'
 import BaseButton from '../components/ui/BaseButton.vue'
-import BaseInput from '../components/ui/BaseInput.vue'
-import Modal from '../components/ui/Modal.vue'
 
 const router = useRouter()
 const masterStore = useMasterStore()
 
-const showModal = ref(false)
-const newItemName = ref('')
-const newItemPhone = ref('')
-
-function openAddModal() {
-  newItemName.value = ''
-  newItemPhone.value = ''
-  showModal.value = true
+function navigateToAdd() {
+  router.push({ name: 'new-contact' })
 }
 
-async function saveItem() {
-  if (!newItemName.value) return
-  await masterStore.addContact(newItemName.value, newItemPhone.value)
-  showModal.value = false
-}
-
-async function deleteItem(id) {
-  if (!confirm('Are you sure?')) return
-  await masterStore.deleteContact(id)
+function navigateToEdit(contact) {
+  router.push({ name: 'edit-contact', params: { id: contact.id } })
 }
 </script>
 
@@ -49,16 +33,23 @@ async function deleteItem(id) {
           <h2 class="text-lg font-semibold text-gray-800">
             Manage Contacts
           </h2>
-          <BaseButton size="sm" @click="openAddModal">Add New</BaseButton>
+          <BaseButton size="sm" @click="navigateToAdd">Add New</BaseButton>
         </div>
 
         <div class="space-y-3">
-          <div v-for="item in masterStore.contacts" :key="item.id" class="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm">
+          <div 
+            v-for="item in masterStore.contacts" 
+            :key="item.id" 
+            @click="navigateToEdit(item)"
+            class="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm cursor-pointer hover:bg-gray-50 transition-colors"
+          >
             <div>
               <p class="font-medium">{{ item.name }}</p>
               <p class="text-xs text-gray-500">{{ item.phone }}</p>
             </div>
-            <button @click="deleteItem(item.id)" class="text-red-500 hover:text-red-700 p-2">Delete</button>
+            <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
           </div>
           <div v-if="masterStore.contacts.length === 0" class="text-center text-gray-500 py-4">
             No contacts found.
@@ -66,18 +57,5 @@ async function deleteItem(id) {
         </div>
       </div>
     </main>
-
-    <!-- Add Modal -->
-    <Modal :show="showModal" title="Add Contact" @close="showModal = false">
-      <div class="space-y-4">
-        <BaseInput v-model="newItemName" label="Name" autoFocus required />
-        <BaseInput v-model="newItemPhone" label="Phone (Optional)" />
-        
-        <div class="flex justify-end gap-3 mt-6">
-          <BaseButton variant="ghost" @click="showModal = false">Cancel</BaseButton>
-          <BaseButton @click="saveItem">Save</BaseButton>
-        </div>
-      </div>
-    </Modal>
   </div>
 </template>

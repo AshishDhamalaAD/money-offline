@@ -43,6 +43,16 @@ const router = createRouter({
             path: '/settings',
             name: 'settings',
             component: () => import('../views/Settings.vue')
+        },
+        {
+            path: '/settings/contacts/new',
+            name: 'new-contact',
+            component: () => import('../views/ContactEdit.vue')
+        },
+        {
+            path: '/settings/contacts/:id/edit',
+            name: 'edit-contact',
+            component: () => import('../views/ContactEdit.vue')
         }
     ]
 })

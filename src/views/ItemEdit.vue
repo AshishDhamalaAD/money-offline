@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useMasterStore } from '../stores/masterStore'
 import BaseButton from '../components/ui/BaseButton.vue'
 import BaseInput from '../components/ui/BaseInput.vue'
+import SearchableSelect from '../components/ui/SearchableSelect.vue'
 import Modal from '../components/ui/Modal.vue'
 
 const route = useRoute()
@@ -14,6 +15,16 @@ const bookId = parseInt(route.params.bookId)
 const type = route.params.type // 'categories', 'products', 'paymentModes'
 const itemId = route.params.itemId ? parseInt(route.params.itemId) : null
 const isNew = !itemId
+
+const quantityTypes = [
+  { label: 'Kilogram (kg)', value: 'kg' },
+  { label: 'Gram (g)', value: 'g' },
+  { label: 'Liter (l)', value: 'l' },
+  { label: 'Milliliter (ml)', value: 'ml' },
+  { label: 'Pieces (pcs)', value: 'pcs' },
+  { label: 'Box', value: 'box' },
+  { label: 'Dozen', value: 'dozen' }
+]
 
 const form = ref({
   name: '',
@@ -118,8 +129,14 @@ function goBack() {
         <BaseInput v-model="form.name" label="Name" autoFocus required />
 
         <div v-if="type === 'products'" class="space-y-4">
-          <BaseInput v-model="form.rate" type="number" label="Default Rate" />
-          <BaseInput v-model="form.quantity_type" label="Quantity Type" placeholder="e.g. kg, liters" />
+          <BaseInput v-model="form.rate" type="number" label="Rate" required />
+          <SearchableSelect 
+            v-model="form.quantity_type" 
+            label="Quantity Type" 
+            :options="quantityTypes"
+            placeholder="Select Type"
+            required
+          />
         </div>
 
         <!-- Description at bottom for all -->

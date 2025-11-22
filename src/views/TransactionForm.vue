@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useTransactionStore } from '../stores/transactionStore'
 import { useMasterStore } from '../stores/masterStore'
@@ -26,13 +26,14 @@ const form = ref({
   payment_mode_id: '',
   description: '',
   products: [],
-  amount: 0
+  amount: 0,
+  discount: 0,
+  charge: 0
 })
 
 const saving = ref(false)
 
 onMounted(async () => {
-  await masterStore.initDefaults()
   await masterStore.initDefaults()
   masterStore.watchBookData(bookId) // Load categories, products, payment modes for this book
   
@@ -69,11 +70,25 @@ function updateProduct(index, item) {
 }
 
 function calculateTotal() {
-  const total = form.value.products.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0)
-  if (total > 0) {
-    form.value.amount = total
+  const productsTotal = form.value.products.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0)
+  
+  if (form.value.type === 'out') {
+    const discount = parseFloat(form.value.discount) || 0
+    const charge = parseFloat(form.value.charge) || 0
+    form.value.amount = Math.max(0, productsTotal - discount + charge)
+  } else {
+    form.value.amount = productsTotal
   }
 }
+
+// Watch for type change to reset/recalc
+watch(() => form.value.type, (newType) => {
+  if (newType === 'in') {
+    form.value.discount = 0
+    form.value.charge = 0
+  }
+  calculateTotal()
+})
 
 async function save() {
   saving.value = true
@@ -259,6 +274,26 @@ async function saveNewProduct() {
         />
       </div>
 
+      <!-- Discount & Charge (Cash Out Only) -->
+      <div v-if="form.type === 'out'" class="space-y-4 rounded-2xl bg-white p-4 shadow-sm">
+        <div class="grid grid-cols-2 gap-4">
+          <BaseInput 
+            v-model="form.discount" 
+            type="number" 
+            label="Discount" 
+            placeholder="0.00" 
+            @input="calculateTotal"
+          />
+          <BaseInput 
+            v-model="form.charge" 
+            type="number" 
+            label="Extra Charge" 
+            placeholder="0.00" 
+            @input="calculateTotal"
+          />
+        </div>
+      </div>
+
       <!-- Total Amount (Moved to bottom) -->
       <div class="sticky bottom-0 bg-gray-50 pt-4 pb-6">
         <div class="rounded-2xl bg-white p-4 shadow-lg ring-1 ring-gray-200">
@@ -266,7 +301,8 @@ async function saveNewProduct() {
             v-model="form.amount" 
             type="number" 
             label="Total Amount" 
-            class="text-3xl font-bold text-indigo-600"
+            class="text-3xl font-bold text-indigo-600 bg-gray-50"
+            disabled
             required
           />
         </div>
