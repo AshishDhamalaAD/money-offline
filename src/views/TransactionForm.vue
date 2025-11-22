@@ -291,6 +291,7 @@ async function saveNewProduct() {
                            label="Date"
                            required />
                 <BaseInput v-model="form.description"
+                           type="textarea"
                            label="Description"
                            placeholder="What is this for?" />
             </div>

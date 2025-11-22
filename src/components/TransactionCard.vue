@@ -104,10 +104,10 @@ const hasCalculation = computed(() => {
         </div>
 
         <!-- Row 3: Description + Time -->
-        <div class="flex justify-between items-center gap-2">
+        <div class="flex justify-between items-start gap-2">
             <span v-if="transaction.description"
-                  class="text-xs text-gray-600 flex-1">{{ transaction.description }}</span>
-            <span class="text-xs text-gray-500">{{ formattedTime }}</span>
+                  class="text-xs text-gray-600 flex-1 whitespace-pre-wrap">{{ transaction.description }}</span>
+            <span class="text-xs text-gray-500 shrink-0">{{ formattedTime }}</span>
         </div>
     </div>
 </template>
