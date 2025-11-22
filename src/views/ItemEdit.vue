@@ -2,6 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useMasterStore } from '../stores/masterStore'
+import { QUANTITY_TYPES } from '../constants'
 import BaseButton from '../components/ui/BaseButton.vue'
 import BaseInput from '../components/ui/BaseInput.vue'
 import SearchableSelect from '../components/ui/SearchableSelect.vue'
@@ -17,16 +18,6 @@ const bookId = parseInt(route.params.bookId)
 const type = route.params.type // 'categories', 'products', 'paymentModes'
 const itemId = route.params.itemId ? parseInt(route.params.itemId) : null
 const isNew = !itemId
-
-const quantityTypes = [
-  { label: 'Kilogram (kg)', value: 'kg' },
-  { label: 'Gram (g)', value: 'g' },
-  { label: 'Liter (l)', value: 'l' },
-  { label: 'Milliliter (ml)', value: 'ml' },
-  { label: 'Pieces (pcs)', value: 'pcs' },
-  { label: 'Box', value: 'box' },
-  { label: 'Dozen', value: 'dozen' }
-]
 
 const form = ref({
   name: '',
@@ -131,9 +122,9 @@ function goBack() {
           <BaseInput v-model="form.rate" type="number" label="Rate" required />
           <SearchableSelect 
             v-model="form.quantity_type" 
+            :options="QUANTITY_TYPES"
             label="Quantity Type" 
-            :options="quantityTypes"
-            placeholder="Select Type"
+            placeholder="Select quantity type"
             required
           />
         </div>

@@ -3,6 +3,7 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useTransactionStore } from '../stores/transactionStore'
 import { useMasterStore } from '../stores/masterStore'
+import { QUANTITY_TYPES } from '../constants'
 import { db } from '../db'
 import BaseButton from '../components/ui/BaseButton.vue'
 import BaseInput from '../components/ui/BaseInput.vue'
@@ -199,16 +200,6 @@ const newProductName = ref('')
 const newProductDescription = ref('')
 const newProductRate = ref(0)
 const newProductQuantityType = ref('')
-
-const quantityTypes = [
-  { label: 'Kilogram (kg)', value: 'kg' },
-  { label: 'Gram (g)', value: 'g' },
-  { label: 'Liter (l)', value: 'l' },
-  { label: 'Milliliter (ml)', value: 'ml' },
-  { label: 'Pieces (pcs)', value: 'pcs' },
-  { label: 'Box', value: 'box' },
-  { label: 'Dozen', value: 'dozen' }
-]
 
 async function saveNewProduct() {
   if (!newProductName.value.trim()) return
@@ -456,7 +447,7 @@ async function saveNewProduct() {
         
         <SearchableSelect
           v-model="newProductQuantityType"
-          :options="quantityTypes"
+          :options="QUANTITY_TYPES"
           label="Quantity Type"
           placeholder="Select quantity type"
           required
