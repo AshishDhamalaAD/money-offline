@@ -103,7 +103,7 @@ const tabs = [
                     <div v-for="item in masterStore.categories"
                          :key="item.id"
                          @click="navigateToEdit('categories', item)"
-                         class="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm cursor-pointer hover:bg-gray-50 transition-colors">
+                         class="flex justify-between items-center bg-white p-4 rounded-sm shadow-sm cursor-pointer hover:bg-gray-50 transition-colors">
                         <div>
                             <p class="font-medium">{{ item.name }}</p>
                             <p class="text-xs text-gray-500">{{ item.description }}</p>
@@ -130,7 +130,7 @@ const tabs = [
                     <div v-for="item in masterStore.products"
                          :key="item.id"
                          @click="navigateToEdit('products', item)"
-                         class="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm cursor-pointer hover:bg-gray-50 transition-colors">
+                         class="flex justify-between items-center bg-white p-4 rounded-sm shadow-sm cursor-pointer hover:bg-gray-50 transition-colors">
                         <div>
                             <p class="font-medium">{{ item.name }}</p>
                             <p class="text-xs text-gray-500">Rate: {{ item.rate }}</p>
@@ -158,7 +158,7 @@ const tabs = [
                     <div v-for="item in masterStore.paymentModes"
                          :key="item.id"
                          @click="navigateToEdit('paymentModes', item)"
-                         class="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm cursor-pointer hover:bg-gray-50 transition-colors">
+                         class="flex justify-between items-center bg-white p-4 rounded-sm shadow-sm cursor-pointer hover:bg-gray-50 transition-colors">
                         <div>
                             <p class="font-medium">{{ item.name }}</p>
                             <p class="text-xs text-gray-500">{{ item.description }}</p>

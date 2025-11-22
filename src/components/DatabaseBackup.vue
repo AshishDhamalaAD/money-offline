@@ -151,7 +151,7 @@ async function startImport() {
     <div class="space-y-4">
         <h2 class="text-lg font-semibold text-gray-800">Database Backup & Restore</h2>
 
-        <div class="bg-white rounded-2xl p-4 shadow-sm space-y-4">
+        <div class="bg-white rounded-sm p-4 shadow-sm space-y-4">
             <!-- Export Section -->
             <div class="space-y-3">
                 <div class="flex items-center justify-between">
@@ -234,7 +234,7 @@ async function startImport() {
                 </div>
             </div>
 
-            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+            <div class="bg-yellow-50 border border-yellow-200 rounded-sm p-3">
                 <p class="text-xs text-yellow-800">
                     <strong>Warning:</strong> Importing will replace all existing data. Make sure to export your current
                     data first!
@@ -251,7 +251,7 @@ async function startImport() {
                     Select a backup file to import. This will replace all existing data.
                 </p>
 
-                <div class="bg-red-50 border border-red-200 rounded-lg p-3">
+                <div class="bg-red-50 border border-red-200 rounded-sm p-3">
                     <p class="text-sm text-red-800">
                         <strong>Warning:</strong> This action cannot be undone. All current data will be permanently
                         replaced.
@@ -265,7 +265,7 @@ async function startImport() {
                            type="file"
                            accept=".json"
                            @change="handleFileSelect"
-                           class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none" />
+                           class="block py-2 px-3 w-full text-sm text-gray-900 border border-gray-300 rounded-sm cursor-pointer bg-gray-50 focus:outline-none" />
                     <p v-if="selectedFile"
                        class="text-sm text-green-600">
                         ✓ Selected: {{ selectedFile.name }}
@@ -287,7 +287,7 @@ async function startImport() {
 
                 <!-- Import Error -->
                 <div v-if="importError"
-                     class="text-sm text-red-600 bg-red-50 p-3 rounded-lg">
+                     class="text-sm text-red-600 bg-red-50 p-3 rounded-sm">
                     {{ importError }}
                 </div>
 

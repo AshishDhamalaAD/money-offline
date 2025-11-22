@@ -41,7 +41,7 @@ function navigateToEdit(contact) {
                     <div v-for="item in masterStore.contacts"
                          :key="item.id"
                          @click="navigateToEdit(item)"
-                         class="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm cursor-pointer hover:bg-gray-50 transition-colors">
+                         class="flex justify-between items-center bg-white p-4 rounded-sm shadow-sm cursor-pointer hover:bg-gray-50 transition-colors">
                         <div>
                             <p class="font-medium">{{ item.name }}</p>
                             <p class="text-xs text-gray-500">{{ item.phone }}</p>

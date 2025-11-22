@@ -19,7 +19,7 @@ function formatCurrency(amount) {
         <div class="grid grid-cols-2 gap-3">
             <!-- Opening Balance (if available) -->
             <div v-if="stats.openingBalance !== undefined"
-                 class="rounded-2xl bg-gray-50 p-3 text-center ring-1 ring-gray-200">
+                 class="rounded-sm bg-gray-50 p-3 text-center ring-1 ring-gray-200">
                 <p class="text-xs font-medium text-gray-600 uppercase tracking-wider">Opening Balance</p>
                 <p
                    :class="['mt-1 text-lg font-bold truncate', stats.openingBalance >= 0 ? 'text-green-700' : 'text-red-700']">
@@ -31,7 +31,7 @@ function formatCurrency(amount) {
 
             <!-- Closing Balance (if available) -->
             <div v-if="stats.closingBalance !== undefined"
-                 class="rounded-2xl bg-blue-50 p-3 text-center ring-1 ring-blue-200">
+                 class="rounded-sm bg-blue-50 p-3 text-center ring-1 ring-blue-200">
                 <p class="text-xs font-medium text-blue-600 uppercase tracking-wider">Closing Balance</p>
                 <p
                    :class="['mt-1 text-xl font-bold truncate', stats.closingBalance >= 0 ? 'text-green-700' : 'text-red-700']">
@@ -45,15 +45,15 @@ function formatCurrency(amount) {
 
         <!-- Current Period Stats -->
         <div class="grid grid-cols-3 gap-3">
-            <div class="rounded-2xl bg-green-50 p-3 text-center ring-1 ring-green-100">
+            <div class="rounded-sm bg-green-50 p-3 text-center ring-1 ring-green-100">
                 <p class="text-xs font-medium text-green-600 uppercase tracking-wider">In</p>
                 <p class="mt-1 text-lg font-bold text-green-700 truncate">{{ formatCurrency(stats.totalIn) }}</p>
             </div>
-            <div class="rounded-2xl bg-red-50 p-3 text-center ring-1 ring-red-100">
+            <div class="rounded-sm bg-red-50 p-3 text-center ring-1 ring-red-100">
                 <p class="text-xs font-medium text-red-600 uppercase tracking-wider">Out</p>
                 <p class="mt-1 text-lg font-bold text-red-700 truncate">{{ formatCurrency(stats.totalOut) }}</p>
             </div>
-            <div class="rounded-2xl bg-indigo-50 p-3 text-center ring-1 ring-indigo-100">
+            <div class="rounded-sm bg-indigo-50 p-3 text-center ring-1 ring-indigo-100">
                 <p class="text-xs font-medium text-indigo-600 uppercase tracking-wider">Net</p>
                 <p class="mt-1 text-lg font-bold text-indigo-700 truncate">{{ formatCurrency(stats.netBalance) }}</p>
             </div>

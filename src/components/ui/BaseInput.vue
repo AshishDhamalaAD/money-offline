@@ -33,7 +33,7 @@ defineEmits(['update:modelValue'])
                   :placeholder="placeholder"
                   rows="3"
                   :class="[
-                    'w-full max-w-full rounded-xl border-gray-200 bg-gray-50 px-4 py-2.5 text-gray-900 placeholder-gray-400 transition-colors focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 resize-y',
+                    'w-full max-w-full rounded-sm border-gray-200 bg-gray-50 px-4 py-2.5 text-gray-900 placeholder-gray-400 transition-colors focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 resize-y',
                     { 'border-red-500 focus:border-red-500 focus:ring-red-500': error }
                 ]"></textarea>
         <input v-else
@@ -43,7 +43,7 @@ defineEmits(['update:modelValue'])
                @input="$emit('update:modelValue', $event.target.value)"
                :placeholder="placeholder"
                :class="[
-                'w-full max-w-full rounded-xl border-gray-200 bg-gray-50 px-4 py-2.5 text-gray-900 placeholder-gray-400 transition-colors focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500',
+                'w-full max-w-full rounded-sm border-gray-200 bg-gray-50 px-4 py-2.5 text-gray-900 placeholder-gray-400 transition-colors focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500',
                 { 'border-red-500 focus:border-red-500 focus:ring-red-500': error }
             ]" />
         <span v-if="error"

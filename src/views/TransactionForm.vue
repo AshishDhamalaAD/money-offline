@@ -262,7 +262,7 @@ async function saveNewProduct() {
             <template #actions>
                 <button v-if="isEdit"
                         @click="confirmDelete"
-                        class="rounded-lg px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors">
+                        class="rounded-sm px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors">
                     Delete
                 </button>
                 <BaseButton size="sm"
@@ -273,19 +273,19 @@ async function saveNewProduct() {
 
         <main class="p-4 space-y-6">
             <!-- Type Selection -->
-            <div class="flex rounded-xl bg-gray-200 p-1">
+            <div class="flex rounded-sm bg-gray-200 p-1">
                 <button @click="form.type = 'in'"
-                        :class="['flex-1 rounded-lg py-2 text-sm font-medium transition-all', form.type === 'in' ? 'bg-white text-green-600 shadow-sm' : 'text-gray-600']">
+                        :class="['flex-1 rounded-sm py-2 text-sm font-medium transition-all', form.type === 'in' ? 'bg-white text-green-600 shadow-sm' : 'text-gray-600']">
                     Cash In (+)
                 </button>
                 <button @click="form.type = 'out'"
-                        :class="['flex-1 rounded-lg py-2 text-sm font-medium transition-all', form.type === 'out' ? 'bg-white text-red-600 shadow-sm' : 'text-gray-600']">
+                        :class="['flex-1 rounded-sm py-2 text-sm font-medium transition-all', form.type === 'out' ? 'bg-white text-red-600 shadow-sm' : 'text-gray-600']">
                     Cash Out (-)
                 </button>
             </div>
 
             <!-- Basic Fields -->
-            <div class="space-y-4 rounded-2xl bg-white p-4 shadow-sm">
+            <div class="space-y-4 rounded-sm bg-white p-4 shadow-sm">
                 <BaseInput v-model="form.date"
                            type="datetime-local"
                            label="Date"
@@ -297,7 +297,7 @@ async function saveNewProduct() {
             </div>
 
             <!-- Details -->
-            <div class="space-y-4 rounded-2xl bg-white p-4 shadow-sm">
+            <div class="space-y-4 rounded-sm bg-white p-4 shadow-sm">
                 <h3 class="font-medium text-gray-900">Details</h3>
 
                 <div class="flex items-end gap-2">
@@ -309,7 +309,7 @@ async function saveNewProduct() {
                                           required />
                     </div>
                     <button @click="showCategoryModal = true"
-                            class="mb-0.5 flex h-[42px] w-[42px] items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 hover:bg-indigo-100 active:scale-95 transition-all">
+                            class="mb-0.5 flex h-[42px] w-[42px] items-center justify-center rounded-sm bg-indigo-50 text-indigo-600 hover:bg-indigo-100 active:scale-95 transition-all">
                         <svg class="h-6 w-6"
                              fill="none"
                              viewBox="0 0 24 24"
@@ -332,7 +332,7 @@ async function saveNewProduct() {
                                           required />
                     </div>
                     <button @click="showPaymentModeModal = true"
-                            class="mb-0.5 flex h-[42px] w-[42px] items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 hover:bg-indigo-100 active:scale-95 transition-all">
+                            class="mb-0.5 flex h-[42px] w-[42px] items-center justify-center rounded-sm bg-indigo-50 text-indigo-600 hover:bg-indigo-100 active:scale-95 transition-all">
                         <svg class="h-6 w-6"
                              fill="none"
                              viewBox="0 0 24 24"
@@ -352,12 +352,12 @@ async function saveNewProduct() {
             </div>
 
             <!-- Products -->
-            <div class="space-y-4 rounded-2xl bg-white p-4 shadow-sm">
+            <div class="space-y-4 rounded-sm bg-white p-4 shadow-sm">
                 <div class="flex items-center justify-between">
                     <h3 class="font-medium text-gray-900">Products</h3>
                     <div class="flex gap-2">
                         <button @click="showProductModal = true"
-                                class="mb-0.5 flex h-[42px] w-[42px] items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 hover:bg-indigo-100 active:scale-95 transition-all">
+                                class="mb-0.5 flex h-[42px] w-[42px] items-center justify-center rounded-sm bg-indigo-50 text-indigo-600 hover:bg-indigo-100 active:scale-95 transition-all">
                             <svg class="h-6 w-6"
                                  fill="none"
                                  viewBox="0 0 24 24"
@@ -394,7 +394,7 @@ async function saveNewProduct() {
 
             <!-- Discount & Charge (Cash Out Only) -->
             <div v-if="form.type === 'out'"
-                 class="space-y-4 rounded-2xl bg-white p-4 shadow-sm">
+                 class="space-y-4 rounded-sm bg-white p-4 shadow-sm">
                 <div class="grid grid-cols-2 gap-4">
                     <BaseInput v-model="form.discount"
                                type="number"
@@ -413,7 +413,7 @@ async function saveNewProduct() {
 
             <!-- Total Amount (Moved to bottom) -->
             <div class="sticky bottom-0 bg-gray-50 pt-4 pb-6 z-20">
-                <div class="rounded-2xl bg-white p-4 shadow-lg ring-1 ring-gray-200">
+                <div class="rounded-sm bg-white p-4 shadow-lg ring-1 ring-gray-200">
                     <BaseInput v-model="form.amount"
                                type="number"
                                step="0.01"

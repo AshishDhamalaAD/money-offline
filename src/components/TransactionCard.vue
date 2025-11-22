@@ -52,7 +52,7 @@ const hasCalculation = computed(() => {
 </script>
 
 <template>
-    <div class="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-100">
+    <div class="rounded-sm bg-white p-4 shadow-sm ring-1 ring-gray-100">
         <!-- Row 1: Type + Category + Calculation -->
         <div class="flex items-center justify-between mb-3">
             <div class="flex items-center gap-2">

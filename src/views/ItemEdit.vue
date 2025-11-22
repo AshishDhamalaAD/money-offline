@@ -115,7 +115,7 @@ function goBack() {
         </PageHeader>
 
         <main class="p-4 space-y-6">
-            <div class="bg-white p-4 rounded-xl shadow-sm space-y-4">
+            <div class="bg-white p-4 rounded-sm shadow-sm space-y-4">
                 <BaseInput v-model="form.name"
                            label="Name"
                            autoFocus

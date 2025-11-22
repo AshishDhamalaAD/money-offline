@@ -391,7 +391,7 @@ async function saveBookName() {
 
                 <!-- Custom Date Range Pickers -->
                 <div v-if="selectedFilter === 'custom'"
-                     class="grid grid-cols-2 gap-3 bg-white p-4 rounded-2xl shadow-sm">
+                     class="grid grid-cols-2 gap-3 bg-white p-4 rounded-sm shadow-sm">
                     <BaseInput v-model="startDate"
                                type="date"
                                label="Start Date" />
@@ -418,10 +418,10 @@ async function saveBookName() {
                     <input v-model="searchQuery"
                            type="text"
                            placeholder="Search transactions..."
-                           class="w-full rounded-xl border-none bg-white py-2.5 pl-10 pr-4 text-[17px] shadow-sm ring-1 ring-gray-200 placeholder-gray-400 focus:ring-2 focus:ring-[#007AFF] focus:outline-none" />
+                           class="w-full rounded-sm border-none bg-white py-2.5 pl-10 pr-4 text-[17px] shadow-sm ring-1 ring-gray-200 placeholder-gray-400 focus:ring-2 focus:ring-[#007AFF] focus:outline-none" />
                 </div>
                 <button @click="openFilterModal()"
-                        class="flex items-center justify-center w-11 h-11 rounded-xl bg-white shadow-sm ring-1 ring-gray-200 text-gray-600 hover:bg-gray-50 active:bg-gray-100 relative">
+                        class="flex items-center justify-center w-11 h-11 rounded-sm bg-white shadow-sm ring-1 ring-gray-200 text-gray-600 hover:bg-gray-50 active:bg-gray-100 relative">
                     <svg class="h-6 w-6"
                          fill="none"
                          viewBox="0 0 24 24"

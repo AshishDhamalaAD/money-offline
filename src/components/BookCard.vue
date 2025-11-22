@@ -24,7 +24,7 @@ const formattedDate = computed(() => {
 
 <template>
     <div @click="openBook"
-         class="group relative overflow-hidden rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-200 transition-all hover:shadow-md active:scale-[0.98]">
+         class="group relative overflow-hidden rounded-sm bg-white p-5 shadow-sm ring-1 ring-gray-200 transition-all hover:shadow-md active:scale-[0.98]">
         <div class="flex items-start justify-between">
             <div
                  class="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100">
