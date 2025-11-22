@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useBookStore } from '../stores/bookStore'
 import { useTransactionStore } from '../stores/transactionStore'
@@ -43,6 +43,32 @@ watch([() => transactionStore.transactions, filter], () => {
     filteredTransactions.value = transactionStore.getFilteredTransactions({ dateRange: filter.value })
   }
 }, { immediate: true })
+
+const groupedTransactions = computed(() => {
+  const groups = {}
+  
+  filteredTransactions.value.forEach(transaction => {
+    const date = new Date(transaction.date)
+    const dateKey = date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    })
+    
+    if (!groups[dateKey]) {
+      groups[dateKey] = {
+        date: dateKey,
+        timestamp: date.getTime(),
+        transactions: []
+      }
+    }
+    
+    groups[dateKey].transactions.push(transaction)
+  })
+  
+  // Convert to array and sort by timestamp (most recent first)
+  return Object.values(groups).sort((a, b) => b.timestamp - a.timestamp)
+})
 
 function goBack() {
   router.push({ name: 'dashboard' })
@@ -128,18 +154,27 @@ async function saveBookName() {
       </div>
 
       <!-- Transactions -->
-      <div class="space-y-3">
-        <div v-if="filteredTransactions.length === 0" class="py-10 text-center text-gray-500">
+      <div class="space-y-6">
+        <div v-if="groupedTransactions.length === 0" class="py-10 text-center text-gray-500">
           No transactions found for this period.
         </div>
-        <div 
-          v-for="t in filteredTransactions" 
-          :key="t.id"
-          @click="router.push({ name: 'edit-transaction', params: { bookId: book.id, id: t.id } })"
-          @contextmenu.prevent="confirmDelete(t)"
-          class="cursor-pointer transition-opacity active:opacity-70"
-        >
-          <TransactionCard :transaction="t" />
+        
+        <div v-for="group in groupedTransactions" :key="group.date" class="space-y-3">
+          <!-- Date Header -->
+          <div class="bg-gray-100 px-4 py-2 rounded-lg">
+            <h3 class="text-sm font-bold text-gray-900">{{ group.date }}</h3>
+          </div>
+          
+          <!-- Transactions for this date -->
+          <div 
+            v-for="t in group.transactions" 
+            :key="t.id"
+            @click="router.push({ name: 'edit-transaction', params: { bookId: book.id, id: t.id } })"
+            @contextmenu.prevent="confirmDelete(t)"
+            class="cursor-pointer transition-opacity active:opacity-70"
+          >
+            <TransactionCard :transaction="t" />
+          </div>
         </div>
       </div>
     </main>
