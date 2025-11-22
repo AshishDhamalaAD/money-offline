@@ -185,7 +185,7 @@ async function saveNewProduct() {
 
 <template>
   <div class="min-h-screen bg-gray-50 pb-20">
-    <header class="bg-white px-4 py-4 shadow-sm sticky top-0 z-10 flex items-center justify-between">
+    <header class="bg-white px-4 py-4 shadow-sm sticky top-0 z-20 flex items-center justify-between">
       <div class="flex items-center gap-3">
         <button @click="router.back()" class="rounded-full p-1 text-gray-600 hover:bg-gray-100">
           <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -283,7 +283,7 @@ async function saveNewProduct() {
           </div>
         </div>
         
-        <div class="space-y-4 divide-y divide-gray-100">
+        <div class="divide-y divide-gray-100">
           <ProductLineItem 
             v-for="(p, index) in form.products" 
             :key="p.id"
@@ -291,7 +291,6 @@ async function saveNewProduct() {
             :products="masterStore.products"
             @update:model-value="updateProduct(index, $event)"
             @remove="removeProduct(index)"
-            :class="{'pt-4': index > 0}"
           />
           <div v-if="form.products.length === 0" class="text-center text-gray-500 py-4 text-sm">
             No items added.

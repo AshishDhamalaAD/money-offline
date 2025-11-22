@@ -28,7 +28,7 @@ async function handleCreateBook() {
 <template>
   <div class="min-h-screen bg-gray-50 pb-20">
     <!-- Header -->
-    <header class="bg-white px-4 py-4 shadow-sm sticky top-0 z-10">
+    <header class="bg-white px-4 py-4 shadow-sm sticky top-0 z-20">
       <div class="flex items-center justify-between">
         <h1 class="text-xl font-bold text-gray-900">My Books</h1>
         <button @click="$router.push({ name: 'settings' })" class="rounded-full bg-gray-100 p-2 text-gray-600 hover:bg-gray-200">

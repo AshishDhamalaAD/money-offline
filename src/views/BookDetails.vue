@@ -81,7 +81,7 @@ async function saveBookName() {
 <template>
   <div class="min-h-screen bg-gray-50 pb-20">
     <!-- Header -->
-    <header class="bg-white px-4 py-4 shadow-sm sticky top-0 z-10">
+    <header class="bg-white px-4 py-4 shadow-sm sticky top-0 z-20">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
           <button @click="goBack" class="rounded-full p-1 text-gray-600 hover:bg-gray-100">

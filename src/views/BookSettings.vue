@@ -68,7 +68,7 @@ const tabs = [
 
 <template>
   <div class="min-h-screen bg-gray-50 pb-20">
-    <header class="bg-white px-4 py-4 shadow-sm sticky top-0 z-10 flex items-center gap-3">
+    <header class="bg-white px-4 py-4 shadow-sm sticky top-0 z-20 flex items-center gap-3">
       <button @click="goBack" class="rounded-full p-1 text-gray-600 hover:bg-gray-100">
         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
