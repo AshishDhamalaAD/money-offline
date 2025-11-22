@@ -12,6 +12,7 @@ import ProductLineItem from '../components/ProductLineItem.vue'
 import Modal from '../components/ui/Modal.vue'
 import PageLayout from '../components/layout/PageLayout.vue'
 import PageHeader from '../components/layout/PageHeader.vue'
+import { formatDateTimeForDB, roundAmount } from '../utils/dateUtils'
 
 const route = useRoute()
 const router = useRouter()
@@ -100,9 +101,9 @@ function calculateTotal() {
     if (form.value.type === 'out') {
         const discount = parseFloat(form.value.discount) || 0
         const charge = parseFloat(form.value.charge) || 0
-        form.value.amount = Math.max(0, productsTotal - discount + charge)
+        form.value.amount = roundAmount(Math.max(0, productsTotal - discount + charge))
     } else {
-        form.value.amount = productsTotal
+        form.value.amount = roundAmount(productsTotal)
     }
 }
 
@@ -396,11 +397,13 @@ async function saveNewProduct() {
                 <div class="grid grid-cols-2 gap-4">
                     <BaseInput v-model="form.discount"
                                type="number"
+                               step="0.01"
                                label="Discount"
                                placeholder="0.00"
                                @input="calculateTotal" />
                     <BaseInput v-model="form.charge"
                                type="number"
+                               step="0.01"
                                label="Charge"
                                placeholder="0.00"
                                @input="calculateTotal" />
@@ -412,6 +415,7 @@ async function saveNewProduct() {
                 <div class="rounded-2xl bg-white p-4 shadow-lg ring-1 ring-gray-200">
                     <BaseInput v-model="form.amount"
                                type="number"
+                               step="0.01"
                                label="Total Amount"
                                class="text-3xl font-bold text-indigo-600"
                                disabled

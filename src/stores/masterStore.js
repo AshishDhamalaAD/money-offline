@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { db } from '../db'
 import { liveQuery } from 'dexie'
 import { ref } from 'vue'
-import { formatDateTimeForDB } from '../utils/dateUtils'
+import { formatDateTimeForDB, roundAmount } from '../utils/dateUtils'
 
 export const useMasterStore = defineStore('master', () => {
     const categories = ref([])
@@ -115,7 +115,7 @@ export const useMasterStore = defineStore('master', () => {
     async function addProduct(name, rate, description, quantityType, bookId) {
         return await db.products.add({
             name,
-            rate,
+            rate: roundAmount(rate),
             description,
             quantity_type: quantityType,
             book_id: bookId,
@@ -125,8 +125,12 @@ export const useMasterStore = defineStore('master', () => {
         })
     }
     async function updateProduct(id, updates) {
+        const updatedData = { ...updates }
+        if (updatedData.rate !== undefined) {
+            updatedData.rate = roundAmount(updatedData.rate)
+        }
         return await db.products.update(id, {
-            ...updates,
+            ...updatedData,
             updated_at: formatDateTimeForDB(),
             sync_status: 'pending'
         })

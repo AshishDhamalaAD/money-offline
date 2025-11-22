@@ -43,3 +43,8 @@ export const formatDateTimeForDB = (date = new Date()) => {
 
     return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
 }
+
+// Round amount to 2 decimal places
+export const roundAmount = (amount) => {
+    return Math.round((parseFloat(amount) || 0) * 100) / 100
+}

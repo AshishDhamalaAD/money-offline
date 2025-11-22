@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { db } from '../db'
 import { liveQuery } from 'dexie'
 import { ref, computed } from 'vue'
-import { formatDateTimeForDB } from '../utils/dateUtils'
+import { formatDateTimeForDB, roundAmount } from '../utils/dateUtils'
 
 export const useTransactionStore = defineStore('transaction', () => {
     const transactions = ref([])
@@ -36,12 +36,21 @@ export const useTransactionStore = defineStore('transaction', () => {
         // Convert date from datetime-local format to database format
         const transactionDate = plainTransaction.date ? formatDateTimeForDB(new Date(plainTransaction.date)) : formatDateTimeForDB()
 
+        // Round all product amounts to 2 decimal places
+        const products = plainTransaction.products?.map(p => ({
+            ...p,
+            rate: roundAmount(p.rate),
+            amount: roundAmount(p.amount)
+        })) || []
+
         const id = await db.transactions.add({
             book_id: currentBookId.value, // Default to current
             ...plainTransaction,
             date: transactionDate,
-            discount: plainTransaction.discount || 0,
-            charge: plainTransaction.charge || 0,
+            products,
+            amount: roundAmount(plainTransaction.amount),
+            discount: roundAmount(plainTransaction.discount || 0),
+            charge: roundAmount(plainTransaction.charge || 0),
             created_at: formatDateTimeForDB(),
             updated_at: formatDateTimeForDB(),
             sync_status: 'pending'
@@ -52,11 +61,21 @@ export const useTransactionStore = defineStore('transaction', () => {
     async function updateTransaction(id, updates) {
         const plainUpdates = JSON.parse(JSON.stringify(updates))
 
+        // Round all product amounts to 2 decimal places if products exist
+        if (plainUpdates.products) {
+            plainUpdates.products = plainUpdates.products.map(p => ({
+                ...p,
+                rate: roundAmount(p.rate),
+                amount: roundAmount(p.amount)
+            }))
+        }
+
         // Convert date from datetime-local format to database format if present
         const updateData = {
             ...plainUpdates,
-            discount: plainUpdates.discount || 0,
-            charge: plainUpdates.charge || 0,
+            amount: plainUpdates.amount ? roundAmount(plainUpdates.amount) : undefined,
+            discount: roundAmount(plainUpdates.discount || 0),
+            charge: roundAmount(plainUpdates.charge || 0),
             updated_at: formatDateTimeForDB(),
             sync_status: 'pending'
         }

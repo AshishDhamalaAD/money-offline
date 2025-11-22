@@ -2,6 +2,7 @@
 import { ref, watch, computed } from 'vue'
 import BaseInput from './ui/BaseInput.vue'
 import SearchableSelect from './ui/SearchableSelect.vue'
+import { roundAmount } from '../utils/dateUtils'
 
 const props = defineProps({
     modelValue: {
@@ -31,15 +32,15 @@ watch(() => props.modelValue, (newVal) => {
 function updateAmount() {
     const qty = parseFloat(item.value.quantity) || 0
     const rate = parseFloat(item.value.rate) || 0
-    item.value.amount = qty * rate
+    item.value.amount = roundAmount(qty * rate)
     emitUpdate()
 }
 
-function updateRate() {
-    const qty = parseFloat(item.value.quantity) || 0
+function updateQuantity() {
+    const rate = parseFloat(item.value.rate) || 0
     const amount = parseFloat(item.value.amount) || 0
-    if (qty !== 0) {
-        item.value.rate = amount / qty
+    if (rate !== 0) {
+        item.value.quantity = roundAmount(amount / rate)
     }
     emitUpdate()
 }
@@ -97,19 +98,22 @@ function onProductSelect(productId) {
             <div class="grid grid-cols-3 gap-2">
                 <BaseInput v-model="item.quantity"
                            type="number"
+                           step="0.01"
                            label="Qty"
                            placeholder="0"
                            @input="updateAmount" />
                 <BaseInput v-model="item.rate"
                            type="number"
+                           step="0.01"
                            label="Rate"
                            placeholder="0.00"
                            @input="updateAmount" />
                 <BaseInput v-model="item.amount"
                            type="number"
+                           step="0.01"
                            label="Amount"
                            placeholder="0.00"
-                           @input="updateRate" />
+                           @input="updateQuantity" />
             </div>
         </div>
     </div>
