@@ -15,7 +15,22 @@ const router = createRouter({
             component: () => import('../views/BookDetails.vue')
         },
         {
-            path: '/book/:bookId/transaction/new',
+            path: '/book/:bookId/settings',
+            name: 'book-settings',
+            component: () => import('../views/BookSettings.vue')
+        },
+        {
+            path: '/book/:bookId/:type/new',
+            name: 'new-item',
+            component: () => import('../views/ItemEdit.vue')
+        },
+        {
+            path: '/book/:bookId/:type/:itemId/edit',
+            name: 'edit-item',
+            component: () => import('../views/ItemEdit.vue')
+        },
+        {
+            path: '/book/:bookId/transaction/create',
             name: 'create-transaction',
             component: () => import('../views/TransactionForm.vue')
         },

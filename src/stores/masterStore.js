@@ -10,37 +10,50 @@ export const useMasterStore = defineStore('master', () => {
     const products = ref([])
 
     // Live queries
-    // Categories now depend on a selected book. We'll expose a function to set the book context or fetch by book.
-    // For global settings, we might want all? Or just let the UI handle subscriptions.
-    // Let's keep 'categories' as a ref that can be updated.
-
-    // We'll remove the default global subscription for categories since it depends on book_id
-    // liveQuery(() => db.categories.toArray()).subscribe(data => categories.value = data)
-
+    // Contacts are global
     liveQuery(() => db.contacts.toArray()).subscribe(data => contacts.value = data)
-    liveQuery(() => db.payment_modes.toArray()).subscribe(data => paymentModes.value = data)
-    liveQuery(() => db.products.toArray()).subscribe(data => products.value = data)
 
-    // Categories
+    // Categories, Payment Modes, Products are Book-specific
     let categorySubscription = null
-    function watchCategories(bookId) {
+    let paymentModeSubscription = null
+    let productSubscription = null
+
+    function watchBookData(bookId) {
+        // Unsubscribe previous
         if (categorySubscription) categorySubscription.unsubscribe()
+        if (paymentModeSubscription) paymentModeSubscription.unsubscribe()
+        if (productSubscription) productSubscription.unsubscribe()
+
         if (!bookId) {
             categories.value = []
+            paymentModes.value = []
+            products.value = []
             return
         }
+
+        // Subscribe new
         categorySubscription = liveQuery(() =>
             db.categories.where('book_id').equals(bookId).toArray()
-        ).subscribe(data => {
-            categories.value = data
-        })
+        ).subscribe(data => categories.value = data)
+
+        paymentModeSubscription = liveQuery(() =>
+            db.payment_modes.where('book_id').equals(bookId).toArray()
+        ).subscribe(data => paymentModes.value = data)
+
+        productSubscription = liveQuery(() =>
+            db.products.where('book_id').equals(bookId).toArray()
+        ).subscribe(data => products.value = data)
     }
 
+    // Categories
     async function addCategory(name, description, bookId) {
         return await db.categories.add({ name, description, book_id: bookId, sync_status: 'pending' })
     }
     async function deleteCategory(id) {
         return await db.categories.delete(id)
+    }
+    async function updateCategory(id, updates) {
+        return await db.categories.update(id, { ...updates, sync_status: 'pending' })
     }
 
     // Contacts
@@ -52,16 +65,19 @@ export const useMasterStore = defineStore('master', () => {
     }
 
     // Payment Modes
-    async function addPaymentMode(name, type) {
-        return await db.payment_modes.add({ name, type, sync_status: 'pending' })
+    async function addPaymentMode(name, type, bookId) {
+        return await db.payment_modes.add({ name, type, book_id: bookId, sync_status: 'pending' })
     }
     async function deletePaymentMode(id) {
         return await db.payment_modes.delete(id)
     }
+    async function updatePaymentMode(id, updates) {
+        return await db.payment_modes.update(id, { ...updates, sync_status: 'pending' })
+    }
 
     // Products
-    async function addProduct(name, rate, description) {
-        return await db.products.add({ name, rate, description, sync_status: 'pending' })
+    async function addProduct(name, rate, description, bookId) {
+        return await db.products.add({ name, rate, description, book_id: bookId, sync_status: 'pending' })
     }
     async function updateProduct(id, updates) {
         return await db.products.update(id, { ...updates, sync_status: 'pending' })
@@ -70,20 +86,18 @@ export const useMasterStore = defineStore('master', () => {
         return await db.products.delete(id)
     }
 
-    // Initialize default data if empty
+    // Initialize default data if empty - Keeping this simple for now, maybe not needed if we rely on user creation
     async function initDefaults() {
+        // Defaults logic might need to change to be book-aware or just removed.
+        // For now, leaving it as is but it might create items without book_id which won't show up.
+        // Better to disable it or make it require a bookId.
+        // Let's comment it out to avoid "ghost" items.
+        /*
         const count = await db.categories.count()
         if (count === 0) {
-            await db.categories.bulkAdd([
-                { name: 'Food', type: 'expense', sync_status: 'pending' },
-                { name: 'Transport', type: 'expense', sync_status: 'pending' },
-                { name: 'Salary', type: 'income', sync_status: 'pending' }
-            ])
-            await db.payment_modes.bulkAdd([
-                { name: 'Cash', type: 'cash', sync_status: 'pending' },
-                { name: 'Online', type: 'online', sync_status: 'pending' }
-            ])
+            // ...
         }
+        */
     }
 
     return {
@@ -91,13 +105,15 @@ export const useMasterStore = defineStore('master', () => {
         contacts,
         paymentModes,
         products,
+        watchBookData,
         addCategory,
         deleteCategory,
-        watchCategories,
+        updateCategory,
         addContact,
         deleteContact,
         addPaymentMode,
         deletePaymentMode,
+        updatePaymentMode,
         addProduct,
         updateProduct,
         deleteProduct,

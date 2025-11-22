@@ -14,9 +14,9 @@ db.version(1).stores({
 db.version(2).stores({
     categories: '++id, name, book_id, description, sync_status', // Removed type, added book_id, description
     products: '++id, name, rate, description, sync_status' // Added description
-}).upgrade(tx => {
-    // Migration logic if needed, but for local dev usually clearing DB is easier if schema changes drastically
-    // We'll just let Dexie handle structural changes. 
-    // Note: Existing categories without book_id might need handling if we want to keep them.
-    // For now, we assume new schema takes over.
+});
+
+db.version(3).stores({
+    payment_modes: '++id, name, type, book_id, sync_status',
+    products: '++id, name, rate, description, book_id, sync_status'
 });
