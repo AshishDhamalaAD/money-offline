@@ -32,6 +32,22 @@ const transactionToDelete = ref(null)
 const showEditBookModal = ref(false)
 const editBookName = ref('')
 
+const showStats = ref(false)
+const searchQuery = ref('')
+const showFilterModal = ref(false)
+
+// Actual filters applied
+const filterCategory = ref('')
+const filterPaymentMode = ref('')
+const filterContact = ref('')
+const filterProduct = ref('')
+
+// Temporary filters for modal
+const tempFilterCategory = ref('')
+const tempFilterPaymentMode = ref('')
+const tempFilterContact = ref('')
+const tempFilterProduct = ref('')
+
 onMounted(async () => {
   const bookIdParam = parseInt(route.params.id)
   if (!bookIdParam) return
@@ -39,6 +55,7 @@ onMounted(async () => {
   bookId.value = bookIdParam
   book.value = await bookStore.getBook(bookId.value)
   transactionStore.setBookId(bookId.value)
+  masterStore.watchBookData(bookId.value) // Ensure master data is loaded for filters
 })
 
 const filterOptions = computed(() => {
@@ -56,22 +73,84 @@ const filterOptions = computed(() => {
   ]
 })
 
+const activeFiltersCount = computed(() => {
+  let count = 0
+  if (filterCategory.value) count++
+  if (filterPaymentMode.value) count++
+  if (filterContact.value) count++
+  if (filterProduct.value) count++
+  return count
+})
+
+function openFilterModal() {
+  tempFilterCategory.value = filterCategory.value
+  tempFilterPaymentMode.value = filterPaymentMode.value
+  tempFilterContact.value = filterContact.value
+  tempFilterProduct.value = filterProduct.value
+  showFilterModal.value = true
+}
+
+function applyFilters() {
+  filterCategory.value = tempFilterCategory.value
+  filterPaymentMode.value = tempFilterPaymentMode.value
+  filterContact.value = tempFilterContact.value
+  filterProduct.value = tempFilterProduct.value
+  showFilterModal.value = false
+}
+
+function resetFilters() {
+  tempFilterCategory.value = ''
+  tempFilterPaymentMode.value = ''
+  tempFilterContact.value = ''
+  tempFilterProduct.value = ''
+}
+
 const filteredTransactions = computed(() => {
+  let transactions = []
+  
+  // 1. Date Filtering
   if (selectedFilter.value === 'all') {
-    return transactionStore.transactions
+    transactions = transactionStore.transactions
   } else if (selectedFilter.value === 'custom') {
     if (startDate.value && endDate.value) {
-      return transactionStore.getFilteredTransactions({ 
+      transactions = transactionStore.getFilteredTransactions({ 
         dateRange: 'custom', 
         startDate: startDate.value, 
         endDate: endDate.value 
       })
     } else {
-      return transactionStore.transactions
+      transactions = transactionStore.transactions
     }
   } else {
-    return transactionStore.getFilteredTransactions({ dateRange: selectedFilter.value })
+    transactions = transactionStore.getFilteredTransactions({ dateRange: selectedFilter.value })
   }
+
+  // 2. Advanced Filters
+  if (filterCategory.value) {
+    transactions = transactions.filter(t => t.category_id === filterCategory.value)
+  }
+  if (filterPaymentMode.value) {
+    transactions = transactions.filter(t => t.payment_mode_id === filterPaymentMode.value)
+  }
+  if (filterContact.value) {
+    transactions = transactions.filter(t => t.contact_id === filterContact.value)
+  }
+  if (filterProduct.value) {
+    transactions = transactions.filter(t => t.products?.some(p => p.id === filterProduct.value))
+  }
+
+  // 3. Search Filtering
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase()
+    transactions = transactions.filter(t => {
+      const descriptionMatch = t.description?.toLowerCase().includes(query)
+      const productMatch = t.products?.some(p => p.name.toLowerCase().includes(query))
+      const amountMatch = t.amount.toString().includes(query)
+      return descriptionMatch || productMatch || amountMatch
+    })
+  }
+
+  return transactions
 })
 
 
@@ -221,13 +300,28 @@ async function saveBookName() {
     </PageHeader>
 
     <!-- Content -->
-    <main class="p-4 space-y-4">
-      <!-- Stats -->
-      <StatsSummary :stats="filteredStats" />
+    <main class="p-4 space-y-4 pb-24">
+      <!-- Stats Toggle -->
+      <div class="flex justify-end">
+        <button 
+          @click="showStats = !showStats" 
+          class="text-[15px] text-[#007AFF] font-medium flex items-center gap-1"
+        >
+          {{ showStats ? 'Hide Stats' : 'Show Stats' }}
+          <svg class="h-4 w-4 transition-transform duration-200" :class="{ 'rotate-180': showStats }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+      </div>
 
-      <!-- Filters -->
+      <!-- Stats -->
+      <div v-show="showStats" class="transition-all duration-300 ease-in-out">
+        <StatsSummary :stats="filteredStats" />
+      </div>
+
+      <!-- Date Filters -->
       <div class="space-y-3">
-        <div class="flex items-center gap-2 overflow-x-auto pb-2 pt-1 no-scrollbar">
+        <div class="flex items-center gap-2 overflow-x-auto pb-2 pt-1 no-scrollbar -mx-4 px-4">
           <button 
             v-for="opt in filterOptions.slice(0, -1)" 
             :key="opt.value"
@@ -265,10 +359,38 @@ async function saveBookName() {
         </div>
       </div>
 
+      <!-- Search & Advanced Filters -->
+      <div class="flex gap-2">
+        <div class="relative flex-1">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          <input 
+            v-model="searchQuery"
+            type="text"
+            placeholder="Search transactions..."
+            class="w-full rounded-xl border-none bg-white py-2.5 pl-10 pr-4 text-[17px] shadow-sm ring-1 ring-gray-200 placeholder-gray-400 focus:ring-2 focus:ring-[#007AFF] focus:outline-none"
+          />
+        </div>
+        <button 
+            @click="openFilterModal()" 
+            class="flex items-center justify-center w-11 h-11 rounded-xl bg-white shadow-sm ring-1 ring-gray-200 text-gray-600 hover:bg-gray-50 active:bg-gray-100"
+          >
+          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+          </svg>
+          <div v-if="activeFiltersCount > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-[#F2F2F7]">
+            {{ activeFiltersCount }}
+            </div>
+        </button>
+      </div>
+
       <!-- Transactions -->
       <div class="space-y-6">
         <div v-if="groupedTransactions.length === 0" class="py-10 text-center text-gray-500">
-          No transactions found for this period.
+          No transactions found.
         </div>
         
         <div v-for="group in groupedTransactions" :key="group.date" class="space-y-3">
@@ -292,7 +414,7 @@ async function saveBookName() {
     </main>
 
     <!-- FAB -->
-    <div class="fixed bottom-6 right-6">
+    <div class="fixed bottom-6 right-6 z-40">
       <button 
         @click="goToCreateTransaction"
         class="flex h-14 w-14 items-center justify-center rounded-full bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 transition-transform hover:scale-105 active:scale-95"
@@ -319,6 +441,37 @@ async function saveBookName() {
         <div class="flex justify-end gap-3 mt-6">
           <BaseButton variant="ghost" @click="showEditBookModal = false">Cancel</BaseButton>
           <BaseButton @click="saveBookName">Save</BaseButton>
+        </div>
+      </div>
+    </Modal>
+
+    <!-- Filter Modal -->
+    <Modal :show="showFilterModal" title="Filter Transactions" @close="showFilterModal = false">
+      <div class="space-y-4 max-h-[70vh] overflow-y-auto p-1">
+        <SearchableSelect 
+          v-model="tempFilterCategory" 
+          label="Category"
+          :options="[{ label: 'All Categories', value: '' }, ...masterStore.categories.map(c => ({ label: c.name, value: c.id }))]"
+          placeholder="All Categories"
+        />
+
+        <SearchableSelect 
+          v-model="tempFilterPaymentMode" 
+          label="Payment Mode"
+          :options="[{ label: 'All Payment Modes', value: '' }, ...masterStore.paymentModes.map(p => ({ label: p.name, value: p.id }))]"
+          placeholder="All Payment Modes"
+        />
+
+        <SearchableSelect 
+          v-model="tempFilterContact" 
+          label="Contact"
+          :options="[{ label: 'All Contacts', value: '' }, ...masterStore.contacts.map(c => ({ label: c.name, value: c.id }))]"
+          placeholder="All Contacts"
+        />
+
+        <div class="flex justify-end gap-3 mt-6">
+          <BaseButton variant="ghost" @click="resetFilters">Reset</BaseButton>
+          <BaseButton @click="applyFilters">Apply</BaseButton>
         </div>
       </div>
     </Modal>

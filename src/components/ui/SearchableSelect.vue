@@ -11,7 +11,11 @@ const props = defineProps({
   label: String,
   placeholder: String,
   error: String,
-  required: Boolean
+  required: Boolean,
+  limit: {
+    type: Number,
+    default: 20
+  }
 })
 
 const emit = defineEmits(['update:modelValue'])
@@ -29,11 +33,17 @@ const selectedLabel = computed(() => {
 
 // Filter options
 const filteredOptions = computed(() => {
-  if (!searchQuery.value) return props.options
-  const query = searchQuery.value.toLowerCase()
-  return props.options.filter(option => 
-    option.label.toLowerCase().includes(query)
-  )
+  let options = props.options
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase()
+    options = options.filter(option => 
+      option.label.toLowerCase().includes(query)
+    )
+    // When searching, show all matching results (no limit)
+    return options
+  }
+  // No search query: limit displayed options for performance
+  return options.slice(0, props.limit)
 })
 
 function open() {
