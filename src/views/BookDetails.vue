@@ -383,7 +383,7 @@ async function saveBookName() {
 
                 <!-- Custom Date Range Pickers -->
                 <div v-if="selectedFilter === 'custom'"
-                     class="grid grid-cols-2 gap-3">
+                     class="grid grid-cols-2 gap-3 bg-white p-4 rounded-2xl shadow-sm">
                     <BaseInput v-model="customStartDate"
                                type="date"
                                label="Start Date" />
