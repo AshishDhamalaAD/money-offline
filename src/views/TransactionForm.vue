@@ -301,7 +301,7 @@ async function saveNewProduct() {
             v-model="form.amount" 
             type="number" 
             label="Total Amount" 
-            class="text-3xl font-bold text-indigo-600 bg-gray-50"
+            class="text-3xl font-bold text-indigo-600"
             disabled
             required
           />
