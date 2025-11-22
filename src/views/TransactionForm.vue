@@ -46,6 +46,9 @@ onMounted(async () => {
     if (t) {
       form.value = { ...t }
     }
+  } else {
+    // Auto-add one product item for new transactions
+    addProduct()
   }
 })
 
@@ -150,6 +153,26 @@ async function saveNewCategory() {
   }
 }
 
+// Quick Add Payment Mode
+const showPaymentModeModal = ref(false)
+const newPaymentModeName = ref('')
+const newPaymentModeDescription = ref('')
+
+async function saveNewPaymentMode() {
+  if (!newPaymentModeName.value.trim()) return
+  
+  try {
+    const id = await masterStore.addPaymentMode(newPaymentModeName.value, newPaymentModeDescription.value, bookId)
+    form.value.payment_mode_id = id
+    showPaymentModeModal.value = false
+    newPaymentModeName.value = ''
+    newPaymentModeDescription.value = ''
+  } catch (e) {
+    console.error(e)
+    alert('Failed to add payment mode')
+  }
+}
+
 // Quick Add Product
 const showProductModal = ref(false)
 const newProductName = ref('')
@@ -171,7 +194,7 @@ async function saveNewProduct() {
   if (!newProductName.value.trim()) return
 
   try {
-    await masterStore.addProduct(
+    const id = await masterStore.addProduct(
       newProductName.value, 
       newProductRate.value, 
       newProductDescription.value, 
@@ -183,6 +206,17 @@ async function saveNewProduct() {
     newProductDescription.value = ''
     newProductRate.value = 0
     newProductQuantityType.value = ''
+    
+    // Auto-add the newly created product to the items list
+    form.value.products.push({
+      id: Date.now(),
+      productId: id,
+      name: newProductName.value,
+      quantity: 1,
+      rate: newProductRate.value,
+      amount: newProductRate.value
+    })
+    calculateTotal()
   } catch (e) {
     console.error(e)
     alert('Failed to add product')
@@ -260,13 +294,26 @@ async function saveNewProduct() {
           </button>
         </div>
         
-        <SearchableSelect 
-          v-model="form.payment_mode_id" 
-          label="Payment Mode"
-          :options="masterStore.paymentModes.map(p => ({ label: p.name, value: p.id }))"
-          placeholder="Select Payment Mode"
-          required
-        />
+        <!-- Payment Mode -->
+        <div class="flex items-end gap-2">
+          <div class="flex-1">
+            <SearchableSelect 
+              v-model="form.payment_mode_id" 
+              label="Payment Mode"
+              :options="masterStore.paymentModes.map(p => ({ label: p.name, value: p.id }))"
+              placeholder="Select Payment Mode"
+              required
+            />
+          </div>
+          <button 
+            @click="showPaymentModeModal = true"
+            class="mb-0.5 flex h-[42px] w-[42px] items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 hover:bg-indigo-100 active:scale-95 transition-all"
+          >
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+          </button>
+        </div>
 
         <SearchableSelect 
           v-model="form.contact_id" 
@@ -281,11 +328,16 @@ async function saveNewProduct() {
         <div class="flex items-center justify-between">
           <h3 class="font-medium text-gray-900">Products</h3>
           <div class="flex gap-2">
-            <button @click="showProductModal = true" class="text-sm font-medium text-indigo-600 hover:text-indigo-700">
-              + New Product
-            </button>
             <button @click="addProduct" class="text-sm font-medium text-indigo-600 hover:text-indigo-700">
               + Add Item
+            </button>
+            <button 
+              @click="showProductModal = true"
+              class="mb-0.5 flex h-[42px] w-[42px] items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 hover:bg-indigo-100 active:scale-95 transition-all"
+            >
+              <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+              </svg>
             </button>
           </div>
         </div>
@@ -365,7 +417,7 @@ async function saveNewProduct() {
 
     <!-- Add Product Modal -->
     <Modal :show="showProductModal" title="Add New Product" @close="showProductModal = false">
-      <div class="space-y-4">
+      <div class="space-y-4 max-h-[70vh] overflow-y-auto">
         <BaseInput 
           v-model="newProductName" 
           label="Product Name" 
@@ -398,6 +450,30 @@ async function saveNewProduct() {
         <div class="flex justify-end gap-3 mt-6">
           <BaseButton variant="ghost" @click="showProductModal = false">Cancel</BaseButton>
           <BaseButton @click="saveNewProduct">Add Product</BaseButton>
+        </div>
+      </div>
+    </Modal>
+    
+    <!-- Add Payment Mode Modal -->
+    <Modal :show="showPaymentModeModal" title="Add New Payment Mode" @close="showPaymentModeModal = false">
+      <div class="space-y-4">
+        <BaseInput 
+          v-model="newPaymentModeName" 
+          label="Payment Mode Name" 
+          placeholder="e.g. Cash, Bank Transfer" 
+          required
+          autoFocus
+        />
+        
+        <BaseInput 
+          v-model="newPaymentModeDescription" 
+          label="Description" 
+          placeholder="Optional" 
+        />
+
+        <div class="flex justify-end gap-3 mt-6">
+          <BaseButton variant="ghost" @click="showPaymentModeModal = false">Cancel</BaseButton>
+          <BaseButton @click="saveNewPaymentMode">Add Payment Mode</BaseButton>
         </div>
       </div>
     </Modal>
