@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { db } from '../db'
 import { liveQuery } from 'dexie'
 import { ref } from 'vue'
+import { formatDateTimeForDB } from '../utils/dateUtils'
 
 export const useMasterStore = defineStore('master', () => {
     const categories = ref([])
@@ -47,18 +48,42 @@ export const useMasterStore = defineStore('master', () => {
 
     // Categories
     async function addCategory(name, description, bookId) {
-        return await db.categories.add({ name, description, book_id: bookId, sync_status: 'pending' })
+        return await db.categories.add({
+            name,
+            description,
+            book_id: bookId,
+            created_at: formatDateTimeForDB(),
+            updated_at: formatDateTimeForDB(),
+            sync_status: 'pending'
+        })
     }
     async function deleteCategory(id) {
         return await db.categories.delete(id)
     }
     async function updateCategory(id, updates) {
-        return await db.categories.update(id, { ...updates, sync_status: 'pending' })
+        return await db.categories.update(id, {
+            ...updates,
+            updated_at: formatDateTimeForDB(),
+            sync_status: 'pending'
+        })
     }
 
     // Contacts
     async function addContact(name, phone) {
-        return await db.contacts.add({ name, phone, sync_status: 'pending' })
+        return await db.contacts.add({
+            name,
+            phone,
+            created_at: formatDateTimeForDB(),
+            updated_at: formatDateTimeForDB(),
+            sync_status: 'pending'
+        })
+    }
+    async function updateContact(id, updates) {
+        return await db.contacts.update(id, {
+            ...updates,
+            updated_at: formatDateTimeForDB(),
+            sync_status: 'pending'
+        })
     }
     async function deleteContact(id) {
         return await db.contacts.delete(id)
@@ -66,21 +91,45 @@ export const useMasterStore = defineStore('master', () => {
 
     // Payment Modes
     async function addPaymentMode(name, description, bookId) {
-        return await db.payment_modes.add({ name, description, book_id: bookId, sync_status: 'pending' })
+        return await db.payment_modes.add({
+            name,
+            description,
+            book_id: bookId,
+            created_at: formatDateTimeForDB(),
+            updated_at: formatDateTimeForDB(),
+            sync_status: 'pending'
+        })
     }
     async function deletePaymentMode(id) {
         return await db.payment_modes.delete(id)
     }
     async function updatePaymentMode(id, updates) {
-        return await db.payment_modes.update(id, { ...updates, sync_status: 'pending' })
+        return await db.payment_modes.update(id, {
+            ...updates,
+            updated_at: formatDateTimeForDB(),
+            sync_status: 'pending'
+        })
     }
 
     // Products
     async function addProduct(name, rate, description, quantityType, bookId) {
-        return await db.products.add({ name, rate, description, quantity_type: quantityType, book_id: bookId, sync_status: 'pending' })
+        return await db.products.add({
+            name,
+            rate,
+            description,
+            quantity_type: quantityType,
+            book_id: bookId,
+            created_at: formatDateTimeForDB(),
+            updated_at: formatDateTimeForDB(),
+            sync_status: 'pending'
+        })
     }
     async function updateProduct(id, updates) {
-        return await db.products.update(id, { ...updates, sync_status: 'pending' })
+        return await db.products.update(id, {
+            ...updates,
+            updated_at: formatDateTimeForDB(),
+            sync_status: 'pending'
+        })
     }
     async function deleteProduct(id) {
         return await db.products.delete(id)
@@ -110,6 +159,7 @@ export const useMasterStore = defineStore('master', () => {
         deleteCategory,
         updateCategory,
         addContact,
+        updateContact,
         deleteContact,
         addPaymentMode,
         deletePaymentMode,
