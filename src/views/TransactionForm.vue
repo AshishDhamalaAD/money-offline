@@ -132,6 +132,24 @@ async function save() {
   }
 }
 
+// Delete transaction
+const showDeleteModal = ref(false)
+
+async function confirmDelete() {
+  showDeleteModal.value = true
+}
+
+async function deleteTransaction() {
+  try {
+    await transactionStore.deleteTransaction(parseInt(route.params.id))
+    showDeleteModal.value = false
+    router.back()
+  } catch (e) {
+    console.error(e)
+    alert('Failed to delete transaction')
+  }
+}
+
 // Quick Add Category
 const showCategoryModal = ref(false)
 const newCategoryName = ref('')
@@ -235,7 +253,16 @@ async function saveNewProduct() {
         </button>
         <h1 class="text-xl font-bold text-gray-900">{{ isEdit ? 'Edit' : 'New' }} Transaction</h1>
       </div>
-      <BaseButton size="sm" :loading="saving" @click="save">Save</BaseButton>
+      <div class="flex items-center gap-2">
+        <button 
+          v-if="isEdit" 
+          @click="confirmDelete" 
+          class="rounded-lg px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+        >
+          Delete
+        </button>
+        <BaseButton size="sm" :loading="saving" @click="save">Save</BaseButton>
+      </div>
     </header>
 
     <main class="p-4 space-y-6">
@@ -474,6 +501,26 @@ async function saveNewProduct() {
         <div class="flex justify-end gap-3 mt-6">
           <BaseButton variant="ghost" @click="showPaymentModeModal = false">Cancel</BaseButton>
           <BaseButton @click="saveNewPaymentMode">Add Payment Mode</BaseButton>
+        </div>
+      </div>
+    </Modal>
+    
+    <!-- Delete Confirmation Modal -->
+    <Modal :show="showDeleteModal" title="Delete Transaction" @close="showDeleteModal = false">
+      <div class="space-y-4">
+        <p class="text-gray-600">
+          Are you sure you want to delete this transaction? This action cannot be undone.
+        </p>
+        
+        <div class="bg-red-50 border border-red-200 rounded-lg p-3">
+          <p class="text-sm text-red-800">
+            <strong>Warning:</strong> This will permanently delete the transaction.
+          </p>
+        </div>
+
+        <div class="flex justify-end gap-3 mt-6">
+          <BaseButton variant="ghost" @click="showDeleteModal = false">Cancel</BaseButton>
+          <BaseButton variant="danger" @click="deleteTransaction">Delete Transaction</BaseButton>
         </div>
       </div>
     </Modal>
