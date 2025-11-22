@@ -53,8 +53,13 @@ function onProductSelect(productId) {
     if (product) {
         item.value.productId = productId
         item.value.name = product.name
-        item.value.rate = product.rate
+        item.value.rate = parseFloat(product.rate) || 0
         updateAmount()
+    } else {
+        // If no product selected, reset
+        item.value.productId = null
+        item.value.name = ''
+        emitUpdate()
     }
 }
 </script>
