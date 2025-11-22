@@ -287,7 +287,7 @@ async function saveNewProduct() {
           <BaseInput 
             v-model="form.charge" 
             type="number" 
-            label="Extra Charge" 
+            label="Charge" 
             placeholder="0.00" 
             @input="calculateTotal"
           />
