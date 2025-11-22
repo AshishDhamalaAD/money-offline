@@ -5,10 +5,10 @@ import PullToRefresh from './components/PullToRefresh.vue'
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 text-gray-900">
-    <PullToRefresh>
-      <RouterView />
-    </PullToRefresh>
-    <ReloadPrompt />
-  </div>
+    <div class="min-h-screen bg-gray-50 text-gray-900">
+        <PullToRefresh>
+            <RouterView />
+        </PullToRefresh>
+        <ReloadPrompt />
+    </div>
 </template>
