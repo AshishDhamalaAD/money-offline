@@ -20,7 +20,8 @@ function navigateToEdit(contact) {
 
 <template>
     <PageLayout>
-        <PageHeader title="Settings" />
+        <PageHeader title="Settings"
+                    :backRoute="{ name: 'dashboard' }" />
 
         <main class="p-4 space-y-6">
             <!-- Database Backup & Restore -->
