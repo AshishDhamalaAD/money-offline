@@ -91,6 +91,25 @@ watch(() => form.value.type, (newType) => {
 })
 
 async function save() {
+  // Validation
+  if (form.value.products.length > 0) {
+    for (const p of form.value.products) {
+      // If products exist in master, require selection (productId)
+      // If no products in master, require name
+      if (masterStore.products.length > 0) {
+        if (!p.productId) {
+          alert('Please select a product for all items.')
+          return
+        }
+      } else {
+        if (!p.name || !p.name.trim()) {
+          alert('Please enter a name for all items.')
+          return
+        }
+      }
+    }
+  }
+
   saving.value = true
   try {
     if (isEdit) {
@@ -251,7 +270,7 @@ async function saveNewProduct() {
       </div>
 
       <!-- Products -->
-      <div class="space-y-4">
+      <div class="space-y-4 rounded-2xl bg-white p-4 shadow-sm">
         <div class="flex items-center justify-between">
           <h3 class="font-medium text-gray-900">Products</h3>
           <div class="flex gap-2">
@@ -264,14 +283,20 @@ async function saveNewProduct() {
           </div>
         </div>
         
-        <ProductLineItem 
-          v-for="(p, index) in form.products" 
-          :key="p.id"
-          :model-value="p"
-          :products="masterStore.products"
-          @update:model-value="updateProduct(index, $event)"
-          @remove="removeProduct(index)"
-        />
+        <div class="space-y-4 divide-y divide-gray-100">
+          <ProductLineItem 
+            v-for="(p, index) in form.products" 
+            :key="p.id"
+            :model-value="p"
+            :products="masterStore.products"
+            @update:model-value="updateProduct(index, $event)"
+            @remove="removeProduct(index)"
+            :class="{'pt-4': index > 0}"
+          />
+          <div v-if="form.products.length === 0" class="text-center text-gray-500 py-4 text-sm">
+            No items added.
+          </div>
+        </div>
       </div>
 
       <!-- Discount & Charge (Cash Out Only) -->

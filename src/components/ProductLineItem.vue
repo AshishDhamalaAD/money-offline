@@ -56,8 +56,8 @@ function onProductSelect(productId) {
 </script>
 
 <template>
-  <div class="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-200 relative">
-    <button @click="$emit('remove')" class="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors">
+  <div class="relative">
+    <button @click="$emit('remove')" class="absolute -top-1 -right-2 p-2 text-gray-400 hover:text-red-500 transition-colors z-10">
       <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
       </svg>
