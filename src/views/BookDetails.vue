@@ -105,6 +105,23 @@ function resetFilters() {
   tempFilterProduct.value = ''
 }
 
+function clearFilter(type) {
+  switch (type) {
+    case 'category':
+      filterCategory.value = ''
+      break
+    case 'payment':
+      filterPaymentMode.value = ''
+      break
+    case 'contact':
+      filterContact.value = ''
+      break
+    case 'product':
+      filterProduct.value = ''
+      break
+  }
+}
+
 const filteredTransactions = computed(() => {
   let transactions = []
   
@@ -376,7 +393,7 @@ async function saveBookName() {
         </div>
         <button 
             @click="openFilterModal()" 
-            class="flex items-center justify-center w-11 h-11 rounded-xl bg-white shadow-sm ring-1 ring-gray-200 text-gray-600 hover:bg-gray-50 active:bg-gray-100"
+            class="flex items-center justify-center w-11 h-11 rounded-xl bg-white shadow-sm ring-1 ring-gray-200 text-gray-600 hover:bg-gray-50 active:bg-gray-100 relative"
           >
           <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
@@ -386,6 +403,33 @@ async function saveBookName() {
             </div>
         </button>
       </div>
+    <!-- Selected Filters -->
+    <div v-if="activeFiltersCount > 0" class="flex flex-wrap gap-2 mt-2">
+        <template v-if="filterCategory">
+            <span class="bg-gray-200 text-gray-800 text-sm px-2 py-1 rounded flex items-center">
+            Category: {{ masterStore.categories.find(c => c.id === filterCategory).name }}
+            <button @click="clearFilter('category')" class="ml-1 text-gray-500 hover:text-gray-700">&times;</button>
+            </span>
+        </template>
+        <template v-if="filterPaymentMode">
+            <span class="bg-gray-200 text-gray-800 text-sm px-2 py-1 rounded flex items-center">
+            Payment: {{ masterStore.paymentModes.find(p => p.id === filterPaymentMode).name }}
+            <button @click="clearFilter('payment')" class="ml-1 text-gray-500 hover:text-gray-700">&times;</button>
+            </span>
+        </template>
+        <template v-if="filterContact">
+            <span class="bg-gray-200 text-gray-800 text-sm px-2 py-1 rounded flex items-center">
+            Contact: {{ masterStore.contacts.find(c => c.id === filterContact).name }}
+            <button @click="clearFilter('contact')" class="ml-1 text-gray-500 hover:text-gray-700">&times;</button>
+            </span>
+        </template>
+        <template v-if="filterProduct">
+            <span class="bg-gray-200 text-gray-800 text-sm px-2 py-1 rounded flex items-center">
+            Product: {{ masterStore.products.find(p => p.id === filterProduct).name }}
+            <button @click="clearFilter('product')" class="ml-1 text-gray-500 hover:text-gray-700">&times;</button>
+            </span>
+        </template>
+    </div>
 
       <!-- Transactions -->
       <div class="space-y-6">
