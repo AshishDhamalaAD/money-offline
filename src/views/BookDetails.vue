@@ -73,17 +73,58 @@ const groupedTransactions = computed(() => {
 const filteredStats = computed(() => {
   let totalIn = 0
   let totalOut = 0
+  let openingBalance = 0
 
+  // Calculate opening balance (net balance from transactions before the filter period)
+  if (filter.value !== 'all') {
+    const now = new Date()
+    now.setHours(0, 0, 0, 0)
+    
+    let filterStartDate = null
+    
+    if (filter.value === 'today') {
+      filterStartDate = new Date(now)
+    } else if (filter.value === 'yesterday') {
+      filterStartDate = new Date(now)
+      filterStartDate.setDate(filterStartDate.getDate() - 1)
+    } else if (filter.value === 'week') {
+      filterStartDate = new Date(now)
+      filterStartDate.setDate(filterStartDate.getDate() - 6)
+    } else if (filter.value === 'month') {
+      filterStartDate = new Date(now.getFullYear(), now.getMonth(), 1)
+    }
+    
+    // Calculate balance from all transactions before the filter start date
+    if (filterStartDate) {
+      transactionStore.transactions.forEach(t => {
+        const tDate = new Date(t.date)
+        tDate.setHours(0, 0, 0, 0)
+        
+        if (tDate < filterStartDate) {
+          const amount = parseFloat(t.amount) || 0
+          if (t.type === 'in') openingBalance += amount
+          else if (t.type === 'out') openingBalance -= amount
+        }
+      })
+    }
+  }
+
+  // Calculate current period stats
   filteredTransactions.value.forEach(t => {
     const amount = parseFloat(t.amount) || 0
     if (t.type === 'in') totalIn += amount
     else if (t.type === 'out') totalOut += amount
   })
 
+  const netBalance = totalIn - totalOut
+  const closingBalance = openingBalance + netBalance
+
   return {
     totalIn,
     totalOut,
-    netBalance: totalIn - totalOut
+    netBalance,
+    openingBalance,
+    closingBalance
   }
 })
 
