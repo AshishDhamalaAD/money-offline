@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useBookStore } from '../stores/bookStore'
 import { useTransactionStore } from '../stores/transactionStore'
@@ -56,6 +56,14 @@ onMounted(async () => {
     book.value = await bookStore.getBook(bookId.value)
     transactionStore.setBookId(bookId.value)
     masterStore.watchBookData(bookId.value) // Ensure master data is loaded for filters
+})
+
+// Reset custom date range when switching to other filters
+watch(selectedFilter, (newValue) => {
+    if (newValue !== 'custom') {
+        startDate.value = ''
+        endDate.value = ''
+    }
 })
 
 const filterOptions = computed(() => {
@@ -384,10 +392,10 @@ async function saveBookName() {
                 <!-- Custom Date Range Pickers -->
                 <div v-if="selectedFilter === 'custom'"
                      class="grid grid-cols-2 gap-3 bg-white p-4 rounded-2xl shadow-sm">
-                    <BaseInput v-model="customStartDate"
+                    <BaseInput v-model="startDate"
                                type="date"
                                label="Start Date" />
-                    <BaseInput v-model="customEndDate"
+                    <BaseInput v-model="endDate"
                                type="date"
                                label="End Date" />
                 </div>
