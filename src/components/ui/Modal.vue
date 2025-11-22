@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, watch } from 'vue'
 
 const props = defineProps({
   show: Boolean,
@@ -7,6 +7,15 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['close'])
+
+// Lock body scroll when modal is open
+watch(() => props.show, (isOpen) => {
+  if (isOpen) {
+    document.body.style.overflow = 'hidden'
+  } else {
+    document.body.style.overflow = ''
+  }
+})
 
 function handleEscape(e) {
   if (e.key === 'Escape' && props.show) {

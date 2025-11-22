@@ -399,7 +399,7 @@ async function saveNewProduct() {
       </div>
 
       <!-- Total Amount (Moved to bottom) -->
-      <div class="sticky bottom-0 bg-gray-50 pt-4 pb-6">
+      <div class="sticky bottom-0 bg-gray-50 pt-4 pb-6 z-20">
         <div class="rounded-2xl bg-white p-4 shadow-lg ring-1 ring-gray-200">
           <BaseInput 
             v-model="form.amount" 
