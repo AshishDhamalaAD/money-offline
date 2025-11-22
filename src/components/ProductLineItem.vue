@@ -81,7 +81,7 @@ function onProductSelect(productId) {
           v-model="item.name"
           @input="emitUpdate"
           placeholder="Product Name"
-          class="w-full rounded-lg border-gray-200 text-sm px-4 py-2.5"
+          class="w-full rounded-lg border border-gray-300 bg-white text-sm px-4 py-2.5 shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
         />
       </div>
 
@@ -92,6 +92,7 @@ function onProductSelect(productId) {
           label="Qty"
           placeholder="0" 
           @input="updateAmount"
+          class="bg-white border-gray-300 shadow-sm"
         />
         <BaseInput 
           v-model="item.rate" 
@@ -99,6 +100,7 @@ function onProductSelect(productId) {
           label="Rate"
           placeholder="0.00" 
           @input="updateAmount"
+          class="bg-white border-gray-300 shadow-sm"
         />
         <BaseInput 
           v-model="item.amount" 
@@ -106,6 +108,7 @@ function onProductSelect(productId) {
           label="Amount"
           placeholder="0.00" 
           @input="updateRate"
+          class="bg-white border-gray-300 shadow-sm"
         />
       </div>
     </div>

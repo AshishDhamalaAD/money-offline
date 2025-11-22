@@ -186,6 +186,7 @@ async function saveNewProduct() {
           v-model="form.date" 
           type="datetime-local" 
           label="Date" 
+          required
         />
         <BaseInput 
           v-model="form.description" 
@@ -205,6 +206,7 @@ async function saveNewProduct() {
               label="Category"
               :options="masterStore.categories.map(c => ({ label: c.name, value: c.id }))"
               placeholder="Select Category"
+              required
             />
           </div>
           <button 
@@ -222,6 +224,7 @@ async function saveNewProduct() {
           label="Payment Mode"
           :options="masterStore.paymentModes.map(p => ({ label: p.name, value: p.id }))"
           placeholder="Select Payment Mode"
+          required
         />
 
         <SearchableSelect 
@@ -264,6 +267,7 @@ async function saveNewProduct() {
             type="number" 
             label="Total Amount" 
             class="text-3xl font-bold text-indigo-600"
+            required
           />
         </div>
       </div>

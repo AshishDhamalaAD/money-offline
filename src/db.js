@@ -20,3 +20,8 @@ db.version(3).stores({
     payment_modes: '++id, name, type, book_id, sync_status',
     products: '++id, name, rate, description, book_id, sync_status'
 });
+
+db.version(4).stores({
+    payment_modes: '++id, name, description, book_id, sync_status', // Removed type, added description
+    products: '++id, name, rate, description, quantity_type, book_id, sync_status' // Added quantity_type
+});

@@ -10,7 +10,8 @@ const props = defineProps({
   },
   label: String,
   placeholder: String,
-  error: String
+  error: String,
+  required: Boolean
 })
 
 const emit = defineEmits(['update:modelValue'])
@@ -62,7 +63,7 @@ onClickOutside(containerRef, close)
 <template>
   <div class="flex flex-col gap-1.5" ref="containerRef">
     <label v-if="label" class="text-sm font-medium text-gray-700 ml-1">
-      {{ label }}
+      {{ label }} <span v-if="required" class="text-red-500">*</span>
     </label>
     
     <div class="relative">

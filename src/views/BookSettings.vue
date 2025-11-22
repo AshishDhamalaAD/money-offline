@@ -12,7 +12,7 @@ const masterStore = useMasterStore()
 
 const bookId = parseInt(route.params.bookId)
 const book = ref(null)
-const activeTab = ref('categories')
+const activeTab = ref(route.query.tab || 'categories')
 
 onMounted(async () => {
   if (!bookId) return
@@ -20,8 +20,17 @@ onMounted(async () => {
   masterStore.watchBookData(bookId)
 })
 
-// Watch for tab changes or just rely on store data being there
-// The store subscription handles updates
+// Watch for tab changes to update URL
+watch(activeTab, (newTab) => {
+  router.replace({ query: { ...route.query, tab: newTab } })
+})
+
+// Watch route query to update activeTab (for back/forward navigation)
+watch(() => route.query.tab, (newTab) => {
+  if (newTab && ['categories', 'products', 'paymentModes'].includes(newTab)) {
+    activeTab.value = newTab
+  }
+})
 
 function goBack() {
   router.push({ name: 'book-details', params: { id: bookId } })
@@ -34,7 +43,8 @@ function navigateToEdit(type, item) {
       bookId, 
       type, 
       itemId: item.id 
-    } 
+    },
+    query: { tab: activeTab.value } // Pass tab to return to correct tab
   })
 }
 
@@ -44,7 +54,8 @@ function navigateToAdd(type) {
     params: { 
       bookId, 
       type 
-    } 
+    },
+    query: { tab: activeTab.value }
   })
 }
 
@@ -70,14 +81,14 @@ const tabs = [
 
     <main class="p-4 space-y-6">
       <!-- Tabs -->
-      <div class="flex overflow-x-auto pb-2 gap-2 no-scrollbar">
+      <div class="flex overflow-x-auto pb-2 pt-1 px-1 gap-2 no-scrollbar -mx-1">
         <button 
           v-for="tab in tabs" 
           :key="tab.id"
           @click="activeTab = tab.id"
           :class="[
             'rounded-full px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors',
-            activeTab === tab.id ? 'bg-indigo-600 text-white' : 'bg-white text-gray-600 ring-1 ring-gray-200'
+            activeTab === tab.id ? 'bg-indigo-600 text-white shadow-md' : 'bg-white text-gray-600 ring-1 ring-gray-200 shadow-sm'
           ]"
         >
           {{ tab.label }}
@@ -146,7 +157,7 @@ const tabs = [
           >
             <div>
               <p class="font-medium">{{ item.name }}</p>
-              <p class="text-xs text-gray-500 capitalize">{{ item.type }}</p>
+              <p class="text-xs text-gray-500">{{ item.description }}</p>
             </div>
             <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />

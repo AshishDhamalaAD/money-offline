@@ -65,8 +65,8 @@ export const useMasterStore = defineStore('master', () => {
     }
 
     // Payment Modes
-    async function addPaymentMode(name, type, bookId) {
-        return await db.payment_modes.add({ name, type, book_id: bookId, sync_status: 'pending' })
+    async function addPaymentMode(name, description, bookId) {
+        return await db.payment_modes.add({ name, description, book_id: bookId, sync_status: 'pending' })
     }
     async function deletePaymentMode(id) {
         return await db.payment_modes.delete(id)
@@ -76,8 +76,8 @@ export const useMasterStore = defineStore('master', () => {
     }
 
     // Products
-    async function addProduct(name, rate, description, bookId) {
-        return await db.products.add({ name, rate, description, book_id: bookId, sync_status: 'pending' })
+    async function addProduct(name, rate, description, quantityType, bookId) {
+        return await db.products.add({ name, rate, description, quantity_type: quantityType, book_id: bookId, sync_status: 'pending' })
     }
     async function updateProduct(id, updates) {
         return await db.products.update(id, { ...updates, sync_status: 'pending' })

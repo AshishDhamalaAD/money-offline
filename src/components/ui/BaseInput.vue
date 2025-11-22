@@ -11,7 +11,8 @@ defineProps({
   id: {
     type: String,
     default: () => 'input-' + Math.random().toString(36).substr(2, 9)
-  }
+  },
+  required: Boolean
 })
 
 defineEmits(['update:modelValue'])
@@ -20,7 +21,7 @@ defineEmits(['update:modelValue'])
 <template>
   <div class="flex flex-col gap-1.5">
     <label v-if="label" :for="id" class="text-sm font-medium text-gray-700 ml-1">
-      {{ label }}
+      {{ label }} <span v-if="required" class="text-red-500">*</span>
     </label>
     <input
       :id="id"

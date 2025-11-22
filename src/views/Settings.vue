@@ -70,7 +70,7 @@ async function deleteItem(id) {
     <!-- Add Modal -->
     <Modal :show="showModal" title="Add Contact" @close="showModal = false">
       <div class="space-y-4">
-        <BaseInput v-model="newItemName" label="Name" autoFocus />
+        <BaseInput v-model="newItemName" label="Name" autoFocus required />
         <BaseInput v-model="newItemPhone" label="Phone (Optional)" />
         
         <div class="flex justify-end gap-3 mt-6">
