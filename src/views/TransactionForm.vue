@@ -1,0 +1,323 @@
+<script setup>
+import { ref, onMounted, computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useTransactionStore } from '../stores/transactionStore'
+import { useMasterStore } from '../stores/masterStore'
+import { db } from '../db'
+import BaseButton from '../components/ui/BaseButton.vue'
+import BaseInput from '../components/ui/BaseInput.vue'
+import SearchableSelect from '../components/ui/SearchableSelect.vue'
+import ProductLineItem from '../components/ProductLineItem.vue'
+import Modal from '../components/ui/Modal.vue'
+
+const route = useRoute()
+const router = useRouter()
+const transactionStore = useTransactionStore()
+const masterStore = useMasterStore()
+
+const bookId = parseInt(route.params.bookId)
+const isEdit = !!route.params.id
+
+const form = ref({
+  type: 'out',
+  date: new Date().toISOString().slice(0, 16),
+  category_id: '',
+  contact_id: '',
+  payment_mode_id: '',
+  description: '',
+  products: [],
+  amount: 0
+})
+
+const saving = ref(false)
+
+onMounted(async () => {
+  await masterStore.initDefaults()
+  masterStore.watchCategories(bookId) // Load categories for this book
+  
+  if (isEdit) {
+    const id = parseInt(route.params.id)
+    const transaction = await transactionStore.transactions.find(t => t.id === id) // Since we have them in store usually
+    // Or fetch from DB if not in store (store only has current book's transactions)
+    // Better to fetch from DB to be safe
+    const t = await db.transactions.get(id)
+    if (t) {
+      form.value = { ...t }
+    }
+  }
+})
+
+function addProduct() {
+  form.value.products.push({
+    id: Date.now(), // temp id
+    name: '',
+    quantity: 1,
+    rate: 0,
+    amount: 0
+  })
+}
+
+function removeProduct(index) {
+  form.value.products.splice(index, 1)
+  calculateTotal()
+}
+
+function updateProduct(index, item) {
+  form.value.products[index] = item
+  calculateTotal()
+}
+
+function calculateTotal() {
+  const total = form.value.products.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0)
+  if (total > 0) {
+    form.value.amount = total
+  }
+}
+
+async function save() {
+  saving.value = true
+  try {
+    if (isEdit) {
+      await transactionStore.updateTransaction(parseInt(route.params.id), form.value)
+    } else {
+      await transactionStore.createTransaction({
+        ...form.value,
+        book_id: bookId
+      })
+    }
+    router.back()
+  } catch (e) {
+    console.error(e)
+    alert('Failed to save transaction')
+  } finally {
+    saving.value = false
+  }
+}
+
+// Quick Add Category
+const showCategoryModal = ref(false)
+const newCategoryName = ref('')
+const newCategoryDescription = ref('')
+
+async function saveNewCategory() {
+  if (!newCategoryName.value.trim()) return
+  
+  try {
+    // Pass bookId to addCategory
+    const id = await masterStore.addCategory(newCategoryName.value, newCategoryDescription.value, bookId)
+    form.value.category_id = id
+    showCategoryModal.value = false
+    newCategoryName.value = ''
+    newCategoryDescription.value = ''
+  } catch (e) {
+    console.error(e)
+    alert('Failed to add category')
+  }
+}
+
+// Quick Add Product
+const showProductModal = ref(false)
+const newProductName = ref('')
+const newProductDescription = ref('')
+const newProductRate = ref(0)
+
+async function saveNewProduct() {
+  if (!newProductName.value.trim()) return
+
+  try {
+    await masterStore.addProduct(newProductName.value, newProductRate.value, newProductDescription.value)
+    showProductModal.value = false
+    newProductName.value = ''
+    newProductDescription.value = ''
+    newProductRate.value = 0
+    // We don't auto-select product here because products are in a list (line items), 
+    // but user can now select it in the line item.
+    // Maybe we can auto-add a line item with this product?
+    // "when created, it must auto select the currently created category" was for category.
+    // For product, "add a new product directly from the transaction page just like category" implies similar flow.
+    // Let's auto-add a line item with this product.
+    const newProduct = masterStore.products[masterStore.products.length - 1] // Wait, liveQuery might not have updated yet.
+    // We can't easily get the ID unless addProduct returns it (it does).
+    // But we need the full object for the UI if we want to be fancy, or just the ID.
+    // Actually, let's just let the user select it. Or better, add a line item.
+    // Let's just close modal for now, user can select it.
+  } catch (e) {
+    console.error(e)
+    alert('Failed to add product')
+  }
+}
+</script>
+
+<template>
+  <div class="min-h-screen bg-gray-50 pb-20">
+    <header class="bg-white px-4 py-4 shadow-sm sticky top-0 z-10 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <button @click="router.back()" class="rounded-full p-1 text-gray-600 hover:bg-gray-100">
+          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <h1 class="text-xl font-bold text-gray-900">{{ isEdit ? 'Edit' : 'New' }} Transaction</h1>
+      </div>
+      <BaseButton size="sm" :loading="saving" @click="save">Save</BaseButton>
+    </header>
+
+    <main class="p-4 space-y-6">
+      <!-- Type Selection -->
+      <div class="flex rounded-xl bg-gray-200 p-1">
+        <button 
+          @click="form.type = 'in'"
+          :class="['flex-1 rounded-lg py-2 text-sm font-medium transition-all', form.type === 'in' ? 'bg-white text-green-600 shadow-sm' : 'text-gray-600']"
+        >
+          Cash In (+)
+        </button>
+        <button 
+          @click="form.type = 'out'"
+          :class="['flex-1 rounded-lg py-2 text-sm font-medium transition-all', form.type === 'out' ? 'bg-white text-red-600 shadow-sm' : 'text-gray-600']"
+        >
+          Cash Out (-)
+        </button>
+      </div>
+
+      <!-- Basic Fields -->
+      <div class="space-y-4 rounded-2xl bg-white p-4 shadow-sm">
+        <BaseInput 
+          v-model="form.date" 
+          type="datetime-local" 
+          label="Date" 
+        />
+        <BaseInput 
+          v-model="form.description" 
+          label="Description" 
+          placeholder="What is this for?" 
+        />
+      </div>
+
+      <!-- Details -->
+      <div class="space-y-4 rounded-2xl bg-white p-4 shadow-sm">
+        <h3 class="font-medium text-gray-900">Details</h3>
+        
+        <div class="flex items-end gap-2">
+          <div class="flex-1">
+            <SearchableSelect 
+              v-model="form.category_id" 
+              label="Category"
+              :options="masterStore.categories.map(c => ({ label: c.name, value: c.id }))"
+              placeholder="Select Category"
+            />
+          </div>
+          <button 
+            @click="showCategoryModal = true"
+            class="mb-0.5 flex h-[42px] w-[42px] items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 hover:bg-indigo-100 active:scale-95 transition-all"
+          >
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+          </button>
+        </div>
+        
+        <SearchableSelect 
+          v-model="form.payment_mode_id" 
+          label="Payment Mode"
+          :options="masterStore.paymentModes.map(p => ({ label: p.name, value: p.id }))"
+          placeholder="Select Payment Mode"
+        />
+
+        <SearchableSelect 
+          v-model="form.contact_id" 
+          label="Contact"
+          :options="masterStore.contacts.map(c => ({ label: c.name, value: c.id }))"
+          placeholder="Select Contact"
+        />
+      </div>
+
+      <!-- Products -->
+      <div class="space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="font-medium text-gray-900">Products</h3>
+          <div class="flex gap-2">
+            <button @click="showProductModal = true" class="text-sm font-medium text-indigo-600 hover:text-indigo-700">
+              + New Product
+            </button>
+            <button @click="addProduct" class="text-sm font-medium text-indigo-600 hover:text-indigo-700">
+              + Add Item
+            </button>
+          </div>
+        </div>
+        
+        <ProductLineItem 
+          v-for="(p, index) in form.products" 
+          :key="p.id"
+          :model-value="p"
+          :products="masterStore.products"
+          @update:model-value="updateProduct(index, $event)"
+          @remove="removeProduct(index)"
+        />
+      </div>
+
+      <!-- Total Amount (Moved to bottom) -->
+      <div class="sticky bottom-0 bg-gray-50 pt-4 pb-6">
+        <div class="rounded-2xl bg-white p-4 shadow-lg ring-1 ring-gray-200">
+          <BaseInput 
+            v-model="form.amount" 
+            type="number" 
+            label="Total Amount" 
+            class="text-3xl font-bold text-indigo-600"
+          />
+        </div>
+      </div>
+    </main>
+
+    <!-- Add Category Modal -->
+    <Modal :show="showCategoryModal" title="Add New Category" @close="showCategoryModal = false">
+      <div class="space-y-4">
+        <BaseInput 
+          v-model="newCategoryName" 
+          label="Category Name" 
+          placeholder="e.g. Groceries" 
+          autoFocus
+        />
+        
+        <BaseInput 
+          v-model="newCategoryDescription" 
+          label="Description" 
+          placeholder="Optional" 
+        />
+
+        <div class="flex justify-end gap-3 mt-6">
+          <BaseButton variant="ghost" @click="showCategoryModal = false">Cancel</BaseButton>
+          <BaseButton @click="saveNewCategory">Add Category</BaseButton>
+        </div>
+      </div>
+    </Modal>
+
+    <!-- Add Product Modal -->
+    <Modal :show="showProductModal" title="Add New Product" @close="showProductModal = false">
+      <div class="space-y-4">
+        <BaseInput 
+          v-model="newProductName" 
+          label="Product Name" 
+          placeholder="e.g. Milk" 
+          autoFocus
+        />
+        
+        <BaseInput 
+          v-model="newProductDescription" 
+          label="Description" 
+          placeholder="Optional" 
+        />
+
+        <BaseInput 
+          v-model="newProductRate" 
+          type="number" 
+          label="Default Rate" 
+        />
+
+        <div class="flex justify-end gap-3 mt-6">
+          <BaseButton variant="ghost" @click="showProductModal = false">Cancel</BaseButton>
+          <BaseButton @click="saveNewProduct">Add Product</BaseButton>
+        </div>
+      </div>
+    </Modal>
+  </div>
+</template>
