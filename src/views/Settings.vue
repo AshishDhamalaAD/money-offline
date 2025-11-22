@@ -2,6 +2,7 @@
 import { useRouter } from 'vue-router'
 import { useMasterStore } from '../stores/masterStore'
 import BaseButton from '../components/ui/BaseButton.vue'
+import DatabaseBackup from '../components/DatabaseBackup.vue'
 
 const router = useRouter()
 const masterStore = useMasterStore()
@@ -27,7 +28,10 @@ function navigateToEdit(contact) {
     </header>
 
     <main class="p-4 space-y-6">
-      <!-- List -->
+      <!-- Database Backup & Restore -->
+      <DatabaseBackup />
+      
+      <!-- Contacts Section -->
       <div class="space-y-4">
         <div class="flex justify-between items-center">
           <h2 class="text-lg font-semibold text-gray-800">
