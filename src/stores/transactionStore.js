@@ -29,11 +29,13 @@ export const useTransactionStore = defineStore('transaction', () => {
     async function createTransaction(transaction) {
         // transaction object should include:
         // type, date, amount, category_id, contact_id, payment_mode_id, description, products (array)
+        // Convert to plain object to avoid DataCloneError with Vue reactive proxies
+        const plainTransaction = JSON.parse(JSON.stringify(transaction))
         const id = await db.transactions.add({
             book_id: currentBookId.value, // Default to current
-            ...transaction,
-            discount: transaction.discount || 0,
-            charge: transaction.charge || 0,
+            ...plainTransaction,
+            discount: plainTransaction.discount || 0,
+            charge: plainTransaction.charge || 0,
             created_at: new Date(),
             updated_at: new Date(),
             sync_status: 'pending'
