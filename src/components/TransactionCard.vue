@@ -70,9 +70,10 @@ const productName = (productId) => {
                 </span>
 
                 <!-- Category Label -->
-                <span v-if="categories.length > 0"
+                <span v-for="category in categories"
+                      :key="category.id"
                       class="px-3 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-700">
-                    {{ categories.map(c => c.name).join(', ') }}
+                    {{ category.name }}
                 </span>
             </div>
 

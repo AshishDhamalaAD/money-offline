@@ -169,7 +169,7 @@ const filteredTransactions = computed(() => {
         const query = searchQuery.value.toLowerCase()
         transactions = transactions.filter(t => {
             const descriptionMatch = t.description?.toLowerCase().includes(query)
-            const productMatch = t.products?.some(p => p.name.toLowerCase().includes(query))
+            const productMatch = t.products?.some(p => p.name?.toLowerCase()?.includes(query))
             const amountMatch = t.amount.toString().includes(query)
             return descriptionMatch || productMatch || amountMatch
         })
