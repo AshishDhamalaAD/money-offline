@@ -29,7 +29,7 @@ export const useTransactionStore = defineStore('transaction', () => {
 
     async function createTransaction(transaction) {
         // transaction object should include:
-        // type, date, amount, category_id, contact_id, payment_mode_id, description, products (array)
+        // type, date, amount, category_ids (array), contact_id, payment_mode_id, description, products (array)
         // Convert to plain object to avoid DataCloneError with Vue reactive proxies
         const plainTransaction = JSON.parse(JSON.stringify(transaction))
 
@@ -49,6 +49,7 @@ export const useTransactionStore = defineStore('transaction', () => {
             date: transactionDate,
             products,
             amount: roundAmount(plainTransaction.amount),
+            category_ids: plainTransaction.category_ids || [],
             discount: roundAmount(plainTransaction.discount || 0),
             charge: roundAmount(plainTransaction.charge || 0),
             created_at: formatDateTimeForDB(),
@@ -74,6 +75,7 @@ export const useTransactionStore = defineStore('transaction', () => {
         const updateData = {
             ...plainUpdates,
             amount: plainUpdates.amount ? roundAmount(plainUpdates.amount) : undefined,
+            category_ids: plainUpdates.category_ids,
             discount: roundAmount(plainUpdates.discount || 0),
             charge: roundAmount(plainUpdates.charge || 0),
             updated_at: formatDateTimeForDB(),
@@ -181,6 +183,10 @@ export const useTransactionStore = defineStore('transaction', () => {
 
             if (filters.type && filters.type !== 'all') {
                 match = match && t.type === filters.type
+            }
+
+            if (filters.category) {
+                match = match && t.category_ids && t.category_ids.includes(filters.category)
             }
 
             return match

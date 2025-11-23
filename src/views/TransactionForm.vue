@@ -35,7 +35,7 @@ const form = ref({
 
         return `${year}-${month}-${day}T${hours}:${minutes}`
     })(),
-    category_id: '',
+    category_ids: [],
     contact_id: '',
     payment_mode_id: '',
     description: '',
@@ -44,6 +44,24 @@ const form = ref({
     discount: 0,
     charge: 0
 })
+
+const selectedCategories = computed(() => {
+    return form.value.category_ids.map(id => masterStore.categories.find(c => c.id === id)).filter(Boolean)
+})
+
+const availableCategories = computed(() => {
+    return masterStore.categories.filter(c => !form.value.category_ids.includes(c.id))
+})
+
+function addCategory(id) {
+    if (id && !form.value.category_ids.includes(id)) {
+        form.value.category_ids.push(id)
+    }
+}
+
+function removeCategory(id) {
+    form.value.category_ids = form.value.category_ids.filter(cId => cId !== id)
+}
 
 const saving = ref(false)
 
@@ -68,6 +86,12 @@ onMounted(async () => {
                 t.date = `${datePart}T${timePart}`
             }
             form.value = { ...t }
+            // Handle migration/compatibility for old transactions with single category_id
+            if (t.category_id && (!t.category_ids || t.category_ids.length === 0)) {
+                form.value.category_ids = [t.category_id]
+            } else if (!form.value.category_ids) {
+                form.value.category_ids = []
+            }
         }
     } else {
         // Auto-add one product item for new transactions
@@ -189,7 +213,7 @@ async function saveNewCategory() {
         if (addingCategoryForProduct.value) {
             newProductCategoryId.value = id
         } else {
-            form.value.category_id = id
+            form.value.category_ids.push(id)
         }
 
         showCategoryModal.value = false
@@ -236,7 +260,7 @@ async function saveNewProduct() {
     try {
         const id = await masterStore.addProduct(
             newProductName.value,
-            newProductRate.value,
+            roundAmount(newProductRate.value),
             newProductDescription.value,
             newProductQuantityType.value,
             bookId,
@@ -323,11 +347,32 @@ function openCategoryModalForProduct() {
 
                 <div class="flex items-end gap-2">
                     <div class="flex-1">
-                        <SearchableSelect v-model="form.category_id"
+                        <div class="flex flex-wrap gap-2 mb-2"
+                             v-if="selectedCategories.length > 0">
+                            <div v-for="category in selectedCategories"
+                                 :key="category.id"
+                                 class="flex items-center gap-1 bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full text-sm">
+                                <span>{{ category.name }}</span>
+                                <button @click="removeCategory(category.id)"
+                                        class="hover:text-indigo-900 focus:outline-none">
+                                    <svg class="h-4 w-4"
+                                         fill="none"
+                                         viewBox="0 0 24 24"
+                                         stroke="currentColor">
+                                        <path stroke-linecap="round"
+                                              stroke-linejoin="round"
+                                              stroke-width="2"
+                                              d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <SearchableSelect :model-value="''"
+                                          @update:model-value="addCategory"
                                           label="Category"
-                                          :options="masterStore.categories.map(c => ({ label: c.name, value: c.id }))"
+                                          :options="availableCategories.map(c => ({ label: c.name, value: c.id }))"
                                           placeholder="Select Category"
-                                          required />
+                                          :required="form.category_ids.length === 0" />
                     </div>
                     <button @click="openCategoryModalForTransaction"
                             class="mb-0.5 flex h-[42px] w-[42px] items-center justify-center rounded-sm bg-indigo-50 text-indigo-600 hover:bg-indigo-100 active:scale-95 transition-all">

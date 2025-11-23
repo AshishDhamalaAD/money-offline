@@ -37,3 +37,7 @@ db.version(6).stores({
     products: '++id, name, rate, description, quantity_type, book_id, category_id, sync_status, created_at, updated_at', // Added category_id
     transactions: '++id, book_id, type, date, category_id, contact_id, payment_mode_id, discount, charge, amount, created_at, updated_at, sync_status' // Added amount, created_at, updated_at
 });
+
+db.version(7).stores({
+    transactions: '++id, book_id, type, date, *category_ids, contact_id, payment_mode_id, discount, charge, amount, created_at, updated_at, sync_status' // Changed category_id to *category_ids
+});
