@@ -440,7 +440,7 @@ function openCategoryModalForProduct() {
                                step="0.01"
                                label="Total Amount"
                                class="text-3xl font-bold text-indigo-600"
-                               disabled
+                               readonly
                                required />
                 </div>
             </div>
