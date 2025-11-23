@@ -52,13 +52,13 @@ function emitUpdate() {
 function onProductSelect(productId) {
     const product = props.products.find(p => p.id === productId)
     if (product) {
-        item.value.productId = productId
+        item.value.product_id = productId
         item.value.name = product.name
         item.value.rate = parseFloat(product.rate) || 0
         updateAmount()
     } else {
         // If no product selected, reset
-        item.value.productId = null
+        item.value.product_id = null
         item.value.name = ''
         emitUpdate()
     }
@@ -84,7 +84,7 @@ function onProductSelect(productId) {
             <!-- Product Select or Name Input -->
             <div>
                 <SearchableSelect v-if="products.length > 0"
-                                  :model-value="item.productId"
+                                  :model-value="item.product_id"
                                   @update:model-value="onProductSelect($event)"
                                   :options="products.map(p => ({ label: p.name, value: p.id }))"
                                   placeholder="Select Product" />

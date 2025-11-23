@@ -30,8 +30,8 @@ function formatCurrency(amount) {
 
 const formattedAmount = computed(() => formatCurrency(props.transaction.amount))
 
-const category = computed(() => {
-    return masterStore.categories.find(c => c.id === props.transaction.category_id)
+const categories = computed(() => {
+    return masterStore.categories.filter(c => props.transaction.category_ids.includes(c.id))
 })
 
 const paymentMode = computed(() => {
@@ -46,9 +46,13 @@ const productsTotal = computed(() => {
 const discount = computed(() => parseFloat(props.transaction.discount) || 0)
 const charge = computed(() => parseFloat(props.transaction.charge) || 0)
 
-const hasCalculation = computed(() => {
-    return props.transaction.type === 'out' && (discount.value > 0 || charge.value > 0)
-})
+const productName = (productId) => {
+    const product = masterStore.products.find(p => p.id === productId)
+
+    if (product) return product.name
+
+    return ''
+}
 </script>
 
 <template>
@@ -66,9 +70,9 @@ const hasCalculation = computed(() => {
                 </span>
 
                 <!-- Category Label -->
-                <span v-if="category"
+                <span v-if="categories.length > 0"
                       class="px-3 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-700">
-                    {{ category.name }}
+                    {{ categories.map(c => c.name).join(', ') }}
                 </span>
             </div>
 
@@ -95,7 +99,7 @@ const hasCalculation = computed(() => {
                  :key="index"
                  class="flex items-center justify-between text-xs">
                 <div class="flex items-center gap-2 text-gray-700">
-                    <span class="font-medium">{{ product.name }}</span>
+                    <span class="font-medium">{{ productName(product.product_id) }}</span>
                     <span v-if="product.quantity > 1"
                           class="text-gray-500">{{ product.quantity }} × {{ formatCurrency(product.rate) }}</span>
                 </div>
@@ -105,8 +109,7 @@ const hasCalculation = computed(() => {
 
         <!-- Row 3: Description + Time -->
         <div class="flex justify-between items-start gap-2">
-            <span v-if="transaction.description"
-                  class="text-xs text-gray-600 flex-1 whitespace-pre-wrap">{{ transaction.description }}</span>
+            <span class="text-xs text-gray-600 flex-1 whitespace-pre-wrap">{{ transaction.description }}</span>
             <span class="text-xs text-gray-500 shrink-0">{{ formattedTime }}</span>
         </div>
     </div>

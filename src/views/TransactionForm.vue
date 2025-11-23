@@ -144,10 +144,10 @@ async function save() {
     // Validation
     if (form.value.products.length > 0) {
         for (const p of form.value.products) {
-            // If products exist in master, require selection (productId)
+            // If products exist in master, require selection (product_id)
             // If no products in master, require name
             if (masterStore.products.length > 0) {
-                if (!p.productId) {
+                if (!p.product_id) {
                     alert('Please select a product for all items.')
                     return
                 }
@@ -266,23 +266,24 @@ async function saveNewProduct() {
             bookId,
             newProductCategoryId.value
         )
+
+        // Auto-add the newly created product to the items list
+        form.value.products.push({
+            id: Date.now(),
+            product_id: id,
+            quantity: 1,
+            rate: roundAmount(newProductRate.value),
+            amount: roundAmount(newProductRate.value)
+        })
+
+        calculateTotal()
+
         showProductModal.value = false
         newProductName.value = ''
         newProductDescription.value = ''
         newProductRate.value = 0
         newProductQuantityType.value = ''
         newProductCategoryId.value = ''
-
-        // Auto-add the newly created product to the items list
-        form.value.products.push({
-            id: Date.now(),
-            productId: id,
-            name: newProductName.value,
-            quantity: 1,
-            rate: roundAmount(newProductRate.value),
-            amount: roundAmount(newProductRate.value)
-        })
-        calculateTotal()
     } catch (e) {
         console.error(e)
         alert('Failed to add product')
