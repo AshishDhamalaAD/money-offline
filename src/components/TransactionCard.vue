@@ -45,14 +45,6 @@ const productsTotal = computed(() => {
 
 const discount = computed(() => parseFloat(props.transaction.discount) || 0)
 const charge = computed(() => parseFloat(props.transaction.charge) || 0)
-
-const productName = (productId) => {
-    const product = masterStore.products.find(p => p.id === productId)
-
-    if (product) return product.name
-
-    return ''
-}
 </script>
 
 <template>
@@ -100,7 +92,7 @@ const productName = (productId) => {
                  :key="index"
                  class="flex items-center justify-between text-xs">
                 <div class="flex items-center gap-2 text-gray-700">
-                    <span class="font-medium">{{ productName(product.product_id) }}</span>
+                    <span class="font-medium">{{ product.name }}</span>
                     <span v-if="product.quantity > 1"
                           class="text-gray-500">{{ product.quantity }} × {{ formatCurrency(product.rate) }}</span>
                 </div>

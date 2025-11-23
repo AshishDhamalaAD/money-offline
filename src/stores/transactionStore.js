@@ -16,13 +16,28 @@ export const useTransactionStore = defineStore('transaction', () => {
         currentBookId.value = bookId
         if (subscription) subscription.unsubscribe()
 
-        subscription = liveQuery(() =>
-            db.transactions
+        subscription = liveQuery(async () => {
+            const txs = await db.transactions
                 .where('book_id')
                 .equals(bookId)
                 .reverse()
                 .sortBy('date')
-        ).subscribe(data => {
+
+            // Fetch all products for this book to populate names
+            const products = await db.products.where('book_id').equals(bookId).toArray()
+            const productMap = new Map(products.map(p => [p.id, p]))
+            
+            // Enrich transactions with product names
+            return txs.map(tx => {
+                if (tx.products && Array.isArray(tx.products)) {
+                    tx.products = tx.products.map(p => ({
+                        ...p,
+                        name: productMap.get(p.product_id)?.name || p.name || ''
+                    }))
+                }
+                return tx
+            })
+        }).subscribe(data => {
             transactions.value = data
         })
     }
