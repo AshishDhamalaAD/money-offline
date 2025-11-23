@@ -177,6 +177,7 @@ async function deleteTransaction() {
 const showCategoryModal = ref(false)
 const newCategoryName = ref('')
 const newCategoryDescription = ref('')
+const addingCategoryForProduct = ref(false)
 
 async function saveNewCategory() {
     if (!newCategoryName.value.trim()) return
@@ -184,10 +185,17 @@ async function saveNewCategory() {
     try {
         // Pass bookId to addCategory
         const id = await masterStore.addCategory(newCategoryName.value, newCategoryDescription.value, bookId)
-        form.value.category_id = id
+
+        if (addingCategoryForProduct.value) {
+            newProductCategoryId.value = id
+        } else {
+            form.value.category_id = id
+        }
+
         showCategoryModal.value = false
         newCategoryName.value = ''
         newCategoryDescription.value = ''
+        addingCategoryForProduct.value = false
     } catch (e) {
         console.error(e)
         alert('Failed to add category')
@@ -220,6 +228,7 @@ const newProductName = ref('')
 const newProductDescription = ref('')
 const newProductRate = ref(0)
 const newProductQuantityType = ref('')
+const newProductCategoryId = ref('')
 
 async function saveNewProduct() {
     if (!newProductName.value.trim()) return
@@ -230,13 +239,15 @@ async function saveNewProduct() {
             newProductRate.value,
             newProductDescription.value,
             newProductQuantityType.value,
-            bookId
+            bookId,
+            newProductCategoryId.value
         )
         showProductModal.value = false
         newProductName.value = ''
         newProductDescription.value = ''
         newProductRate.value = 0
         newProductQuantityType.value = ''
+        newProductCategoryId.value = ''
 
         // Auto-add the newly created product to the items list
         form.value.products.push({
@@ -244,14 +255,24 @@ async function saveNewProduct() {
             productId: id,
             name: newProductName.value,
             quantity: 1,
-            rate: newProductRate.value,
-            amount: newProductRate.value
+            rate: roundAmount(newProductRate.value),
+            amount: roundAmount(newProductRate.value)
         })
         calculateTotal()
     } catch (e) {
         console.error(e)
         alert('Failed to add product')
     }
+}
+
+function openCategoryModalForTransaction() {
+    showCategoryModal.value = true
+    addingCategoryForProduct.value = false
+}
+
+function openCategoryModalForProduct() {
+    showCategoryModal.value = true
+    addingCategoryForProduct.value = true
 }
 </script>
 
@@ -308,7 +329,7 @@ async function saveNewProduct() {
                                           placeholder="Select Category"
                                           required />
                     </div>
-                    <button @click="showCategoryModal = true"
+                    <button @click="openCategoryModalForTransaction"
                             class="mb-0.5 flex h-[42px] w-[42px] items-center justify-center rounded-sm bg-indigo-50 text-indigo-600 hover:bg-indigo-100 active:scale-95 transition-all">
                         <svg class="h-6 w-6"
                              fill="none"
@@ -428,6 +449,7 @@ async function saveNewProduct() {
         <!-- Add Category Modal -->
         <Modal :show="showCategoryModal"
                title="Add New Category"
+               z-index="z-[60]"
                @close="showCategoryModal = false">
             <div class="space-y-4">
                 <BaseInput v-model="newCategoryName"
@@ -468,6 +490,27 @@ async function saveNewProduct() {
                                   label="Quantity Type"
                                   placeholder="Select quantity type"
                                   required />
+
+                <div class="flex items-end gap-2">
+                    <div class="flex-1">
+                        <SearchableSelect v-model="newProductCategoryId"
+                                          label="Category"
+                                          :options="masterStore.categories.map((c) => ({ label: c.name, value: c.id }))"
+                                          placeholder="Select Category" />
+                    </div>
+                    <button @click="openCategoryModalForProduct"
+                            class="mb-0.5 flex h-[42px] w-[42px] items-center justify-center rounded-sm bg-indigo-50 text-indigo-600 hover:bg-indigo-100 active:scale-95 transition-all">
+                        <svg class="h-6 w-6"
+                             fill="none"
+                             viewBox="0 0 24 24"
+                             stroke="currentColor">
+                            <path stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  stroke-width="2"
+                                  d="M12 4v16m8-8H4" />
+                        </svg>
+                    </button>
+                </div>
 
                 <BaseInput v-model="newProductDescription"
                            label="Description"

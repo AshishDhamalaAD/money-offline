@@ -23,10 +23,31 @@ const form = ref({
     name: '',
     description: '',
     rate: 0,
-    quantity_type: ''
+    quantity_type: '',
+    category_id: '',
 })
 
 const showDeleteModal = ref(false)
+
+// Quick Add Category
+const showCategoryModal = ref(false)
+const newCategoryName = ref('')
+const newCategoryDescription = ref('')
+
+async function saveNewCategory() {
+    if (!newCategoryName.value.trim()) return
+
+    try {
+        const id = await masterStore.addCategory(newCategoryName.value, newCategoryDescription.value, bookId)
+        form.value.category_id = id
+        showCategoryModal.value = false
+        newCategoryName.value = ''
+        newCategoryDescription.value = ''
+    } catch (e) {
+        console.error(e)
+        alert('Failed to add category')
+    }
+}
 
 const title = computed(() => {
     const typeLabel = type === 'paymentModes' ? 'Payment Mode' : type.slice(0, -1).charAt(0).toUpperCase() + type.slice(0, -1).slice(1)
@@ -34,9 +55,9 @@ const title = computed(() => {
 })
 
 onMounted(async () => {
-    if (!isNew) {
-        masterStore.watchBookData(bookId)
+    masterStore.watchBookData(bookId)
 
+    if (!isNew) {
         // Hack: wait for data
         const unsubscribe = masterStore.$subscribe((mutation, state) => {
             const list = state[type]
@@ -58,6 +79,7 @@ function fillForm(item) {
     form.value.description = item.description || ''
     form.value.rate = item.rate || 0
     form.value.quantity_type = item.quantity_type || ''
+    form.value.category_id = item.category_id || ''
 }
 
 async function save() {
@@ -67,13 +89,23 @@ async function save() {
         if (isNew) await masterStore.addCategory(form.value.name, form.value.description, bookId)
         else await masterStore.updateCategory(itemId, { name: form.value.name, description: form.value.description })
     } else if (type === 'products') {
-        if (isNew) await masterStore.addProduct(form.value.name, form.value.rate, form.value.description, form.value.quantity_type, bookId)
-        else await masterStore.updateProduct(itemId, {
-            name: form.value.name,
-            rate: form.value.rate,
-            description: form.value.description,
-            quantity_type: form.value.quantity_type
-        })
+        if (isNew)
+            await masterStore.addProduct(
+                form.value.name,
+                form.value.rate,
+                form.value.description,
+                form.value.quantity_type,
+                bookId,
+                form.value.category_id
+            )
+        else
+            await masterStore.updateProduct(itemId, {
+                name: form.value.name,
+                rate: form.value.rate,
+                description: form.value.description,
+                quantity_type: form.value.quantity_type,
+                category_id: form.value.category_id,
+            })
     } else if (type === 'paymentModes') {
         if (isNew) await masterStore.addPaymentMode(form.value.name, form.value.description, bookId)
         else await masterStore.updatePaymentMode(itemId, { name: form.value.name, description: form.value.description })
@@ -132,6 +164,27 @@ function goBack() {
                                       label="Quantity Type"
                                       placeholder="Select quantity type"
                                       required />
+
+                    <div class="flex items-end gap-2">
+                        <div class="flex-1">
+                            <SearchableSelect v-model="form.category_id"
+                                              label="Category"
+                                              :options="masterStore.categories.map((c) => ({ label: c.name, value: c.id }))"
+                                              placeholder="Select Category" />
+                        </div>
+                        <button @click="showCategoryModal = true"
+                                class="mb-0.5 flex h-[42px] w-[42px] items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 active:scale-95 transition-all">
+                            <svg class="h-6 w-6"
+                                 fill="none"
+                                 viewBox="0 0 24 24"
+                                 stroke="currentColor">
+                                <path stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      stroke-width="2"
+                                      d="M12 4v16m8-8H4" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Description at bottom for all -->
@@ -145,6 +198,28 @@ function goBack() {
                 </div>
             </div>
         </main>
+
+        <!-- Add Category Modal -->
+        <Modal :show="showCategoryModal"
+               title="Add New Category"
+               @close="showCategoryModal = false">
+            <div class="space-y-4">
+                <BaseInput v-model="newCategoryName"
+                           label="Category Name"
+                           placeholder="e.g. Groceries"
+                           autoFocus />
+
+                <BaseInput v-model="newCategoryDescription"
+                           label="Description"
+                           placeholder="Optional" />
+
+                <div class="flex justify-end gap-3 mt-6">
+                    <BaseButton variant="ghost"
+                                @click="showCategoryModal = false">Cancel</BaseButton>
+                    <BaseButton @click="saveNewCategory">Add Category</BaseButton>
+                </div>
+            </div>
+        </Modal>
 
         <!-- Delete Confirmation Modal -->
         <Modal :show="showDeleteModal"

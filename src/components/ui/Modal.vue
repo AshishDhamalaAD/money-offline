@@ -3,7 +3,11 @@ import { onMounted, onUnmounted, watch } from 'vue'
 
 const props = defineProps({
     show: Boolean,
-    title: String
+    title: String,
+    zIndex: {
+        type: String,
+        default: 'z-50'
+    }
 })
 
 const emit = defineEmits(['close'])
@@ -36,7 +40,8 @@ onUnmounted(() => document.removeEventListener('keydown', handleEscape))
                     leave-from-class="opacity-100"
                     leave-to-class="opacity-0">
             <div v-if="show"
-                 class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+                 class="fixed inset-0 flex items-center justify-center p-4 sm:p-6"
+                 :class="[zIndex]"
                  role="dialog"
                  aria-modal="true">
                 <!-- Backdrop -->

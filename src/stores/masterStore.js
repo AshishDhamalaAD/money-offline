@@ -112,13 +112,14 @@ export const useMasterStore = defineStore('master', () => {
     }
 
     // Products
-    async function addProduct(name, rate, description, quantityType, bookId) {
+    async function addProduct(name, rate, description, quantityType, bookId, categoryId) {
         return await db.products.add({
             name,
             rate: roundAmount(rate),
             description,
             quantity_type: quantityType,
             book_id: bookId,
+            category_id: categoryId,
             created_at: formatDateTimeForDB(),
             updated_at: formatDateTimeForDB(),
             sync_status: 'pending'
