@@ -104,14 +104,14 @@ onClickOutside(containerRef, close)
                 <!-- Options List -->
                 <ul class="max-h-60 overflow-auto py-1">
                     <li v-if="filteredOptions.length === 0"
-                        class="px-4 py-2 text-sm text-gray-500 text-center">
+                        class="px-4 py-2 text-gray-500 text-center">
                         No results found
                     </li>
                     <li v-for="option in filteredOptions"
                         :key="option.value"
                         @click="select(option)"
                         :class="[
-                            'cursor-pointer px-4 py-2 text-sm hover:bg-indigo-50 hover:text-indigo-600',
+                            'cursor-pointer px-4 py-2 hover:bg-indigo-50 hover:text-indigo-600',
                             { 'bg-indigo-50 text-indigo-600 font-medium': option.value === modelValue }
                         ]">
                         {{ option.label }}
