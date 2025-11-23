@@ -29,3 +29,11 @@ db.version(4).stores({
 db.version(5).stores({
     transactions: '++id, book_id, type, date, category_id, contact_id, payment_mode_id, discount, charge, sync_status' // Added discount, charge
 });
+
+db.version(6).stores({
+    categories: '++id, name, book_id, description, sync_status, created_at, updated_at',
+    payment_modes: '++id, name, type, book_id, sync_status, created_at, updated_at',
+    contacts: '++id, name, phone, sync_status, created_at, updated_at',
+    products: '++id, name, rate, description, quantity_type, book_id, category_id, sync_status, created_at, updated_at', // Added category_id
+    transactions: '++id, book_id, type, date, category_id, contact_id, payment_mode_id, discount, charge, amount, created_at, updated_at, sync_status' // Added amount, created_at, updated_at
+});
