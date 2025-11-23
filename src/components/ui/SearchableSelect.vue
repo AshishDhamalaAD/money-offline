@@ -97,7 +97,7 @@ onClickOutside(containerRef, close)
                     <input ref="inputRef"
                            v-model="searchQuery"
                            type="text"
-                           class="w-full rounded-sm bg-gray-50 px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                           class="w-full rounded-sm bg-gray-50 px-3 py-1.5 text focus:outline-none focus:ring-1 focus:ring-indigo-500"
                            placeholder="Search..." />
                 </div>
 
