@@ -95,7 +95,8 @@ const tabs = [
                     <h2 class="text-lg font-semibold text-gray-800">
                         Manage {{tabs.find(t => t.id === activeTab)?.label}}
                     </h2>
-                    <BaseButton size="sm"
+                    <BaseButton v-if="activeTab !== 'import'"
+                                size="sm"
                                 @click="navigateToAdd(activeTab)">Add New</BaseButton>
                 </div>
 
