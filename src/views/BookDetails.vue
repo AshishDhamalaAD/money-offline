@@ -161,7 +161,7 @@ const filteredTransactions = computed(() => {
         transactions = transactions.filter(t => t.contact_id === filterContact.value)
     }
     if (filterProduct.value) {
-        transactions = transactions.filter(t => t.products?.some(p => p.id === filterProduct.value))
+        transactions = transactions.filter(t => t.products?.some(p => p.product_id === filterProduct.value))
     }
 
     // 3. Search Filtering
