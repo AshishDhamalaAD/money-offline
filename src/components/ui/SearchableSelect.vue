@@ -65,7 +65,9 @@ function select(option) {
     close()
 }
 
-onClickOutside(containerRef, close)
+onClickOutside(containerRef, close, {
+    ignore: [inputRef]
+})
 
 // When modelValue changes externally, we don't need to do much as selectedLabel is computed
 </script>

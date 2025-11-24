@@ -179,10 +179,16 @@ const filteredTransactions = computed(() => {
 })
 
 
+const visibleLimit = ref(50)
+
+const paginatedTransactions = computed(() => {
+    return filteredTransactions.value.slice(0, visibleLimit.value)
+})
+
 const groupedTransactions = computed(() => {
     const groups = {}
 
-    filteredTransactions.value.forEach(transaction => {
+    paginatedTransactions.value.forEach(transaction => {
         const date = new Date(transaction.date)
         const dateKey = formatDate(date)
 
@@ -199,6 +205,19 @@ const groupedTransactions = computed(() => {
 
     // Convert to array and sort by timestamp (most recent first)
     return Object.values(groups).sort((a, b) => b.timestamp - a.timestamp)
+})
+
+const hasMoreTransactions = computed(() => {
+    return visibleLimit.value < filteredTransactions.value.length
+})
+
+function loadMore() {
+    visibleLimit.value += 50
+}
+
+// Reset pagination when filters change
+watch([selectedFilter, filterCategory, filterPaymentMode, filterContact, filterProduct, searchQuery], () => {
+    visibleLimit.value = 50
 })
 
 const filteredStats = computed(() => {
@@ -493,6 +512,13 @@ async function saveBookName() {
                          class="cursor-pointer transition-opacity active:opacity-70">
                         <TransactionCard :transaction="t" />
                     </div>
+                </div>
+
+                <!-- Load More Button -->
+                <div v-if="hasMoreTransactions" class="flex justify-center py-4">
+                    <BaseButton variant="secondary" @click="loadMore">
+                        Load More
+                    </BaseButton>
                 </div>
             </div>
         </main>

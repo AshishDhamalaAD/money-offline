@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useBookStore } from '../stores/bookStore'
 import { useMasterStore } from '../stores/masterStore'
@@ -7,6 +7,7 @@ import BaseButton from '../components/ui/BaseButton.vue'
 import PageLayout from '../components/layout/PageLayout.vue'
 import PageHeader from '../components/layout/PageHeader.vue'
 import LegacyImport from '../components/settings/LegacyImport.vue'
+import SearchInput from '../components/ui/SearchInput.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -68,6 +69,29 @@ const tabs = [
     { id: 'paymentModes', label: 'Payment Modes' },
     { id: 'import', label: 'Import Legacy Data' }
 ]
+
+const searchQuery = ref('')
+
+const filteredItems = computed(() => {
+    let items = []
+    if (activeTab.value === 'categories') items = masterStore.categories
+    else if (activeTab.value === 'products') items = masterStore.products
+    else if (activeTab.value === 'paymentModes') items = masterStore.paymentModes
+    else return []
+
+    if (!searchQuery.value) return items
+
+    const query = searchQuery.value.toLowerCase()
+    return items.filter(item => 
+        item.name.toLowerCase().includes(query) || 
+        (item.description && item.description.toLowerCase().includes(query))
+    )
+})
+
+// Reset search when tab changes
+watch(activeTab, () => {
+    searchQuery.value = ''
+})
 </script>
 
 <template>
@@ -91,19 +115,27 @@ const tabs = [
 
             <!-- Lists -->
             <div class="space-y-4">
-                <div class="flex justify-between items-center">
-                    <h2 class="text-lg font-semibold text-gray-800">
-                        Manage {{tabs.find(t => t.id === activeTab)?.label}}
-                    </h2>
-                    <BaseButton v-if="activeTab !== 'import'"
-                                size="sm"
-                                @click="navigateToAdd(activeTab)">Add New</BaseButton>
+                <div class="flex flex-col gap-4">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-lg font-semibold text-gray-800">
+                            Manage {{tabs.find(t => t.id === activeTab)?.label}}
+                        </h2>
+                        <BaseButton v-if="activeTab !== 'import'"
+                                    size="sm"
+                                    @click="navigateToAdd(activeTab)">Add New</BaseButton>
+                    </div>
+
+                    <!-- Search Input -->
+                    <div v-if="activeTab !== 'import'">
+                        <SearchInput v-model="searchQuery"
+                                     placeholder="Search..." />
+                    </div>
                 </div>
 
                 <!-- Categories List -->
                 <div v-if="activeTab === 'categories'"
                      class="space-y-3">
-                    <div v-for="item in masterStore.categories"
+                    <div v-for="item in filteredItems"
                          :key="item.id"
                          @click="navigateToEdit('categories', item)"
                          class="flex justify-between items-center bg-white p-4 rounded-sm shadow-sm cursor-pointer hover:bg-gray-50 transition-colors">
@@ -121,7 +153,7 @@ const tabs = [
                                   d="M9 5l7 7-7 7" />
                         </svg>
                     </div>
-                    <div v-if="masterStore.categories.length === 0"
+                    <div v-if="filteredItems.length === 0"
                          class="text-center text-gray-500 py-8">
                         No categories found.
                     </div>
@@ -130,7 +162,7 @@ const tabs = [
                 <!-- Products List -->
                 <div v-if="activeTab === 'products'"
                      class="space-y-3">
-                    <div v-for="item in masterStore.products"
+                    <div v-for="item in filteredItems"
                          :key="item.id"
                          @click="navigateToEdit('products', item)"
                          class="flex justify-between items-center bg-white p-4 rounded-sm shadow-sm cursor-pointer hover:bg-gray-50 transition-colors">
@@ -149,7 +181,7 @@ const tabs = [
                                   d="M9 5l7 7-7 7" />
                         </svg>
                     </div>
-                    <div v-if="masterStore.products.length === 0"
+                    <div v-if="filteredItems.length === 0"
                          class="text-center text-gray-500 py-8">
                         No products found.
                     </div>
@@ -158,7 +190,7 @@ const tabs = [
                 <!-- Payment Modes List -->
                 <div v-if="activeTab === 'paymentModes'"
                      class="space-y-3">
-                    <div v-for="item in masterStore.paymentModes"
+                    <div v-for="item in filteredItems"
                          :key="item.id"
                          @click="navigateToEdit('paymentModes', item)"
                          class="flex justify-between items-center bg-white p-4 rounded-sm shadow-sm cursor-pointer hover:bg-gray-50 transition-colors">
@@ -176,7 +208,7 @@ const tabs = [
                                   d="M9 5l7 7-7 7" />
                         </svg>
                     </div>
-                    <div v-if="masterStore.paymentModes.length === 0"
+                    <div v-if="filteredItems.length === 0"
                          class="text-center text-gray-500 py-8">
                         No payment modes found.
                     </div>
