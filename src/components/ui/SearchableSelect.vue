@@ -37,7 +37,8 @@ const filteredOptions = computed(() => {
     if (searchQuery.value) {
         const query = searchQuery.value.toLowerCase()
         options = options.filter(option =>
-            option.label.toLowerCase().includes(query)
+            option.label.toLowerCase().includes(query) ||
+            (option.description && option.description.toLowerCase().includes(query))
         )
         // When searching, show all matching results (no limit)
         return options
@@ -48,8 +49,7 @@ const filteredOptions = computed(() => {
 
 function open() {
     isOpen.value = true
-    searchQuery.value = '' // Reset search on open? Or keep it? Let's reset to show all, or show current selection if we want.
-    // Better UX: if has value, show all. If typing, filter.
+    searchQuery.value = '' 
     nextTick(() => {
         inputRef.value?.focus()
     })
@@ -68,8 +68,6 @@ function select(option) {
 onClickOutside(containerRef, close, {
     ignore: [inputRef]
 })
-
-// When modelValue changes externally, we don't need to do much as selectedLabel is computed
 </script>
 
 <template>
@@ -85,10 +83,19 @@ onClickOutside(containerRef, close, {
             <!-- Trigger / Display -->
             <div @click="open"
                  :class="[
-                    'w-full rounded-sm border-gray-200 bg-gray-50 px-4 py-2.5 text-left transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500',
+                    'w-full rounded-sm border-gray-200 bg-gray-50 px-4 py-2.5 text-left transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 flex justify-between items-center',
                     { 'border-red-500': error, 'text-gray-400': !modelValue && !selectedLabel, 'text-gray-900': modelValue || selectedLabel }
                 ]">
-                {{ selectedLabel || placeholder || 'Select...' }}
+                <span class="truncate">{{ selectedLabel || placeholder || 'Select...' }}</span>
+                <svg class="h-5 w-5 text-gray-400 flex-shrink-0"
+                     fill="none"
+                     viewBox="0 0 24 24"
+                     stroke="currentColor">
+                    <path stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M19 9l-7 7-7-7" />
+                </svg>
             </div>
 
             <!-- Dropdown -->
@@ -116,7 +123,10 @@ onClickOutside(containerRef, close, {
                             'cursor-pointer px-4 py-2 hover:bg-indigo-50 hover:text-indigo-600',
                             { 'bg-indigo-50 text-indigo-600 font-medium': option.value === modelValue }
                         ]">
-                        {{ option.label }}
+                        <div class="flex flex-col">
+                            <span>{{ option.label }}</span>
+                            <span v-if="option.description" class="text-xs text-gray-400">{{ option.description }}</span>
+                        </div>
                     </li>
                 </ul>
             </div>

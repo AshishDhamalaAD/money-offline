@@ -35,7 +35,7 @@ export const useMasterStore = defineStore('master', () => {
         // Subscribe new
         categorySubscription = liveQuery(() =>
             db.categories.where('book_id').equals(bookId).toArray()
-        ).subscribe(data => categories.value = data)
+        ).subscribe(data => categories.value = data.sort((a, b) => a.sort - b.sort))
 
         paymentModeSubscription = liveQuery(() =>
             db.payment_modes.where('book_id').equals(bookId).toArray()
@@ -54,6 +54,7 @@ export const useMasterStore = defineStore('master', () => {
             book_id: bookId,
             created_at: formatDateTimeForDB(),
             updated_at: formatDateTimeForDB(),
+            sort: 999,
             sync_status: 'pending'
         })
     }

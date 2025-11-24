@@ -120,6 +120,9 @@ function updateProduct(index, item) {
 }
 
 function calculateTotal() {
+    // If no products, amount is manually entered, so don't overwrite it
+    if (form.value.products.length === 0) return
+
     const productsTotal = form.value.products.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0)
 
     if (form.value.type === 'out') {
@@ -370,7 +373,7 @@ function openCategoryModalForProduct() {
                         <SearchableSelect :model-value="''"
                                           @update:model-value="addCategory"
                                           label="Category"
-                                          :options="availableCategories.map(c => ({ label: c.name, value: c.id }))"
+                                          :options="availableCategories.map(c => ({ label: c.name, value: c.id, description: c.description }))"
                                           placeholder="Select Category"
                                           :required="form.category_ids.length === 0" />
                     </div>
@@ -393,7 +396,7 @@ function openCategoryModalForProduct() {
                     <div class="flex-1">
                         <SearchableSelect v-model="form.payment_mode_id"
                                           label="Payment Mode"
-                                          :options="masterStore.paymentModes.map(p => ({ label: p.name, value: p.id }))"
+                                          :options="masterStore.paymentModes.map(p => ({ label: p.name, value: p.id, description: p.description }))"
                                           placeholder="Select Payment Mode"
                                           required />
                     </div>
@@ -413,7 +416,7 @@ function openCategoryModalForProduct() {
 
                 <SearchableSelect v-model="form.contact_id"
                                   label="Contact"
-                                  :options="masterStore.contacts.map(c => ({ label: c.name, value: c.id }))"
+                                  :options="masterStore.contacts.map(c => ({ label: c.name, value: c.id, description: c.phone }))"
                                   placeholder="Select Contact" />
             </div>
 
@@ -458,8 +461,8 @@ function openCategoryModalForProduct() {
                 </div>
             </div>
 
-            <!-- Discount & Charge (Cash Out Only) -->
-            <div v-if="form.type === 'out'"
+            <!-- Discount & Charge (Cash Out Only, and only if products exist) -->
+            <div v-if="form.type === 'out' && form.products.length > 0"
                  class="space-y-4 rounded-sm bg-white p-4 shadow-sm">
                 <div class="grid grid-cols-2 gap-4">
                     <BaseInput v-model="form.discount"
@@ -485,7 +488,7 @@ function openCategoryModalForProduct() {
                                step="0.01"
                                label="Total Amount"
                                class="text-3xl font-bold text-indigo-600"
-                               readonly
+                               :readonly="form.products.length > 0"
                                required />
                 </div>
             </div>

@@ -523,21 +523,7 @@ async function saveBookName() {
             </div>
         </main>
 
-        <!-- FAB -->
-        <div class="fixed bottom-6 right-6 z-40">
-            <button @click="goToCreateTransaction"
-                    class="flex h-14 w-14 items-center justify-center rounded-full bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 transition-transform hover:scale-105 active:scale-95">
-                <svg class="h-6 w-6"
-                     fill="none"
-                     viewBox="0 0 24 24"
-                     stroke="currentColor">
-                    <path stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M12 4v16m8-8H4" />
-                </svg>
-            </button>
-        </div>
+
 
         <!-- Delete Confirmation Modal -->
         <Modal :show="showDeleteModal"
@@ -575,18 +561,23 @@ async function saveBookName() {
             <div class="space-y-4 max-h-[70vh] overflow-y-auto p-1">
                 <SearchableSelect v-model="tempFilterCategory"
                                   label="Category"
-                                  :options="[{ label: 'All Categories', value: '' }, ...masterStore.categories.map(c => ({ label: c.name, value: c.id }))]"
+                                  :options="[{ label: 'All Categories', value: '' }, ...masterStore.categories.map(c => ({ label: c.name, value: c.id, description: c.description }))]"
                                   placeholder="All Categories" />
 
                 <SearchableSelect v-model="tempFilterPaymentMode"
                                   label="Payment Mode"
-                                  :options="[{ label: 'All Payment Modes', value: '' }, ...masterStore.paymentModes.map(p => ({ label: p.name, value: p.id }))]"
+                                  :options="[{ label: 'All Payment Modes', value: '' }, ...masterStore.paymentModes.map(p => ({ label: p.name, value: p.id, description: p.description }))]"
                                   placeholder="All Payment Modes" />
 
                 <SearchableSelect v-model="tempFilterContact"
                                   label="Contact"
-                                  :options="[{ label: 'All Contacts', value: '' }, ...masterStore.contacts.map(c => ({ label: c.name, value: c.id }))]"
+                                  :options="[{ label: 'All Contacts', value: '' }, ...masterStore.contacts.map(c => ({ label: c.name, value: c.id, description: c.phone }))]"
                                   placeholder="All Contacts" />
+
+                <SearchableSelect v-model="tempFilterProduct"
+                                  label="Product"
+                                  :options="[{ label: 'All Products', value: '' }, ...masterStore.products.map(p => ({ label: p.name, value: p.id, description: p.description }))]"
+                                  placeholder="All Products" />
 
                 <div class="flex justify-end gap-3 mt-6">
                     <BaseButton variant="ghost"
@@ -596,4 +587,22 @@ async function saveBookName() {
             </div>
         </Modal>
     </PageLayout>
+
+    <!-- FAB -->
+    <Teleport to="body">
+        <div class="fixed bottom-6 right-6 z-40">
+            <button @click="goToCreateTransaction"
+                    class="flex h-14 w-14 items-center justify-center rounded-full bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 transition-transform hover:scale-105 active:scale-95">
+                <svg class="h-6 w-6"
+                     fill="none"
+                     viewBox="0 0 24 24"
+                     stroke="currentColor">
+                    <path stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M12 4v16m8-8H4" />
+                </svg>
+            </button>
+        </div>
+    </Teleport>
 </template>

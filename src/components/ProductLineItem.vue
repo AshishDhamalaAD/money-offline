@@ -86,7 +86,7 @@ function onProductSelect(productId) {
                 <SearchableSelect v-if="products.length > 0"
                                   :model-value="item.product_id"
                                   @update:model-value="onProductSelect($event)"
-                                  :options="products.map(p => ({ label: p.name, value: p.id }))"
+                                  :options="products.map(p => ({ label: p.name, value: p.id, description: p.description }))"
                                   placeholder="Select Product" />
                 <input v-else
                        v-model="item.name"
