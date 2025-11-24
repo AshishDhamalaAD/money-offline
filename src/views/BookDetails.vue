@@ -15,6 +15,7 @@ import BaseButton from '../components/ui/BaseButton.vue'
 import FloatingActionButton from '../components/ui/FloatingActionButton.vue'
 import SearchInput from '../components/ui/SearchInput.vue'
 import { formatDate, getNepalDate } from '../utils/dateUtils'
+import { formatCurrency } from '../utils/moneyUtils'
 
 const route = useRoute()
 const router = useRouter()
@@ -225,11 +226,13 @@ const groupedTransactions = computed(() => {
             groups[dateKey] = {
                 date: dateKey,
                 timestamp: date.getTime(),
-                transactions: []
+                transactions: [],
+                amount: 0,
             }
         }
 
         groups[dateKey].transactions.push(transaction)
+        groups[dateKey].amount += transaction.amount
     })
 
     // Convert to array and sort by timestamp (most recent first)
@@ -456,7 +459,7 @@ async function saveBookName() {
                              class="flex-1" />
                 <button @click="openFilterModal()"
                         class="flex items-center justify-center w-11 rounded-sm bg-white shadow-sm ring-1 ring-gray-200 text-gray-600 hover:bg-gray-50 active:bg-gray-100 relative">
-                    <svg class="h-5 w-5"
+                    <svg class="h-6 w-6"
                          fill="none"
                          viewBox="0 0 24 24"
                          stroke="currentColor">
@@ -515,8 +518,9 @@ async function saveBookName() {
                      :key="group.date"
                      class="space-y-3">
                     <!-- Date Header -->
-                    <div class="bg-gray-100 px-4 py-2 rounded-lg">
-                        <h3 class="text-sm font-bold text-gray-900">{{ group.date }}</h3>
+                    <div class="bg-gray-100 px-4 py-2 rounded-lg text-sm flex justify-between items-center">
+                        <h3 class="font-bold text-gray-900">{{ group.date }}</h3>
+                        <span class="text-gray-600">{{ formatCurrency(group.amount) }}</span>
                     </div>
 
                     <!-- Transactions for this date -->

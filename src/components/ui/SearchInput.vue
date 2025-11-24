@@ -34,7 +34,7 @@ function clear() {
                @input="$emit('update:modelValue', $event.target.value)"
                type="text"
                :placeholder="placeholder"
-               class="w-full rounded-sm border-gray-300 bg-white py-2 pl-10 pr-10 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" />
+               class="w-full rounded-sm border-gray-300 bg-white py-2.5 pl-10 pr-10 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" />
         <button v-if="modelValue"
                 @click="clear"
                 class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">

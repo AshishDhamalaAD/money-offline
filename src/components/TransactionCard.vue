@@ -2,6 +2,7 @@
 import { computed, onMounted } from 'vue'
 import { useMasterStore } from '../stores/masterStore'
 import { formatTime } from '../utils/dateUtils'
+import { formatCurrency } from '../utils/moneyUtils'
 
 const props = defineProps({
     transaction: {
@@ -19,14 +20,6 @@ const masterStore = useMasterStore()
 onMounted(() => {
     masterStore.watchBookData(props.transaction.book_id)
 })
-
-// Currency formatting function
-function formatCurrency(amount) {
-    return new Intl.NumberFormat('en-IN', {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 2
-    }).format(amount || 0)
-}
 
 const formattedAmount = computed(() => formatCurrency(props.transaction.amount))
 
@@ -91,13 +84,13 @@ const charge = computed(() => parseFloat(props.transaction.charge) || 0)
              class="space-y-1 mb-2">
             <div v-for="(product, index) in transaction.products"
                  :key="index"
-                 class="flex items-center justify-between text-xs">
-                <div class="flex items-center gap-2 text-gray-700">
+                 class="flex items-center justify-between text-xs gap-2">
+                <div class="flex-1 flex items-center justify-between gap-2 text-gray-700">
                     <span class="font-medium">{{ product.name }}</span>
                     <span v-if="product.quantity > 1"
                           class="text-gray-500">{{ product.quantity }} × {{ formatCurrency(product.rate) }}</span>
                 </div>
-                <span class="text-gray-900 font-medium">{{ formatCurrency(product.amount) }}</span>
+                <span class="text-gray-900 font-medium inline-block min-w-[50px] text-right">{{ formatCurrency(product.amount) }}</span>
             </div>
         </div>
 
