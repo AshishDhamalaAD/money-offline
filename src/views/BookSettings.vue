@@ -6,6 +6,7 @@ import { useMasterStore } from '../stores/masterStore'
 import BaseButton from '../components/ui/BaseButton.vue'
 import PageLayout from '../components/layout/PageLayout.vue'
 import PageHeader from '../components/layout/PageHeader.vue'
+import LegacyImport from '../components/settings/LegacyImport.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -29,7 +30,7 @@ watch(activeTab, (newTab) => {
 
 // Watch route query to update activeTab (for back/forward navigation)
 watch(() => route.query.tab, (newTab) => {
-    if (newTab && ['categories', 'products', 'paymentModes'].includes(newTab)) {
+    if (newTab && ['categories', 'products', 'paymentModes', 'import'].includes(newTab)) {
         activeTab.value = newTab
     }
 })
@@ -64,7 +65,8 @@ function navigateToAdd(type) {
 const tabs = [
     { id: 'categories', label: 'Categories' },
     { id: 'products', label: 'Products' },
-    { id: 'paymentModes', label: 'Payment Modes' }
+    { id: 'paymentModes', label: 'Payment Modes' },
+    { id: 'import', label: 'Import Legacy Data' }
 ]
 </script>
 
@@ -177,6 +179,11 @@ const tabs = [
                          class="text-center text-gray-500 py-8">
                         No payment modes found.
                     </div>
+                </div>
+
+                <!-- Legacy Import -->
+                <div v-if="activeTab === 'import'">
+                    <LegacyImport :book-id="bookId" />
                 </div>
 
             </div>
