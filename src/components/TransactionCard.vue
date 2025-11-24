@@ -102,7 +102,7 @@ const charge = computed(() => parseFloat(props.transaction.charge) || 0)
 
         <!-- Row 3: Description + Time -->
         <div class="flex justify-between items-start gap-2">
-            <span class="text-xs text-gray-600 flex-1 whitespace-pre-wrap">{{ transaction.description }}</span>
+            <span class="text-xs text-gray-600 flex-1 whitespace-pre-wrap" v-html="transaction.description"></span>
             <span class="text-xs text-gray-500 shrink-0">{{ formattedTime }}</span>
         </div>
     </div>

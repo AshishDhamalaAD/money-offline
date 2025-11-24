@@ -269,7 +269,6 @@ async function saveNewProduct() {
 
         // Auto-add the newly created product to the items list
         form.value.products.push({
-            id: Date.now(),
             product_id: id,
             quantity: 1,
             rate: roundAmount(newProductRate.value),

@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { db } from '../db'
+import { formatDateTimeForDB } from '../utils/dateUtils'
 import BaseButton from './ui/BaseButton.vue'
 import Modal from './ui/Modal.vue'
 
@@ -22,7 +23,7 @@ async function exportDatabase() {
         const tables = ['books', 'transactions', 'categories', 'contacts', 'payment_modes', 'products']
         const exportData = {
             version: 5,
-            exportDate: new Date().toISOString(),
+            exportDate: formatDateTimeForDB(),
             data: {}
         }
 
