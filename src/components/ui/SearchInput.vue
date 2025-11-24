@@ -1,5 +1,5 @@
 <script setup>
-defineProps({
+const props = defineProps({
     modelValue: {
         type: String,
         default: ''
@@ -10,7 +10,11 @@ defineProps({
     }
 })
 
-defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue'])
+
+function clear() {
+    emit('update:modelValue', '')
+}
 </script>
 
 <template>
@@ -30,6 +34,19 @@ defineEmits(['update:modelValue'])
                @input="$emit('update:modelValue', $event.target.value)"
                type="text"
                :placeholder="placeholder"
-               class="w-full rounded-sm border-gray-300 bg-white py-2 pl-10 pr-4 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" />
+               class="w-full rounded-sm border-gray-300 bg-white py-2 pl-10 pr-10 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" />
+        <button v-if="modelValue"
+                @click="clear"
+                class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
+            <svg class="h-5 w-5"
+                 fill="none"
+                 viewBox="0 0 24 24"
+                 stroke="currentColor">
+                <path stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
     </div>
 </template>

@@ -13,6 +13,7 @@ import PageLayout from '../components/layout/PageLayout.vue'
 import PageHeader from '../components/layout/PageHeader.vue'
 import BaseButton from '../components/ui/BaseButton.vue'
 import FloatingActionButton from '../components/ui/FloatingActionButton.vue'
+import SearchInput from '../components/ui/SearchInput.vue'
 import { formatDate, getNepalDate } from '../utils/dateUtils'
 
 const route = useRoute()
@@ -450,26 +451,12 @@ async function saveBookName() {
 
             <!-- Search & Advanced Filters -->
             <div class="flex gap-2">
-                <div class="relative flex-1">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <svg class="h-5 w-5 text-gray-400"
-                             fill="none"
-                             viewBox="0 0 24 24"
-                             stroke="currentColor">
-                            <path stroke-linecap="round"
-                                  stroke-linejoin="round"
-                                  stroke-width="2"
-                                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                    </div>
-                    <input v-model="searchQuery"
-                           type="text"
-                           placeholder="Search transactions..."
-                           class="w-full rounded-sm border-none bg-white py-2.5 pl-10 pr-4 text-[17px] shadow-sm ring-1 ring-gray-200 placeholder-gray-400 focus:ring-2 focus:ring-[#007AFF] focus:outline-none" />
-                </div>
+                <SearchInput v-model="searchQuery"
+                             placeholder="Search transactions..."
+                             class="flex-1" />
                 <button @click="openFilterModal()"
-                        class="flex items-center justify-center w-11 h-11 rounded-sm bg-white shadow-sm ring-1 ring-gray-200 text-gray-600 hover:bg-gray-50 active:bg-gray-100 relative">
-                    <svg class="h-6 w-6"
+                        class="flex items-center justify-center w-11 rounded-sm bg-white shadow-sm ring-1 ring-gray-200 text-gray-600 hover:bg-gray-50 active:bg-gray-100 relative">
+                    <svg class="h-5 w-5"
                          fill="none"
                          viewBox="0 0 24 24"
                          stroke="currentColor">
