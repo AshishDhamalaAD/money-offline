@@ -73,7 +73,7 @@ const charge = computed(() => parseFloat(props.transaction.charge) || 0)
                           class="text-red-600"> + {{ formatCurrency(charge) }}</span>
                     <span v-if="productsTotal !== transaction.amount"
                           :class="transaction.type === 'in' ? 'text-green-600' : 'text-red-600'">
-                          <span v-if="productsTotal > 0 || discount > 0 || charge > 0">=</span> {{ formattedAmount }}
+                          <span v-if="productsTotal > 0 || discount > 0 || charge > 0"> =</span> {{ formattedAmount }}
                     </span>
                 </div>
             </div>
