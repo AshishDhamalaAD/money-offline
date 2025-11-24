@@ -85,6 +85,11 @@ onMounted(async () => {
                 const timePart = dateParts[1] ? dateParts[1].substring(0, 5) : '00:00' // HH:mm
                 t.date = `${datePart}T${timePart}`
             }
+            if(t.description) {
+                t.description = t.description
+                    .replace(/<\/p>\s*<p>/g, '\n')  // replace between paragraphs with newline
+                    .replace(/<\/?p>/g, '');       // remove remaining <p> or </p>
+            }
             form.value = { ...t }
             // Handle migration/compatibility for old transactions with single category_id
             if (t.category_id && (!t.category_ids || t.category_ids.length === 0)) {
