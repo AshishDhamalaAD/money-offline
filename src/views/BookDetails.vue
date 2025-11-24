@@ -12,6 +12,7 @@ import Modal from '../components/ui/Modal.vue'
 import PageLayout from '../components/layout/PageLayout.vue'
 import PageHeader from '../components/layout/PageHeader.vue'
 import BaseButton from '../components/ui/BaseButton.vue'
+import FloatingActionButton from '../components/ui/FloatingActionButton.vue'
 import { formatDate, getNepalDate } from '../utils/dateUtils'
 
 const route = useRoute()
@@ -55,7 +56,18 @@ onMounted(async () => {
     bookId.value = bookIdParam
     book.value = await bookStore.getBook(bookId.value)
     transactionStore.setBookId(bookId.value)
-    masterStore.watchBookData(bookId.value) // Ensure master data is loaded for filters
+    masterStore.watchBookData(bookId.value)
+
+    // Restore filters from URL query params
+    const query = route.query
+    if (query.filter) selectedFilter.value = query.filter
+    if (query.startDate) startDate.value = query.startDate
+    if (query.endDate) endDate.value = query.endDate
+    if (query.category) filterCategory.value = parseInt(query.category)
+    if (query.paymentMode) filterPaymentMode.value = parseInt(query.paymentMode)
+    if (query.contact) filterContact.value = parseInt(query.contact)
+    if (query.product) filterProduct.value = parseInt(query.product)
+    if (query.search) searchQuery.value = query.search
 })
 
 // Reset custom date range when switching to other filters
@@ -64,6 +76,22 @@ watch(selectedFilter, (newValue) => {
         startDate.value = ''
         endDate.value = ''
     }
+})
+
+// Persist filters to URL query params
+watch([selectedFilter, startDate, endDate, filterCategory, filterPaymentMode, filterContact, filterProduct, searchQuery], () => {
+    const query = {}
+    if (selectedFilter.value !== 'month') query.filter = selectedFilter.value
+    if (startDate.value) query.startDate = startDate.value
+    if (endDate.value) query.endDate = endDate.value
+    if (filterCategory.value) query.category = filterCategory.value
+    if (filterPaymentMode.value) query.paymentMode = filterPaymentMode.value
+    if (filterContact.value) query.contact = filterContact.value
+    if (filterProduct.value) query.product = filterProduct.value
+    if (searchQuery.value) query.search = searchQuery.value
+
+    // Use replace to avoid adding to browser history
+    router.replace({ query })
 })
 
 const filterOptions = computed(() => {
@@ -589,20 +617,5 @@ async function saveBookName() {
     </PageLayout>
 
     <!-- FAB -->
-    <Teleport to="body">
-        <div class="fixed bottom-6 right-6 z-40">
-            <button @click="goToCreateTransaction"
-                    class="flex h-14 w-14 items-center justify-center rounded-full bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 transition-transform hover:scale-105 active:scale-95">
-                <svg class="h-6 w-6"
-                     fill="none"
-                     viewBox="0 0 24 24"
-                     stroke="currentColor">
-                    <path stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M12 4v16m8-8H4" />
-                </svg>
-            </button>
-        </div>
-    </Teleport>
+    <FloatingActionButton @click="goToCreateTransaction" />
 </template>
