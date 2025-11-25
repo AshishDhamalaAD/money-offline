@@ -4,17 +4,17 @@ defineProps({
   label: String,
   options: {
     type: Array,
-    default: () => []
+    default: () => [],
   },
   placeholder: String,
   error: String,
   id: {
     type: String,
-    default: () => 'select-' + Math.random().toString(36).substr(2, 9)
-  }
+    default: () => "select-" + Math.random().toString(36).substr(2, 9),
+  },
 })
 
-defineEmits(['update:modelValue'])
+defineEmits(["update:modelValue"])
 </script>
 
 <template>
@@ -29,7 +29,7 @@ defineEmits(['update:modelValue'])
         @change="$emit('update:modelValue', $event.target.value)"
         :class="[
           'w-full appearance-none rounded-xl border-gray-200 bg-gray-50 px-4 py-2.5 text-gray-900 transition-colors focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500',
-          { 'border-red-500 focus:border-red-500 focus:ring-red-500': error, 'text-gray-400': !modelValue }
+          { 'border-red-500 focus:border-red-500 focus:ring-red-500': error, 'text-gray-400': !modelValue },
         ]"
       >
         <option v-if="placeholder" value="" disabled selected>{{ placeholder }}</option>

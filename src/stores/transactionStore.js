@@ -26,7 +26,7 @@ export const useTransactionStore = defineStore('transaction', () => {
             // Fetch all products for this book to populate names
             const products = await db.products.where('book_id').equals(bookId).toArray()
             const productMap = new Map(products.map(p => [p.id, p]))
-            
+
             // Enrich transactions with product names
             return txs.map(tx => {
                 if (tx.products && Array.isArray(tx.products)) {
