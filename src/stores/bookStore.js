@@ -32,9 +32,14 @@ export const useBookStore = defineStore('book', () => {
     }
 
     async function deleteBook(id) {
+        // Delete the book
         await db.books.delete(id)
-        // Also delete related transactions
+
+        // Also delete related master data (transactions, categories, products, payment modes)
         await db.transactions.where('book_id').equals(id).delete()
+        await db.categories.where('book_id').equals(id).delete()
+        await db.products.where('book_id').equals(id).delete()
+        await db.payment_modes.where('book_id').equals(id).delete()
     }
 
     async function getBook(id) {

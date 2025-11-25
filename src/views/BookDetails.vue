@@ -6,6 +6,7 @@ import { useTransactionStore } from "../stores/transactionStore"
 import { useMasterStore } from "../stores/masterStore"
 import TransactionCard from "../components/TransactionCard.vue"
 import StatsSummary from "../components/StatsSummary.vue"
+import DeleteBook from "../components/DeleteBook.vue"
 import SearchableSelect from "../components/ui/SearchableSelect.vue"
 import BaseInput from "../components/ui/BaseInput.vue"
 import Modal from "../components/ui/Modal.vue"
@@ -398,7 +399,8 @@ async function saveBookName() {
     <!-- Content -->
     <main class="p-4 space-y-4 pb-24">
       <!-- Stats Toggle -->
-      <div class="flex justify-end">
+      <div class="flex justify-between">
+        <DeleteBook v-if="bookId" :book-id="bookId" />
         <button @click="showStats = !showStats" class="text-[15px] text-[#007AFF] font-medium flex items-center gap-1">
           {{ showStats ? "Hide Stats" : "Show Stats" }}
           <svg
