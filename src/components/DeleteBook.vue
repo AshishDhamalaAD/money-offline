@@ -34,7 +34,7 @@ async function handleDeleteBook() {
 <template>
   <button
     @click="showDeleteModal = true"
-    class="rounded-lg px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+    class="rounded-lg pl-0.5 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
   >
     Delete Book
   </button>
