@@ -37,7 +37,7 @@ onUnmounted(() => document.removeEventListener("keydown", handleEscape))
 <template>
   <Teleport to="body">
     <Transition
-      enter-active-class="transition duration-100 ease-out"
+      enter-active-class="transition duration-[50ms] ease-out"
       enter-from-class="opacity-0"
       enter-to-class="opacity-100"
       leave-active-class="transition duration-150 ease-in"
@@ -56,7 +56,7 @@ onUnmounted(() => document.removeEventListener("keydown", handleEscape))
 
         <!-- Panel -->
         <Transition
-          enter-active-class="transition duration-100 ease-out"
+          enter-active-class="transition duration-[50ms] ease-out"
           enter-from-class="opacity-0 scale-95 translate-y-4"
           enter-to-class="opacity-100 scale-100 translate-y-0"
           leave-active-class="transition duration-150 ease-in"
