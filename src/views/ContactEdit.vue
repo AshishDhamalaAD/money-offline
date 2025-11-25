@@ -5,6 +5,7 @@ import { useMasterStore } from "../stores/masterStore"
 import BaseButton from "../components/ui/BaseButton.vue"
 import BaseInput from "../components/ui/BaseInput.vue"
 import Modal from "../components/ui/Modal.vue"
+import Toast from "../components/ui/Toast.vue"
 import PageLayout from "../components/layout/PageLayout.vue"
 import PageHeader from "../components/layout/PageHeader.vue"
 
@@ -21,6 +22,8 @@ const form = ref({
 })
 
 const showDeleteModal = ref(false)
+const showToast = ref(false)
+const toastMessage = ref("")
 
 onMounted(async () => {
   if (!isNew) {
@@ -60,8 +63,14 @@ async function save() {
 }
 
 async function handleDelete() {
-  await masterStore.deleteContact(contactId)
-  goBack()
+  try {
+    await masterStore.deleteContact(contactId)
+    goBack()
+  } catch (error) {
+    toastMessage.value = error.message
+    showToast.value = true
+    showDeleteModal.value = false
+  }
 }
 
 function goBack() {
@@ -103,5 +112,8 @@ function goBack() {
         <BaseButton variant="danger" @click="handleDelete">Delete</BaseButton>
       </div>
     </Modal>
+
+    <!-- Toast Notification -->
+    <Toast :show="showToast" :message="toastMessage" type="error" @close="showToast = false" />
   </PageLayout>
 </template>

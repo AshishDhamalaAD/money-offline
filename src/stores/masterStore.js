@@ -59,6 +59,26 @@ export const useMasterStore = defineStore('master', () => {
         })
     }
     async function deleteCategory(id) {
+        // Check if category is used in any transactions
+        const usageCount = await db.transactions
+            .where('category_ids')
+            .equals(id)
+            .count()
+
+        if (usageCount > 0) {
+            throw new Error(`Cannot delete category. It is being used in ${usageCount} transaction(s).`)
+        }
+
+        // Check if category is used in any products
+        const productUsageCount = await db.products
+            .where('category_id')
+            .equals(id)
+            .count()
+
+        if (productUsageCount > 0) {
+            throw new Error(`Cannot delete category. It is being used by ${productUsageCount} product(s).`)
+        }
+
         return await db.categories.delete(id)
     }
     async function updateCategory(id, updates) {
@@ -87,6 +107,16 @@ export const useMasterStore = defineStore('master', () => {
         })
     }
     async function deleteContact(id) {
+        // Check if contact is used in any transactions
+        const usageCount = await db.transactions
+            .where('contact_id')
+            .equals(id)
+            .count()
+
+        if (usageCount > 0) {
+            throw new Error(`Cannot delete contact. It is being used in ${usageCount} transaction(s).`)
+        }
+
         return await db.contacts.delete(id)
     }
 
@@ -102,6 +132,16 @@ export const useMasterStore = defineStore('master', () => {
         })
     }
     async function deletePaymentMode(id) {
+        // Check if payment mode is used in any transactions
+        const usageCount = await db.transactions
+            .where('payment_mode_id')
+            .equals(id)
+            .count()
+
+        if (usageCount > 0) {
+            throw new Error(`Cannot delete payment mode. It is being used in ${usageCount} transaction(s).`)
+        }
+
         return await db.payment_modes.delete(id)
     }
     async function updatePaymentMode(id, updates) {
@@ -138,6 +178,21 @@ export const useMasterStore = defineStore('master', () => {
         })
     }
     async function deleteProduct(id) {
+        // Check if product is used in any transaction line items
+        const transactions = await db.transactions.toArray()
+        let usageCount = 0
+
+        for (const transaction of transactions) {
+            if (transaction.products && Array.isArray(transaction.products)) {
+                const hasProduct = transaction.products.some(item => item.product_id === id)
+                if (hasProduct) usageCount++
+            }
+        }
+
+        if (usageCount > 0) {
+            throw new Error(`Cannot delete product. It is being used in ${usageCount} transaction(s).`)
+        }
+
         return await db.products.delete(id)
     }
 

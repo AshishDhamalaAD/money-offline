@@ -7,6 +7,7 @@ import BaseButton from "../components/ui/BaseButton.vue"
 import BaseInput from "../components/ui/BaseInput.vue"
 import SearchableSelect from "../components/ui/SearchableSelect.vue"
 import Modal from "../components/ui/Modal.vue"
+import Toast from "../components/ui/Toast.vue"
 import PageLayout from "../components/layout/PageLayout.vue"
 import PageHeader from "../components/layout/PageHeader.vue"
 
@@ -28,6 +29,8 @@ const form = ref({
 })
 
 const showDeleteModal = ref(false)
+const showToast = ref(false)
+const toastMessage = ref("")
 
 // Quick Add Category
 const showCategoryModal = ref(false)
@@ -116,11 +119,17 @@ async function save() {
 }
 
 async function handleDelete() {
-  if (type === "categories") await masterStore.deleteCategory(itemId)
-  else if (type === "products") await masterStore.deleteProduct(itemId)
-  else if (type === "paymentModes") await masterStore.deletePaymentMode(itemId)
+  try {
+    if (type === "categories") await masterStore.deleteCategory(itemId)
+    else if (type === "products") await masterStore.deleteProduct(itemId)
+    else if (type === "paymentModes") await masterStore.deletePaymentMode(itemId)
 
-  goBack()
+    goBack()
+  } catch (error) {
+    toastMessage.value = error.message
+    showToast.value = true
+    showDeleteModal.value = false
+  }
 }
 
 function goBack() {
@@ -212,5 +221,8 @@ function goBack() {
         <BaseButton variant="danger" @click="handleDelete">Delete</BaseButton>
       </div>
     </Modal>
+
+    <!-- Toast Notification -->
+    <Toast :show="showToast" :message="toastMessage" type="error" @close="showToast = false" />
   </PageLayout>
 </template>
