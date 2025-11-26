@@ -3,6 +3,7 @@ import { ref, watch, computed } from "vue"
 import BaseInput from "./ui/BaseInput.vue"
 import SearchableSelect from "./ui/SearchableSelect.vue"
 import { roundAmount } from "../utils/dateUtils"
+import IconX from "./icons/IconX.vue"
 
 const props = defineProps({
   modelValue: {
@@ -71,10 +72,8 @@ function onProductSelect(productId) {
 
 <template>
   <div :class="['relative py-4', productIndex === 0 ? '-mt-4' : '']">
-    <button @click="$emit('remove')" class="absolute top-5 right-0 p-2 text-red-500 z-10">
-      <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-      </svg>
+    <button @click="$emit('remove')" class="absolute top-5 -right-4 p-2 text-red-500 z-10">
+      <IconX class="h-5 w-5" />
     </button>
 
     <div class="grid grid-cols-1 gap-3">

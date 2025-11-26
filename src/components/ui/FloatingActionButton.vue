@@ -1,4 +1,6 @@
 <script setup>
+import IconPlus from "../icons/IconPlus.vue"
+
 defineProps({
   show: {
     type: Boolean,
@@ -16,9 +18,7 @@ defineEmits(["click"])
         @click="$emit('click')"
         class="flex h-14 w-14 items-center justify-center rounded-full bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 transition-transform hover:scale-105 active:scale-95"
       >
-        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-        </svg>
+        <IconPlus />
       </button>
     </div>
   </Teleport>

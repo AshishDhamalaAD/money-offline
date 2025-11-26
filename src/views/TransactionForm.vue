@@ -13,6 +13,8 @@ import Modal from "../components/ui/Modal.vue"
 import PageLayout from "../components/layout/PageLayout.vue"
 import PageHeader from "../components/layout/PageHeader.vue"
 import { formatDateTimeForDB, roundAmount } from "../utils/dateUtils"
+import IconPlus from "../components/icons/IconPlus.vue"
+import IconX from "../components/icons/IconX.vue"
 
 const route = useRoute()
 const router = useRouter()
@@ -372,9 +374,7 @@ function openCategoryModalForProduct() {
               >
                 <span>{{ category.name }}</span>
                 <button @click="removeCategory(category.id)" class="hover:text-indigo-900 focus:outline-none">
-                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  <IconX class="h-4 w-4" />
                 </button>
               </div>
             </div>
@@ -391,9 +391,7 @@ function openCategoryModalForProduct() {
             @click="openCategoryModalForTransaction"
             class="mb-0.5 flex h-[42px] w-[42px] items-center justify-center rounded-sm bg-indigo-50 text-indigo-600 hover:bg-indigo-100 active:scale-95 transition-all"
           >
-            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
+            <IconPlus />
           </button>
         </div>
 
@@ -414,9 +412,7 @@ function openCategoryModalForProduct() {
             @click="showPaymentModeModal = true"
             class="mb-0.5 flex h-[42px] w-[42px] items-center justify-center rounded-sm bg-indigo-50 text-indigo-600 hover:bg-indigo-100 active:scale-95 transition-all"
           >
-            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
+            <IconPlus />
           </button>
         </div>
 
@@ -437,9 +433,7 @@ function openCategoryModalForProduct() {
               @click="showProductModal = true"
               class="mb-0.5 flex h-[42px] w-[42px] items-center justify-center rounded-sm bg-indigo-50 text-indigo-600 hover:bg-indigo-100 active:scale-95 transition-all"
             >
-              <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-              </svg>
+              <IconPlus />
             </button>
           </div>
         </div>
@@ -543,9 +537,7 @@ function openCategoryModalForProduct() {
             @click="openCategoryModalForProduct"
             class="mb-0.5 flex h-[42px] w-[42px] items-center justify-center rounded-sm bg-indigo-50 text-indigo-600 hover:bg-indigo-100 active:scale-95 transition-all"
           >
-            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
+            <IconPlus />
           </button>
         </div>
 

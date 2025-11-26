@@ -8,6 +8,7 @@ import PageLayout from "../components/layout/PageLayout.vue"
 import PageHeader from "../components/layout/PageHeader.vue"
 import LegacyImport from "../components/settings/LegacyImport.vue"
 import SearchInput from "../components/ui/SearchInput.vue"
+import IconChevronRight from "../components/icons/IconChevronRight.vue"
 
 const route = useRoute()
 const router = useRouter()
@@ -150,9 +151,7 @@ watch(activeTab, () => {
               <p class="font-medium">{{ item.name }}</p>
               <p class="text-xs text-gray-500">{{ item.description }}</p>
             </div>
-            <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-            </svg>
+            <IconChevronRight class="text-gray-400" />
           </div>
           <div v-if="filteredItems.length === 0" class="text-center text-gray-500 py-8">No categories found.</div>
         </div>
@@ -170,9 +169,7 @@ watch(activeTab, () => {
               <p class="text-xs text-gray-500">Rate: {{ item.rate }}</p>
               <p class="text-xs text-gray-400">{{ item.description }}</p>
             </div>
-            <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-            </svg>
+            <IconChevronRight class="text-gray-400" />
           </div>
           <div v-if="filteredItems.length === 0" class="text-center text-gray-500 py-8">No products found.</div>
         </div>
@@ -189,9 +186,7 @@ watch(activeTab, () => {
               <p class="font-medium">{{ item.name }}</p>
               <p class="text-xs text-gray-500">{{ item.description }}</p>
             </div>
-            <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-            </svg>
+            <IconChevronRight class="text-gray-400" />
           </div>
           <div v-if="filteredItems.length === 0" class="text-center text-gray-500 py-8">No payment modes found.</div>
         </div>

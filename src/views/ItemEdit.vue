@@ -10,6 +10,7 @@ import Modal from "../components/ui/Modal.vue"
 import Toast from "../components/ui/Toast.vue"
 import PageLayout from "../components/layout/PageLayout.vue"
 import PageHeader from "../components/layout/PageHeader.vue"
+import IconPlus from "../components/icons/IconPlus.vue"
 
 const route = useRoute()
 const router = useRouter()
@@ -183,9 +184,7 @@ function goBack() {
               @click="showCategoryModal = true"
               class="mb-0.5 flex h-[42px] w-[42px] items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 active:scale-95 transition-all"
             >
-              <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-              </svg>
+              <IconPlus />
             </button>
           </div>
         </div>
