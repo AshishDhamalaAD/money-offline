@@ -96,6 +96,27 @@ const filteredItems = computed(() => {
 watch(activeTab, () => {
   searchQuery.value = ""
 })
+
+// Pagination
+const paginationLimit = 10
+const visibleLimit = ref(paginationLimit)
+
+const paginatedItems = computed(() => {
+  return filteredItems.value.slice(0, visibleLimit.value)
+})
+
+const hasMoreItems = computed(() => {
+  return visibleLimit.value < filteredItems.value.length
+})
+
+function loadMore() {
+  visibleLimit.value += paginationLimit
+}
+
+// Reset pagination when filters change
+watch([activeTab, searchQuery], () => {
+  visibleLimit.value = paginationLimit
+})
 </script>
 
 <template>
@@ -129,6 +150,9 @@ watch(activeTab, () => {
           <div class="flex justify-between items-center">
             <h2 class="text-lg font-semibold text-gray-800">
               Manage {{ tabs.find((t) => t.id === activeTab)?.label }}
+              <span class="text-sm font-normal" v-if="filteredItems.length > 0 && filteredItems.length > visibleLimit">
+                ({{ paginatedItems.length }}/{{ filteredItems.length }})
+              </span>
             </h2>
             <BaseButton v-if="activeTab !== 'import'" size="sm" @click="navigateToAdd(activeTab)">Add New</BaseButton>
           </div>
@@ -142,7 +166,7 @@ watch(activeTab, () => {
         <!-- Categories List -->
         <div v-if="activeTab === 'categories'" class="space-y-3">
           <div
-            v-for="item in filteredItems"
+            v-for="item in paginatedItems"
             :key="item.id"
             @click="navigateToEdit('categories', item)"
             class="flex justify-between items-center bg-white p-4 rounded-sm shadow-sm cursor-pointer hover:bg-gray-50 transition-colors"
@@ -154,12 +178,15 @@ watch(activeTab, () => {
             <IconChevronRight class="text-gray-400" />
           </div>
           <div v-if="filteredItems.length === 0" class="text-center text-gray-500 py-8">No categories found.</div>
+          <div v-if="hasMoreItems" class="flex justify-center py-4">
+            <BaseButton variant="secondary" @click="loadMore">Load More</BaseButton>
+          </div>
         </div>
 
         <!-- Products List -->
         <div v-if="activeTab === 'products'" class="space-y-3">
           <div
-            v-for="item in filteredItems"
+            v-for="item in paginatedItems"
             :key="item.id"
             @click="navigateToEdit('products', item)"
             class="flex justify-between items-center bg-white p-4 rounded-sm shadow-sm cursor-pointer hover:bg-gray-50 transition-colors"
@@ -172,12 +199,15 @@ watch(activeTab, () => {
             <IconChevronRight class="text-gray-400" />
           </div>
           <div v-if="filteredItems.length === 0" class="text-center text-gray-500 py-8">No products found.</div>
+          <div v-if="hasMoreItems" class="flex justify-center py-4">
+            <BaseButton variant="secondary" @click="loadMore">Load More</BaseButton>
+          </div>
         </div>
 
         <!-- Payment Modes List -->
         <div v-if="activeTab === 'paymentModes'" class="space-y-3">
           <div
-            v-for="item in filteredItems"
+            v-for="item in paginatedItems"
             :key="item.id"
             @click="navigateToEdit('paymentModes', item)"
             class="flex justify-between items-center bg-white p-4 rounded-sm shadow-sm cursor-pointer hover:bg-gray-50 transition-colors"
@@ -189,6 +219,9 @@ watch(activeTab, () => {
             <IconChevronRight class="text-gray-400" />
           </div>
           <div v-if="filteredItems.length === 0" class="text-center text-gray-500 py-8">No payment modes found.</div>
+          <div v-if="hasMoreItems" class="flex justify-center py-4">
+            <BaseButton variant="secondary" @click="loadMore">Load More</BaseButton>
+          </div>
         </div>
 
         <!-- Legacy Import -->
