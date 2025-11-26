@@ -189,12 +189,17 @@ watch([activeTab, searchQuery], () => {
             v-for="item in paginatedItems"
             :key="item.id"
             @click="navigateToEdit('products', item)"
-            class="flex justify-between items-center bg-white p-4 rounded-sm shadow-sm cursor-pointer hover:bg-gray-50 transition-colors"
+            class="flex justify-between items-center gap-2 bg-white p-4 rounded-sm shadow-sm cursor-pointer hover:bg-gray-50 transition-colors"
           >
-            <div>
-              <p class="font-medium">{{ item.name }}</p>
-              <p class="text-xs text-gray-500">Rate: {{ item.rate }}</p>
-              <p class="text-xs text-gray-400">{{ item.description }}</p>
+            <div class="flex items-center gap-2">
+              <div v-if="item.image_urls && item.image_urls.length > 0" class="shrink-0">
+                <img :src="item.resizedImageUrls()[0]" alt="" class="w-8 h-8 object-cover rounded-full"></img>
+              </div>
+              <div>
+                <p class="font-medium">{{ item.name }}</p>
+                <p class="text-xs text-gray-500">Rate: {{ item.rate }}</p>
+                <p class="text-xs text-gray-400">{{ item.description }}</p>
+              </div>
             </div>
             <IconChevronRight class="text-gray-400" />
           </div>

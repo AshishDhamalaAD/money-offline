@@ -21,6 +21,8 @@ const type = route.params.type // 'categories', 'products', 'paymentModes'
 const itemId = route.params.itemId ? parseInt(route.params.itemId) : null
 const isNew = !itemId
 
+const imageUrls = ref([])
+
 const form = ref({
   name: "",
   description: "",
@@ -85,6 +87,10 @@ function fillForm(item) {
   form.value.rate = item.rate || 0
   form.value.quantity_type = item.quantity_type || ""
   form.value.category_id = item.category_id || ""
+
+  if (type === "products" && item.image_urls && item.image_urls.length > 0) {
+    imageUrls.value = item.resizedImageUrls(200)
+  }
 }
 
 async function save() {
@@ -159,6 +165,12 @@ function goBack() {
 
     <main class="p-4 space-y-6">
       <div class="bg-white p-4 rounded-sm shadow-sm space-y-4">
+        <div v-if="imageUrls.length > 0" class="flex items-center justify-center gap-2">
+          <div v-for="url in imageUrls" :key="url" class="rounded-lg overflow-hidden shrink-0">
+            <img :src="url" class="w-40 h-40 object-cover" />
+          </div>
+        </div>
+
         <BaseInput v-model="form.name" label="Name" autoFocus required />
 
         <div v-if="type === 'products'" class="space-y-4">

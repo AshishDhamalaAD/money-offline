@@ -28,13 +28,7 @@ export const useSyncStore = defineStore('sync', () => {
 
             const data = await getDatabaseDump()
 
-            // Add token to the payload
-            const payload = {
-                ...data,
-                token: token ? token.value : ""
-            }
-
-            const response = await fetch(endpoint.value, {
+            const response = await fetch(`${endpoint.value}/sync-app-data`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

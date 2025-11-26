@@ -24,6 +24,8 @@ const masterStore = useMasterStore()
 const bookId = parseInt(route.params.bookId)
 const isEdit = !!route.params.id
 
+const imageUrls = ref([])
+
 const form = ref({
   type: "out",
   date: (() => {
@@ -76,8 +78,12 @@ onMounted(async () => {
     const transaction = await transactionStore.transactions.find((t) => t.id === id) // Since we have them in store usually
     // Or fetch from DB if not in store (store only has current book's transactions)
     // Better to fetch from DB to be safe
-    const t = await db.transactions.get(id)
+    const t = transaction ? transaction : await db.transactions.get(id)
     if (t) {
+      if (t.image_urls && t.image_urls.length > 0) {
+        imageUrls.value = t.resizedImageUrls(200)
+      }
+
       // Convert date from 'YYYY-MM-DD HH:mm:ss' to 'YYYY-MM-DDTHH:mm' for datetime-local input
       const dateStr = t.date
       if (dateStr) {
@@ -352,6 +358,12 @@ function openCategoryModalForProduct() {
         >
           Cash Out (-)
         </button>
+      </div>
+
+      <div v-if="imageUrls.length > 0" class="flex items-center justify-center gap-2">
+        <div v-for="url in imageUrls" :key="url" class="rounded-lg overflow-hidden shrink-0">
+          <img :src="url" class="w-40 h-40 object-cover" />
+        </div>
       </div>
 
       <!-- Basic Fields -->
