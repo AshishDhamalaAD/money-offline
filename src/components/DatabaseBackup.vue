@@ -1,9 +1,11 @@
 <script setup>
 import { ref } from "vue"
 import { db } from "../db"
-import { formatDateTimeForDB } from "../utils/dateUtils"
+import { useDatabaseExport } from "../composables/useDatabaseExport"
 import BaseButton from "./ui/BaseButton.vue"
 import Modal from "./ui/Modal.vue"
+
+const { getDatabaseDump } = useDatabaseExport()
 
 // Export/Import state
 const isExporting = ref(false)
@@ -20,25 +22,9 @@ async function exportDatabase() {
   exportProgress.value = 0
 
   try {
-    const tables = ["books", "transactions", "categories", "contacts", "payment_modes", "products"]
-    const exportData = {
-      version: 5,
-      exportDate: formatDateTimeForDB(),
-      data: {},
-    }
-
-    const totalTables = tables.length
-
-    for (let i = 0; i < tables.length; i++) {
-      const tableName = tables[i]
-      exportProgress.value = Math.round(((i + 1) / totalTables) * 100)
-
-      const data = await db[tableName].toArray()
-      exportData.data[tableName] = data
-
-      // Small delay to show progress
-      await new Promise((resolve) => setTimeout(resolve, 100))
-    }
+    const exportData = await getDatabaseDump((progress) => {
+      exportProgress.value = progress
+    })
 
     // Create and download file
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" })
@@ -140,7 +126,6 @@ async function startImport() {
       window.location.reload()
     }, 1000)
   } catch (error) {
-    console.error("Import failed:", error)
     importError.value = "Failed to import database: " + error.message
     isImporting.value = false
     importProgress.value = 0

@@ -4,6 +4,7 @@ import { ref, watch } from "vue"
 import PageLayout from "../components/layout/PageLayout.vue"
 import PageHeader from "../components/layout/PageHeader.vue"
 import DatabaseBackup from "../components/DatabaseBackup.vue"
+import ServerSync from "../components/ServerSync.vue"
 import ContactsManager from "../components/settings/ContactsManager.vue"
 import ResetDatabase from "../components/settings/ResetDatabase.vue"
 
@@ -62,8 +63,10 @@ watch(
       </div>
 
       <!-- Database Backup & Restore -->
-      <div v-if="activeTab === 'data'">
+      <div v-if="activeTab === 'data'" class="space-y-6">
         <DatabaseBackup />
+
+        <ServerSync />
       </div>
 
       <!-- Danger Zone -->

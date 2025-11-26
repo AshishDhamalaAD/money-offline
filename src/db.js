@@ -41,3 +41,9 @@ db.version(6).stores({
 db.version(7).stores({
     transactions: '++id, book_id, type, date, *category_ids, contact_id, payment_mode_id, discount, charge, amount, created_at, updated_at, sync_status' // Changed category_id to *category_ids
 });
+
+db.version(8).stores({
+    settings: 'key, value',
+    categories: '++id, name, book_id, description, sync_status, sort, created_at, updated_at',
+    contacts: '++id, name, phone, sync_status, sort, created_at, updated_at'
+});
