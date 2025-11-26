@@ -3,6 +3,7 @@ import { db } from '../db'
 import { liveQuery } from 'dexie'
 import { ref, computed } from 'vue'
 import { formatDateTimeForDB, roundAmount } from '../utils/dateUtils'
+import { useSyncStore } from './syncStore'
 
 export const useTransactionStore = defineStore('transaction', () => {
     const transactions = ref([])
@@ -71,6 +72,11 @@ export const useTransactionStore = defineStore('transaction', () => {
             updated_at: formatDateTimeForDB(),
             sync_status: 'pending'
         })
+
+        // Trigger background sync
+        const syncStore = useSyncStore()
+        syncStore.triggerSync()
+
         return id
     }
 
@@ -102,10 +108,18 @@ export const useTransactionStore = defineStore('transaction', () => {
         }
 
         await db.transactions.update(id, updateData)
+
+        // Trigger background sync
+        const syncStore = useSyncStore()
+        syncStore.triggerSync()
     }
 
     async function deleteTransaction(id) {
         await db.transactions.delete(id)
+
+        // Trigger background sync
+        const syncStore = useSyncStore()
+        syncStore.triggerSync()
     }
 
     // Stats

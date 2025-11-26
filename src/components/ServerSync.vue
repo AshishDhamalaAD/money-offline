@@ -1,16 +1,18 @@
 <script setup>
 import { ref, onMounted } from "vue"
 import { db } from "../db"
-import { useDatabaseExport } from "../composables/useDatabaseExport"
+import { useSyncStore } from "../stores/syncStore"
+import { storeToRefs } from "pinia"
 import BaseButton from "./ui/BaseButton.vue"
 import BaseInput from "./ui/BaseInput.vue"
 import Toast from "./ui/Toast.vue"
 
-const { getDatabaseDump } = useDatabaseExport()
+const syncStore = useSyncStore()
+const { isSyncing } = storeToRefs(syncStore)
 
 const apiEndpoint = ref("")
 const apiToken = ref("")
-const isSyncing = ref(false)
+// isSyncing is now from store
 const showToast = ref(false)
 const toastMessage = ref("")
 const toastType = ref("success")
@@ -48,31 +50,17 @@ async function syncToServer() {
     return
   }
 
-  isSyncing.value = true
+  if (!navigator.onLine) {
+    showToastMsg("No internet connection. Sync requires an active internet connection.", "error")
+    return
+  }
 
-  try {
-    const data = await getDatabaseDump()
+  const result = await syncStore.triggerSync()
 
-    const response = await fetch(apiEndpoint.value, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        "X-TOKEN": apiToken.value,
-      },
-      body: JSON.stringify(data),
-    })
-
-    if (!response.ok) {
-      throw new Error(`Server responded with ${response.status} ${response.statusText}`)
-    }
-
+  if (result.success) {
     showToastMsg("Sync successful!", "success")
-  } catch (error) {
-    console.error("Sync failed:", error)
-    showToastMsg("Sync failed: " + error.message, "error")
-  } finally {
-    isSyncing.value = false
+  } else {
+    showToastMsg("Sync failed: " + result.message, "error")
   }
 }
 </script>
@@ -88,7 +76,7 @@ async function syncToServer() {
 
         <div class="grid gap-4">
           <BaseInput v-model="apiEndpoint" label="API Endpoint" placeholder="https://example.com/api/sync" />
-          <BaseInput v-model="apiToken" label="API Token" type="text" placeholder="Enter your API token" />
+          <BaseInput v-model="apiToken" label="API Token" type="password" placeholder="Enter your API token" />
         </div>
 
         <div class="flex gap-3">
