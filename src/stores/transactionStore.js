@@ -43,7 +43,7 @@ export const useTransactionStore = defineStore('transaction', () => {
                 return tx
             })
         }).subscribe(async data => {
-            transactions.value = (await attachImagesTo(data, TRANSACTION_IMAGES)).filter(p => p.image_urls.length > 0);
+            transactions.value = await attachImagesTo(data, TRANSACTION_IMAGES);
         })
     }
 
