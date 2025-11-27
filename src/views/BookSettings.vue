@@ -218,8 +218,9 @@ watch(visibleLimit, (newLimit) => {
             @click="navigateToEdit('products', item)"
             class="flex justify-between items-center gap-2 bg-white p-4 rounded-sm shadow-sm cursor-pointer hover:bg-gray-50 transition-colors"
           >
-            <div class="flex items-center gap-2">
-              <div v-if="item.attachments && item.attachments.length > 0" class="shrink-0">
+            <div class="flex items-center gap-4">
+              <div v-if="item.attachments && item.attachments.length > 0" class="shrink-0 relative">
+                <span v-if="item.attachments.length > 1" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">{{ item.attachments.length }}</span>
                 <img :src="resizedImageUrls({imageUrls: item.attachments})[0]" alt="" class="w-8 h-8 object-cover rounded-full"></img>
               </div>
               <div>
