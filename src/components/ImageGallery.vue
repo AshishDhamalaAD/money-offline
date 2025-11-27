@@ -21,6 +21,17 @@ const loadedImages = ref(new Set())
 const isDragging = ref(false)
 const swipeOffset = ref(0)
 
+// Zoom state
+const scale = ref(1)
+const panX = ref(0)
+const panY = ref(0)
+const minScale = 1
+const maxScale = 4
+const lastTapTime = ref(0)
+const isPinching = ref(false)
+const initialDistance = ref(0)
+const initialScale = ref(1)
+
 const fullImageUrls = computed(() => {
   return props.images.map((url) => `${settingsStore.apiEndpoint}/storage/${url}`)
 })
@@ -37,7 +48,14 @@ function openModal(index) {
   showModal.value = true
   swipeOffset.value = 0
   loadedImages.value.clear()
+  resetZoom()
   document.body.style.overflow = "hidden"
+}
+
+function resetZoom() {
+  scale.value = 1
+  panX.value = 0
+  panY.value = 0
 }
 
 function onImageLoad(index) {
@@ -57,6 +75,7 @@ function nextImage() {
     currentIndex.value = 0
   }
   swipeOffset.value = 0
+  resetZoom()
 }
 
 function prevImage() {
@@ -66,36 +85,107 @@ function prevImage() {
     currentIndex.value = props.images.length - 1
   }
   swipeOffset.value = 0
+  resetZoom()
 }
 
-// Swipe detection
+// Touch and gesture detection
 const touchStartX = ref(0)
+const touchStartY = ref(0)
+const startPanX = ref(0)
+const startPanY = ref(0)
 
 function handleTouchStart(e) {
-  touchStartX.value = e.changedTouches[0].screenX
-  isDragging.value = true
+  if (e.touches.length === 2) {
+    // Pinch start
+    isPinching.value = true
+    initialDistance.value = getDistance(e.touches[0], e.touches[1])
+    initialScale.value = scale.value
+  } else if (e.touches.length === 1) {
+    touchStartX.value = e.touches[0].clientX
+    touchStartY.value = e.touches[0].clientY
+    startPanX.value = panX.value
+    startPanY.value = panY.value
+
+    if (scale.value > 1) {
+      // Panning mode when zoomed
+      isDragging.value = true
+    } else {
+      // Swipe mode when not zoomed
+      isDragging.value = true
+    }
+  }
 }
 
 function handleTouchMove(e) {
-  if (!isDragging.value) return
-  const currentX = e.changedTouches[0].screenX
-  swipeOffset.value = currentX - touchStartX.value
+  if (isPinching.value && e.touches.length === 2) {
+    // Pinch zoom
+    const currentDistance = getDistance(e.touches[0], e.touches[1])
+    const scaleChange = currentDistance / initialDistance.value
+    scale.value = Math.min(maxScale, Math.max(minScale, initialScale.value * scaleChange))
+    e.preventDefault()
+  } else if (isDragging.value && e.touches.length === 1) {
+    const currentX = e.touches[0].clientX
+    const currentY = e.touches[0].clientY
+
+    if (scale.value > 1) {
+      // Pan when zoomed
+      panX.value = startPanX.value + (currentX - touchStartX.value)
+      panY.value = startPanY.value + (currentY - touchStartY.value)
+    } else {
+      // Swipe carousel when not zoomed
+      swipeOffset.value = currentX - touchStartX.value
+    }
+  }
 }
 
 function handleTouchEnd(e) {
-  isDragging.value = false
-  const touchEndX = e.changedTouches[0].screenX
-  const diff = touchEndX - touchStartX.value
-
-  if (Math.abs(diff) > 50) {
-    if (diff < 0) {
-      nextImage()
-    } else {
-      prevImage()
-    }
-  } else {
-    swipeOffset.value = 0
+  if (isPinching.value) {
+    isPinching.value = false
+    return
   }
+
+  isDragging.value = false
+
+  // Double-tap detection
+  const now = Date.now()
+  if (now - lastTapTime.value < 300) {
+    handleDoubleTap(e)
+    lastTapTime.value = 0
+    return
+  }
+  lastTapTime.value = now
+
+  // Handle swipe only if not zoomed
+  if (scale.value === 1) {
+    const touchEndX = e.changedTouches[0].clientX
+    const diff = touchEndX - touchStartX.value
+
+    if (Math.abs(diff) > 50) {
+      if (diff < 0) {
+        nextImage()
+      } else {
+        prevImage()
+      }
+    } else {
+      swipeOffset.value = 0
+    }
+  }
+}
+
+function handleDoubleTap(e) {
+  if (scale.value === 1) {
+    // Zoom in to 2x
+    scale.value = 2
+  } else {
+    // Reset zoom
+    resetZoom()
+  }
+}
+
+function getDistance(touch1, touch2) {
+  const dx = touch1.clientX - touch2.clientX
+  const dy = touch1.clientY - touch2.clientY
+  return Math.sqrt(dx * dx + dy * dy)
 }
 
 onUnmounted(() => {
@@ -159,8 +249,13 @@ onUnmounted(() => {
             <!-- Actual image -->
             <img
               :src="imageUrl"
-              class="max-w-full max-h-full object-contain select-none"
+              class="max-w-full max-h-full object-contain select-none transition-transform duration-200"
               :class="{ 'opacity-0': !loadedImages.has(index) }"
+              :style="{
+                transform:
+                  index === currentIndex ? `scale(${scale}) translate(${panX / scale}px, ${panY / scale}px)` : 'none',
+                transition: isDragging || isPinching ? 'none' : 'transform 0.2s ease-out',
+              }"
               draggable="false"
               @load="onImageLoad(index)"
               lazy
