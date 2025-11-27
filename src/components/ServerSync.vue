@@ -1,32 +1,23 @@
 <script setup>
 import { ref, onMounted } from "vue"
-import { db } from "../db"
 import { useSyncStore } from "../stores/syncStore"
+import { useSettingsStore } from "../stores/settingsStore"
 import { storeToRefs } from "pinia"
 import BaseButton from "./ui/BaseButton.vue"
 import BaseInput from "./ui/BaseInput.vue"
 import Toast from "./ui/Toast.vue"
-import IconSpinner from "./icons/IconSpinner.vue"
 
 const syncStore = useSyncStore()
 const { isSyncing } = storeToRefs(syncStore)
-
-const apiEndpoint = ref("")
-const apiToken = ref("")
+const settingsStore = useSettingsStore()
+const { apiEndpoint, apiToken } = storeToRefs(settingsStore)
 // isSyncing is now from store
 const showToast = ref(false)
 const toastMessage = ref("")
 const toastType = ref("success")
 
 onMounted(async () => {
-  try {
-    const endpoint = await db.settings.get("apiEndpoint")
-    const token = await db.settings.get("apiToken")
-    if (endpoint) apiEndpoint.value = endpoint.value
-    if (token) apiToken.value = token.value
-  } catch (e) {
-    console.error("Failed to load settings", e)
-  }
+  await settingsStore.init()
 })
 
 function showToastMsg(msg, type = "success") {
@@ -36,12 +27,11 @@ function showToastMsg(msg, type = "success") {
 }
 
 async function saveSettings() {
-  try {
-    await db.settings.put({ key: "apiEndpoint", value: apiEndpoint.value })
-    await db.settings.put({ key: "apiToken", value: apiToken.value })
+  const result = await settingsStore.saveSettings(apiEndpoint.value, apiToken.value)
+  if (result.success) {
     showToastMsg("Settings saved successfully", "success")
-  } catch (error) {
-    showToastMsg("Failed to save settings: " + error.message, "error")
+  } else {
+    showToastMsg("Failed to save settings: " + result.message, "error")
   }
 }
 

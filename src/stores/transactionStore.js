@@ -4,6 +4,7 @@ import { liveQuery } from 'dexie'
 import { ref, computed } from 'vue'
 import { formatDateTimeForDB, roundAmount } from '../utils/dateUtils'
 import { useSyncStore } from './syncStore'
+import { useSettingsStore } from './settingsStore'
 import { PRODUCT_IMAGES, TRANSACTION_IMAGES } from "../constants"
 import { attachImagesTo } from "../utils/imageUtils"
 
@@ -20,6 +21,9 @@ export const useTransactionStore = defineStore('transaction', () => {
         if (subscription) subscription.unsubscribe()
 
         subscription = liveQuery(async () => {
+            const settingsStore = useSettingsStore()
+            await settingsStore.init()
+
             const txs = await db.transactions
                 .where('book_id')
                 .equals(bookId)
@@ -28,7 +32,7 @@ export const useTransactionStore = defineStore('transaction', () => {
 
             // Fetch all products for this book to populate names
             const dbProducts = await db.products.where('book_id').equals(bookId).toArray()
-            const products = await attachImagesTo(dbProducts, PRODUCT_IMAGES)
+            const products = attachImagesTo(dbProducts, PRODUCT_IMAGES)
 
             const productMap = new Map(products.map(p => [p.id, p]))
 
@@ -42,8 +46,8 @@ export const useTransactionStore = defineStore('transaction', () => {
                 }
                 return tx
             })
-        }).subscribe(async data => {
-            transactions.value = await attachImagesTo(data, TRANSACTION_IMAGES);
+        }).subscribe(data => {
+            transactions.value = attachImagesTo(data, TRANSACTION_IMAGES);
         })
     }
 
