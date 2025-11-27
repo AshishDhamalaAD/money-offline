@@ -17,53 +17,55 @@ const props = defineProps({
 
 const showModal = ref(false)
 const currentIndex = ref(0)
-const isLoading = ref(false)
-const translateX = ref(0)
+const loadedImages = ref(new Set())
 const isDragging = ref(false)
+const swipeOffset = ref(0)
 
 const fullImageUrls = computed(() => {
   return props.images.map((url) => `${settingsStore.apiEndpoint}/storage/${url}`)
 })
 
+// Calculate the total translateX based on current index and swipe offset
+const containerTranslateX = computed(() => {
+  const baseOffset = -currentIndex.value * 100 // Each image is 100vw
+  const swipePercentage = (swipeOffset.value / window.innerWidth) * 100
+  return `${baseOffset + swipePercentage}vw`
+})
+
 function openModal(index) {
   currentIndex.value = index
   showModal.value = true
-  isLoading.value = true
-  translateX.value = 0
-  document.body.style.overflow = "hidden" // Prevent background scrolling
+  swipeOffset.value = 0
+  loadedImages.value.clear()
+  document.body.style.overflow = "hidden"
 }
 
-function onImageLoad() {
-  isLoading.value = false
+function onImageLoad(index) {
+  loadedImages.value.add(index)
 }
 
 function closeModal() {
   showModal.value = false
   document.body.style.overflow = ""
+  swipeOffset.value = 0
 }
 
 function nextImage() {
   if (currentIndex.value < props.images.length - 1) {
     currentIndex.value++
-    isLoading.value = true
-    translateX.value = 0
   } else {
-    currentIndex.value = 0 // Loop back to start
-    isLoading.value = true
-    translateX.value = 0
+    currentIndex.value = 0
   }
+  swipeOffset.value = 0
 }
 
 function prevImage() {
   if (currentIndex.value > 0) {
     currentIndex.value--
-    isLoading.value = true
-    translateX.value = 0
   } else {
-    currentIndex.value = props.images.length - 1 // Loop to end
-    isLoading.value = true
-    translateX.value = 0
+    currentIndex.value = props.images.length - 1
   }
+  swipeOffset.value = 0
 }
 
 // Swipe detection
@@ -77,7 +79,7 @@ function handleTouchStart(e) {
 function handleTouchMove(e) {
   if (!isDragging.value) return
   const currentX = e.changedTouches[0].screenX
-  translateX.value = currentX - touchStartX.value
+  swipeOffset.value = currentX - touchStartX.value
 }
 
 function handleTouchEnd(e) {
@@ -92,12 +94,7 @@ function handleTouchEnd(e) {
       prevImage()
     }
   } else {
-    // Reset position if swipe wasn't long enough
-    translateX.value = 0
-  }
-
-  if (props.images.length === 1) {
-    isLoading.value = false
+    swipeOffset.value = 0
   }
 }
 
@@ -130,31 +127,45 @@ onUnmounted(() => {
         <IconX class="w-8 h-8" />
       </button>
 
-      <!-- Image Container -->
+      <!-- Carousel Container -->
       <div
-        class="relative w-full h-full flex items-center justify-center p-4 overflow-hidden"
+        class="relative w-full h-full overflow-hidden"
         @touchstart="handleTouchStart"
         @touchmove="handleTouchMove"
         @touchend="handleTouchEnd"
         @click.stop
       >
-        <div v-if="isLoading" class="absolute inset-0 flex items-center justify-center z-10">
-          <IconSpinner class="w-10 h-10 text-white animate-spin" />
-        </div>
-
+        <!-- Images Carousel -->
         <div
-          class="relative w-full h-full flex items-center justify-center transition-transform duration-300 ease-out"
+          class="flex h-full"
           :style="{
-            transform: `translateX(${translateX}px)`,
+            transform: `translateX(${containerTranslateX})`,
             transition: isDragging ? 'none' : 'transform 0.3s ease-out',
           }"
         >
-          <img
-            :src="fullImageUrls[currentIndex]"
-            class="max-w-full max-h-full object-contain select-none"
-            draggable="false"
-            @load="onImageLoad"
-          />
+          <div
+            v-for="(imageUrl, index) in fullImageUrls"
+            :key="index"
+            class="shrink-0 w-screen h-full flex items-center justify-center p-4"
+          >
+            <!-- Loading placeholder with blur -->
+            <div
+              v-if="!loadedImages.has(index)"
+              class="absolute inset-0 flex items-center justify-center backdrop-blur-sm bg-gray-800 bg-opacity-30"
+            >
+              <IconSpinner class="w-10 h-10 text-white animate-spin" />
+            </div>
+
+            <!-- Actual image -->
+            <img
+              :src="imageUrl"
+              class="max-w-full max-h-full object-contain select-none"
+              :class="{ 'opacity-0': !loadedImages.has(index) }"
+              draggable="false"
+              @load="onImageLoad(index)"
+              lazy
+            />
+          </div>
         </div>
 
         <!-- Navigation Buttons (Visible on desktop/larger screens) -->
