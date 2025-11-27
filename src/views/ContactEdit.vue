@@ -8,6 +8,7 @@ import Modal from "../components/ui/Modal.vue"
 import Toast from "../components/ui/Toast.vue"
 import PageLayout from "../components/layout/PageLayout.vue"
 import PageHeader from "../components/layout/PageHeader.vue"
+import FixedSaveButton from "../components/FixedSaveButton.vue"
 
 const route = useRoute()
 const router = useRouter()
@@ -99,10 +100,7 @@ function goBack() {
       </div>
     </main>
 
-    <!-- Fixed Save Button -->
-    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-30">
-      <BaseButton class="w-full" @click="save">Save</BaseButton>
-    </div>
+    <FixedSaveButton @click="save" />
 
     <!-- Delete Confirmation Modal -->
     <Modal :show="showDeleteModal" title="Confirm Delete" @close="showDeleteModal = false">

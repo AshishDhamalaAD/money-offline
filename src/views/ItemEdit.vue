@@ -12,6 +12,7 @@ import PageLayout from "../components/layout/PageLayout.vue"
 import PageHeader from "../components/layout/PageHeader.vue"
 import IconPlus from "../components/icons/IconPlus.vue"
 import ImageGallery from "../components/ImageGallery.vue"
+import FixedSaveButton from "../components/FixedSaveButton.vue"
 
 const route = useRoute()
 const router = useRouter()
@@ -202,10 +203,7 @@ function goBack() {
       </div>
     </main>
 
-    <!-- Fixed Save Button -->
-    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-30">
-      <BaseButton class="w-full" @click="save">Save</BaseButton>
-    </div>
+    <FixedSaveButton @click="save" />
 
     <!-- Add Category Modal -->
     <Modal :show="showCategoryModal" title="Add New Category" @close="showCategoryModal = false">

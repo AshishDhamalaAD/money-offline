@@ -16,6 +16,7 @@ import { formatDateTimeForDB, roundAmount } from "../utils/dateUtils"
 import IconPlus from "../components/icons/IconPlus.vue"
 import IconX from "../components/icons/IconX.vue"
 import ImageGallery from "../components/ImageGallery.vue"
+import FixedSaveButton from "../components/FixedSaveButton.vue"
 
 const route = useRoute()
 const router = useRouter()
@@ -509,13 +510,13 @@ function openCategoryModalForProduct() {
 
       <!-- Total Amount (Moved to bottom) -->
       <div class="bg-gray-50 pb-6">
-        <div class="rounded-sm bg-white p-4 shadow-lg ring-1 ring-gray-200">
+        <div class="rounded-sm bg-white p-4 shadow-sm ring-1 ring-gray-200">
           <BaseInput
             v-model="form.amount"
             type="number"
             step="0.01"
             label="Total Amount"
-            class="text-3xl font-bold text-indigo-600"
+            class="font-bold text-indigo-600"
             :readonly="form.products.length > 0"
             required
           />
@@ -523,10 +524,7 @@ function openCategoryModalForProduct() {
       </div>
     </main>
 
-    <!-- Fixed Save Button -->
-    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-30">
-      <BaseButton class="w-full" :loading="saving" @click="save">Save</BaseButton>
-    </div>
+    <FixedSaveButton @click="save" />
 
     <!-- Add Category Modal -->
     <Modal :show="showCategoryModal" title="Add New Category" z-index="z-[60]" @close="showCategoryModal = false">
