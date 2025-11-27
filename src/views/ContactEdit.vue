@@ -89,7 +89,6 @@ function goBack() {
         >
           Delete
         </button>
-        <BaseButton size="sm" @click="save">Save</BaseButton>
       </template>
     </PageHeader>
 
@@ -97,12 +96,13 @@ function goBack() {
       <div class="bg-white p-4 rounded-xl shadow-sm space-y-4">
         <BaseInput v-model="form.name" label="Name" autoFocus required />
         <BaseInput v-model="form.phone" label="Phone (Optional)" />
-
-        <div class="pt-4 flex gap-3">
-          <BaseButton class="flex-1" @click="save">Save</BaseButton>
-        </div>
       </div>
     </main>
+
+    <!-- Fixed Save Button -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-30">
+      <BaseButton class="w-full" @click="save">Save</BaseButton>
+    </div>
 
     <!-- Delete Confirmation Modal -->
     <Modal :show="showDeleteModal" title="Confirm Delete" @close="showDeleteModal = false">

@@ -354,7 +354,6 @@ function openCategoryModalForProduct() {
         >
           Delete
         </button>
-        <BaseButton size="sm" :loading="saving" @click="save">Save</BaseButton>
       </template>
     </PageHeader>
 
@@ -509,7 +508,7 @@ function openCategoryModalForProduct() {
       </div>
 
       <!-- Total Amount (Moved to bottom) -->
-      <div class="sticky bottom-0 bg-gray-50 pt-4 pb-6 z-20">
+      <div class="bg-gray-50 pb-6">
         <div class="rounded-sm bg-white p-4 shadow-lg ring-1 ring-gray-200">
           <BaseInput
             v-model="form.amount"
@@ -523,6 +522,11 @@ function openCategoryModalForProduct() {
         </div>
       </div>
     </main>
+
+    <!-- Fixed Save Button -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-30">
+      <BaseButton class="w-full" :loading="saving" @click="save">Save</BaseButton>
+    </div>
 
     <!-- Add Category Modal -->
     <Modal :show="showCategoryModal" title="Add New Category" z-index="z-[60]" @close="showCategoryModal = false">
