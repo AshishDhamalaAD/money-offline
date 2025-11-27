@@ -60,7 +60,7 @@ function navigateToEdit(type, item) {
       type,
       itemId: item.id,
     },
-    query: { tab: activeTab.value, search: searchQuery.value || undefined }, // Pass tab and search to return to correct state
+    query: { tab: activeTab.value, search: searchQuery.value || undefined, limit: visibleLimit.value !== paginationLimit ? visibleLimit.value : undefined }, // Pass tab, search, and limit to return to correct state
   })
 }
 
@@ -71,7 +71,7 @@ function navigateToAdd(type) {
       bookId,
       type,
     },
-    query: { tab: activeTab.value, search: searchQuery.value || undefined },
+    query: { tab: activeTab.value, search: searchQuery.value || undefined, limit: visibleLimit.value !== paginationLimit ? visibleLimit.value : undefined },
   })
 }
 
@@ -113,7 +113,7 @@ watch(activeTab, () => {
 
 // Pagination
 const paginationLimit = 10
-const visibleLimit = ref(paginationLimit)
+const visibleLimit = ref(parseInt(route.query.limit) || paginationLimit)
 
 const paginatedItems = computed(() => {
   return filteredItems.value.slice(0, visibleLimit.value)
@@ -130,6 +130,19 @@ function loadMore() {
 // Reset pagination when filters change
 watch([activeTab, searchQuery], () => {
   visibleLimit.value = paginationLimit
+})
+
+// Update URL when pagination changes
+watch(visibleLimit, (newLimit) => {
+  if (newLimit !== paginationLimit) {
+    const query = { ...route.query, limit: newLimit }
+    router.replace({ query })
+  } else {
+    // Remove limit from URL if it's the default
+    const query = { ...route.query }
+    delete query.limit
+    router.replace({ query })
+  }
 })
 </script>
 
