@@ -123,7 +123,7 @@ const allImages = computed(() => {
 
     <div
       v-if="allImages.length > 0"
-      class="flex justify-between items-start gap-2"
+      class="flex items-start gap-2"
       :class="{
         'mt-2': transaction.description,
       }"
