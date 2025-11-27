@@ -156,7 +156,7 @@ export const useMasterStore = defineStore('master', () => {
 
     // Products
     async function addProduct(name, rate, description, quantityType, bookId, categoryId) {
-        return await db.products.add({
+        const productId = await db.products.add({
             name,
             rate: roundAmount(rate),
             description,
@@ -167,17 +167,39 @@ export const useMasterStore = defineStore('master', () => {
             updated_at: formatDateTimeForDB(),
             sync_status: 'pending'
         })
+
+        addProductRate({
+            product_id: productId,
+            rate: roundAmount(rate),
+        })
+
+        return productId;
     }
     async function updateProduct(id, updates) {
         const updatedData = { ...updates }
+
+        // Fetch current product to check for rate change
+        const currentProduct = await db.products.get(id)
+
         if (updatedData.rate !== undefined) {
             updatedData.rate = roundAmount(updatedData.rate)
         }
-        return await db.products.update(id, {
+
+        const result = await db.products.update(id, {
             ...updatedData,
             updated_at: formatDateTimeForDB(),
             sync_status: 'pending'
         })
+
+        // Check if rate changed and add to history
+        if (updatedData.rate !== undefined && currentProduct && currentProduct.rate !== updatedData.rate) {
+            addProductRate({
+                product_id: id,
+                rate: updatedData.rate,
+            })
+        }
+
+        return result
     }
     async function deleteProduct(id) {
         // Check if product is used in any transaction line items
@@ -196,6 +218,39 @@ export const useMasterStore = defineStore('master', () => {
         }
 
         return await db.products.delete(id)
+    }
+
+    // Product Rates
+    async function getProductRates(productId) {
+        return await db.product_rates
+            .where('product_id')
+            .equals(productId)
+            .reverse()
+            .sortBy('created_at')
+    }
+
+    async function addProductRate(rateData) {
+        return await db.product_rates.add({
+            ...rateData,
+            rate: roundAmount(rateData.rate),
+            created_at: formatDateTimeForDB(),
+            updated_at: formatDateTimeForDB(),
+        })
+    }
+
+    async function updateProductRate(id, updates) {
+        const updatedData = { ...updates }
+        if (updatedData.rate !== undefined) {
+            updatedData.rate = roundAmount(updatedData.rate)
+        }
+        return await db.product_rates.update(id, {
+            ...updatedData,
+            updated_at: formatDateTimeForDB(),
+        })
+    }
+
+    async function deleteProductRate(id) {
+        return await db.product_rates.delete(id)
     }
 
     // Initialize default data if empty - Keeping this simple for now, maybe not needed if we rely on user creation
@@ -230,6 +285,10 @@ export const useMasterStore = defineStore('master', () => {
         addProduct,
         updateProduct,
         deleteProduct,
+        getProductRates,
+        addProductRate,
+        updateProductRate,
+        deleteProductRate,
         initDefaults
     }
 })

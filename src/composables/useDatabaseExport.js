@@ -3,7 +3,7 @@ import { formatDateTimeForDB } from "../utils/dateUtils"
 
 export function useDatabaseExport() {
     async function getDatabaseDump(onProgress) {
-        const tables = ["books", "transactions", "categories", "contacts", "payment_modes", "products"]
+        const tables = ["books", "transactions", "categories", "contacts", "payment_modes", "products", "product_rates"]
         const exportData = {
             version: 5,
             exportDate: formatDateTimeForDB(),

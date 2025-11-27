@@ -52,3 +52,7 @@ db.version(9).stores({
     products: '++id, name, rate, description, quantity_type, book_id, category_id, sync_status, created_at, updated_at, attachments',
     transactions: '++id, book_id, type, date, *category_ids, contact_id, payment_mode_id, discount, charge, amount, created_at, updated_at, sync_status, attachments'
 });
+
+db.version(10).stores({
+    product_rates: '++id, product_id, rate, created_at, updated_at'
+});

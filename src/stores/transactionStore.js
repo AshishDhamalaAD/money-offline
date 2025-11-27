@@ -5,10 +5,12 @@ import { ref, computed } from 'vue'
 import { formatDateTimeForDB, roundAmount } from '../utils/dateUtils'
 import { useSyncStore } from './syncStore'
 import { useSettingsStore } from './settingsStore'
+import { useMasterStore } from './masterStore'
 
 export const useTransactionStore = defineStore('transaction', () => {
     const transactions = ref([])
     const currentBookId = ref(null)
+    const masterStore = useMasterStore()
 
     // Subscribe to transactions for the current book
     // We'll update this subscription when currentBookId changes
@@ -79,6 +81,21 @@ export const useTransactionStore = defineStore('transaction', () => {
             sync_status: 'pending'
         })
 
+        // Check for rate changes in products
+        if (products.length > 0) {
+            for (const p of products) {
+                if (p.product_id) {
+                    const product = await db.products.get(p.product_id)
+                    if (product && product.rate !== p.rate) {
+                        await masterStore.addProductRate({
+                            product_id: p.product_id,
+                            rate: p.rate,
+                        });
+                    }
+                }
+            }
+        }
+
         // Trigger background sync
         const syncStore = useSyncStore()
         syncStore.triggerSync()
@@ -119,6 +136,22 @@ export const useTransactionStore = defineStore('transaction', () => {
         }
 
         await db.transactions.update(id, updateData)
+
+        // Check for rate changes in products if products were updated
+        if (updateData.products) {
+            for (const p of updateData.products) {
+                if (p.product_id) {
+                    const product = await db.products.get(p.product_id)
+                    // Note: p.rate is already rounded above if it existed
+                    if (product && product.rate !== p.rate) {
+                        await masterStore.addProductRate({
+                            product_id: p.product_id,
+                            rate: p.rate,
+                        })
+                    }
+                }
+            }
+        }
 
         // Trigger background sync
         const syncStore = useSyncStore()

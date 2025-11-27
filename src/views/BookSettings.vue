@@ -7,8 +7,10 @@ import BaseButton from "../components/ui/BaseButton.vue"
 import PageLayout from "../components/layout/PageLayout.vue"
 import PageHeader from "../components/layout/PageHeader.vue"
 import LegacyImport from "../components/settings/LegacyImport.vue"
+import ProductRateImport from "../components/settings/ProductRateImport.vue"
 import SearchInput from "../components/ui/SearchInput.vue"
 import IconChevronRight from "../components/icons/IconChevronRight.vue"
+import IconHistory from "../components/icons/IconHistory.vue"
 import { resizedImageUrls } from "../utils/imageUtils"
 
 const route = useRoute()
@@ -42,7 +44,7 @@ watch(activeTab, (newTab) => {
 watch(
   () => route.query.tab,
   (newTab) => {
-    if (newTab && ["categories", "products", "paymentModes", "import"].includes(newTab)) {
+    if (newTab && ["categories", "products", "paymentModes", "import", "rateHistoryImport"].includes(newTab)) {
       activeTab.value = newTab
     }
   }
@@ -75,11 +77,22 @@ function navigateToAdd(type) {
   })
 }
 
+function navigateToHistory(product) {
+  router.push({
+    name: "product-rates-history",
+    params: {
+      bookId,
+      productId: product.id,
+    },
+  })
+}
+
 const tabs = [
   { id: "categories", label: "Categories" },
   { id: "products", label: "Products" },
   { id: "paymentModes", label: "Payment Modes" },
   { id: "import", label: "Import Legacy Data" },
+  { id: "rateHistoryImport", label: "Import Rate History" },
 ]
 
 const searchQuery = ref(route.query.search || "")
@@ -185,7 +198,7 @@ watch(visibleLimit, (newLimit) => {
           </div>
 
           <!-- Search Input -->
-          <div v-if="activeTab !== 'import'">
+          <div v-if="activeTab !== 'import' && activeTab !== 'rateHistoryImport'">
             <SearchInput v-model="searchQuery" placeholder="Search..." />
           </div>
         </div>
@@ -229,7 +242,17 @@ watch(visibleLimit, (newLimit) => {
                 <p class="text-xs text-gray-400">{{ item.description }}</p>
               </div>
             </div>
-            <IconChevronRight class="text-gray-400" />
+
+            <div class="flex items-center gap-2">
+              <button
+                @click.stop="navigateToHistory(item)"
+                class="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors"
+                title="View Rate History"
+              >
+                <IconHistory class="w-5 h-5" />
+              </button>
+              <IconChevronRight class="text-gray-400" />
+            </div>
           </div>
           <div v-if="filteredItems.length === 0" class="text-center text-gray-500 py-8">No products found.</div>
           <div v-if="hasMoreItems" class="flex justify-center py-4">
@@ -260,6 +283,11 @@ watch(visibleLimit, (newLimit) => {
         <!-- Legacy Import -->
         <div v-if="activeTab === 'import'">
           <LegacyImport :book-id="bookId" />
+        </div>
+
+        <!-- Rate History Import -->
+        <div v-if="activeTab === 'rateHistoryImport'">
+          <ProductRateImport />
         </div>
       </div>
     </main>

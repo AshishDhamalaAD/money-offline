@@ -30,6 +30,11 @@ const router = createRouter({
             component: () => import('../views/ItemEdit.vue')
         },
         {
+            path: '/book/:bookId/products/:productId/history',
+            name: 'product-rates-history',
+            component: () => import('../views/ProductRatesHistory.vue')
+        },
+        {
             path: '/book/:bookId/transaction/create',
             name: 'create-transaction',
             component: () => import('../views/TransactionForm.vue')
