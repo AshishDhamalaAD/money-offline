@@ -3,8 +3,6 @@ import { db } from '../db'
 import { liveQuery } from 'dexie'
 import { ref } from 'vue'
 import { formatDateTimeForDB, roundAmount } from '../utils/dateUtils'
-import { attachImagesTo } from "../utils/imageUtils"
-import { PRODUCT_IMAGES } from "../constants"
 
 export const useMasterStore = defineStore('master', () => {
     const categories = ref([])
@@ -45,8 +43,8 @@ export const useMasterStore = defineStore('master', () => {
 
         productSubscription = liveQuery(() =>
             db.products.where('book_id').equals(bookId).toArray()
-        ).subscribe(async data => {
-            products.value = await attachImagesTo(data, PRODUCT_IMAGES);
+        ).subscribe(data => {
+            products.value = data;
         })
     }
 

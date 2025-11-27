@@ -9,6 +9,7 @@ import PageHeader from "../components/layout/PageHeader.vue"
 import LegacyImport from "../components/settings/LegacyImport.vue"
 import SearchInput from "../components/ui/SearchInput.vue"
 import IconChevronRight from "../components/icons/IconChevronRight.vue"
+import { resizedImageUrls } from "../utils/imageUtils"
 
 const route = useRoute()
 const router = useRouter()
@@ -192,8 +193,8 @@ watch([activeTab, searchQuery], () => {
             class="flex justify-between items-center gap-2 bg-white p-4 rounded-sm shadow-sm cursor-pointer hover:bg-gray-50 transition-colors"
           >
             <div class="flex items-center gap-2">
-              <div v-if="item.image_urls && item.image_urls.length > 0" class="shrink-0">
-                <img :src="item.resizedImageUrls()[0]" alt="" class="w-8 h-8 object-cover rounded-full"></img>
+              <div v-if="item.attachments && item.attachments.length > 0" class="shrink-0">
+                <img :src="resizedImageUrls({imageUrls: item.attachments})[0]" alt="" class="w-8 h-8 object-cover rounded-full"></img>
               </div>
               <div>
                 <p class="font-medium">{{ item.name }}</p>

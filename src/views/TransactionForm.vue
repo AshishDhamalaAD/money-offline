@@ -15,6 +15,7 @@ import PageHeader from "../components/layout/PageHeader.vue"
 import { formatDateTimeForDB, roundAmount } from "../utils/dateUtils"
 import IconPlus from "../components/icons/IconPlus.vue"
 import IconX from "../components/icons/IconX.vue"
+import { resizedImageUrls } from "../utils/imageUtils"
 
 const route = useRoute()
 const router = useRouter()
@@ -80,8 +81,8 @@ onMounted(async () => {
     // Better to fetch from DB to be safe
     const t = transaction ? transaction : await db.transactions.get(id)
     if (t) {
-      if (t.image_urls && t.image_urls.length > 0) {
-        imageUrls.value = t.resizedImageUrls(200)
+      if (t.attachments && t.attachments.length > 0) {
+        imageUrls.value = resizedImageUrls({ imageUrls: t.attachments })
       }
 
       // Convert date from 'YYYY-MM-DD HH:mm:ss' to 'YYYY-MM-DDTHH:mm' for datetime-local input

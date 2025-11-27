@@ -11,6 +11,7 @@ import Toast from "../components/ui/Toast.vue"
 import PageLayout from "../components/layout/PageLayout.vue"
 import PageHeader from "../components/layout/PageHeader.vue"
 import IconPlus from "../components/icons/IconPlus.vue"
+import { resizedImageUrls } from "../utils/imageUtils"
 
 const route = useRoute()
 const router = useRouter()
@@ -88,8 +89,8 @@ function fillForm(item) {
   form.value.quantity_type = item.quantity_type || ""
   form.value.category_id = item.category_id || ""
 
-  if (type === "products" && item.image_urls && item.image_urls.length > 0) {
-    imageUrls.value = item.resizedImageUrls(200)
+  if (type === "products" && item.attachments && item.attachments.length > 0) {
+    imageUrls.value = resizedImageUrls({ width: 200, imageUrls: item.attachments })
   }
 }
 

@@ -3,6 +3,7 @@ import { computed, onMounted } from "vue"
 import { useMasterStore } from "../stores/masterStore"
 import { formatTime } from "../utils/dateUtils"
 import { formatCurrency } from "../utils/moneyUtils"
+import { resizedImageUrls } from "../utils/imageUtils"
 
 const props = defineProps({
   transaction: {
@@ -101,6 +102,19 @@ const charge = computed(() => parseFloat(props.transaction.charge) || 0)
     <div class="flex justify-between items-start gap-2">
       <span class="text-xs text-gray-600 flex-1 whitespace-pre-wrap" v-html="transaction.description"></span>
       <span class="text-xs text-gray-500 shrink-0">{{ formattedTime }}</span>
+    </div>
+
+    <div
+      v-if="transaction.attachments && transaction.attachments.length > 0"
+      class="flex justify-between items-start gap-2"
+    >
+      <img
+        v-for="attachment in resizedImageUrls({ imageUrls: transaction.attachments })"
+        :key="`${transaction.id}-${attachment}`"
+        class="w-[30px] h-[30px] object-cover"
+        :src="attachment"
+        loading="lazy"
+      />
     </div>
   </div>
 </template>
