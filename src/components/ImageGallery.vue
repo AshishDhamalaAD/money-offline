@@ -104,7 +104,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div v-if="images.length > 0" class="flex items-center justify-center gap-2">
+  <div v-if="images.length > 0" class="flex items-center gap-2 overflow-x-auto px-2">
     <img
       v-for="(url, index) in resizedImageUrls({ width: 200, imageUrls: images })"
       :key="`${index}-${url}`"
