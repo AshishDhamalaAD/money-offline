@@ -10,6 +10,7 @@ import SearchInput from "../components/ui/SearchInput.vue"
 import IconChevronRight from "../components/icons/IconChevronRight.vue"
 import IconHistory from "../components/icons/IconHistory.vue"
 import { resizedImageUrls } from "../utils/imageUtils"
+import { formatCurrency } from "../utils/moneyUtils"
 
 const route = useRoute()
 const router = useRouter()
@@ -246,7 +247,7 @@ watch(visibleLimit, (newLimit) => {
               </div>
               <div>
                 <p class="font-medium">{{ item.name }}</p>
-                <p class="text-xs text-gray-500">Rate: {{ item.rate }}</p>
+                <p class="text-xs text-gray-500">Rate: {{ formatCurrency(item.rate) }}</p>
                 <p class="text-xs text-gray-400">{{ item.description }}</p>
               </div>
             </div>
