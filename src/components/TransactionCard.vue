@@ -39,6 +39,23 @@ const productsTotal = computed(() => {
 
 const discount = computed(() => parseFloat(props.transaction.discount) || 0)
 const charge = computed(() => parseFloat(props.transaction.charge) || 0)
+
+const allImages = computed(() => {
+  const images = []
+  // Transaction attachments
+  if (props.transaction.attachments) {
+    images.push(...props.transaction.attachments)
+  }
+  // Product attachments
+  if (props.transaction.products) {
+    props.transaction.products.forEach((p) => {
+      if (p.attachments) {
+        images.push(...p.attachments)
+      }
+    })
+  }
+  return images
+})
 </script>
 
 <template>
@@ -105,11 +122,14 @@ const charge = computed(() => parseFloat(props.transaction.charge) || 0)
     </div>
 
     <div
-      v-if="transaction.attachments && transaction.attachments.length > 0"
+      v-if="allImages.length > 0"
       class="flex justify-between items-start gap-2"
+      :class="{
+        'mt-2': transaction.description,
+      }"
     >
       <img
-        v-for="attachment in resizedImageUrls({ imageUrls: transaction.attachments })"
+        v-for="attachment in resizedImageUrls({ imageUrls: allImages })"
         :key="`${transaction.id}-${attachment}`"
         class="w-[30px] h-[30px] object-cover"
         :src="attachment"

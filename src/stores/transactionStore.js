@@ -38,7 +38,8 @@ export const useTransactionStore = defineStore('transaction', () => {
                 if (tx.products && Array.isArray(tx.products)) {
                     tx.products = tx.products.map(p => ({
                         ...p,
-                        name: productMap.get(p.product_id)?.name || p.name || ''
+                        name: productMap.get(p.product_id)?.name || p.name || '',
+                        attachments: productMap.get(p.product_id)?.attachments || []
                     }))
                 }
                 return tx
@@ -90,11 +91,16 @@ export const useTransactionStore = defineStore('transaction', () => {
 
         // Round all product amounts to 2 decimal places if products exist
         if (plainUpdates.products) {
-            plainUpdates.products = plainUpdates.products.map(p => ({
-                ...p,
-                rate: roundAmount(p.rate),
-                amount: roundAmount(p.amount)
-            }))
+            plainUpdates.products = plainUpdates.products.map(p => {
+                delete p.name;
+                delete p.attachments;
+
+                return {
+                    ...p,
+                    rate: roundAmount(p.rate),
+                    amount: roundAmount(p.amount)
+                }
+            })
         }
 
         // Convert date from datetime-local format to database format if present
