@@ -15,7 +15,7 @@ import PageHeader from "../components/layout/PageHeader.vue"
 import { formatDateTimeForDB, roundAmount } from "../utils/dateUtils"
 import IconPlus from "../components/icons/IconPlus.vue"
 import IconX from "../components/icons/IconX.vue"
-import { resizedImageUrls } from "../utils/imageUtils"
+import ImageGallery from "../components/ImageGallery.vue"
 
 const route = useRoute()
 const router = useRouter()
@@ -25,7 +25,7 @@ const masterStore = useMasterStore()
 const bookId = parseInt(route.params.bookId)
 const isEdit = !!route.params.id
 
-const imageUrls = ref([])
+const transactionAttachments = ref([])
 
 const form = ref({
   type: "out",
@@ -48,6 +48,26 @@ const form = ref({
   amount: 0,
   discount: 0,
   charge: 0,
+})
+
+const allImages = computed(() => {
+  const images = []
+  // Transaction attachments
+  if (transactionAttachments.value.length > 0) {
+    images.push(...transactionAttachments.value)
+  }
+  // Product attachments
+  if (form.value.products) {
+    form.value.products.forEach((p) => {
+      if (p.product_id) {
+        const product = masterStore.products.find((mp) => mp.id === p.product_id)
+        if (product && product.attachments) {
+          images.push(...product.attachments)
+        }
+      }
+    })
+  }
+  return images
 })
 
 const selectedCategories = computed(() => {
@@ -82,7 +102,7 @@ onMounted(async () => {
     const t = transaction ? transaction : await db.transactions.get(id)
     if (t) {
       if (t.attachments && t.attachments.length > 0) {
-        imageUrls.value = resizedImageUrls({ imageUrls: t.attachments })
+        transactionAttachments.value = t.attachments
       }
 
       // Convert date from 'YYYY-MM-DD HH:mm:ss' to 'YYYY-MM-DDTHH:mm' for datetime-local input
@@ -361,11 +381,7 @@ function openCategoryModalForProduct() {
         </button>
       </div>
 
-      <div v-if="imageUrls.length > 0" class="flex items-center justify-center gap-2">
-        <div v-for="url in imageUrls" :key="url" class="rounded-lg overflow-hidden shrink-0">
-          <img :src="url" class="w-40 h-40 object-cover" />
-        </div>
-      </div>
+      <ImageGallery :images="allImages" />
 
       <!-- Basic Fields -->
       <div class="space-y-4 rounded-sm bg-white p-4 shadow-sm">

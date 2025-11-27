@@ -11,7 +11,7 @@ import Toast from "../components/ui/Toast.vue"
 import PageLayout from "../components/layout/PageLayout.vue"
 import PageHeader from "../components/layout/PageHeader.vue"
 import IconPlus from "../components/icons/IconPlus.vue"
-import { resizedImageUrls } from "../utils/imageUtils"
+import ImageGallery from "../components/ImageGallery.vue"
 
 const route = useRoute()
 const router = useRouter()
@@ -22,7 +22,7 @@ const type = route.params.type // 'categories', 'products', 'paymentModes'
 const itemId = route.params.itemId ? parseInt(route.params.itemId) : null
 const isNew = !itemId
 
-const imageUrls = ref([])
+const attachments = ref([])
 
 const form = ref({
   name: "",
@@ -90,7 +90,7 @@ function fillForm(item) {
   form.value.category_id = item.category_id || ""
 
   if (type === "products" && item.attachments && item.attachments.length > 0) {
-    imageUrls.value = resizedImageUrls({ width: 200, imageUrls: item.attachments })
+    attachments.value = item.attachments
   }
 }
 
@@ -166,11 +166,7 @@ function goBack() {
 
     <main class="p-4 space-y-6">
       <div class="bg-white p-4 rounded-sm shadow-sm space-y-4">
-        <div v-if="imageUrls.length > 0" class="flex items-center justify-center gap-2">
-          <div v-for="url in imageUrls" :key="url" class="rounded-lg overflow-hidden shrink-0">
-            <img :src="url" class="w-40 h-40 object-cover" />
-          </div>
-        </div>
+        <ImageGallery :images="attachments" />
 
         <BaseInput v-model="form.name" label="Name" autoFocus required />
 
