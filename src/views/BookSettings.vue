@@ -6,8 +6,6 @@ import { useMasterStore } from "../stores/masterStore"
 import BaseButton from "../components/ui/BaseButton.vue"
 import PageLayout from "../components/layout/PageLayout.vue"
 import PageHeader from "../components/layout/PageHeader.vue"
-import LegacyImport from "../components/settings/LegacyImport.vue"
-import ProductRateImport from "../components/settings/ProductRateImport.vue"
 import SearchInput from "../components/ui/SearchInput.vue"
 import IconChevronRight from "../components/icons/IconChevronRight.vue"
 import IconHistory from "../components/icons/IconHistory.vue"
@@ -44,7 +42,7 @@ watch(activeTab, (newTab) => {
 watch(
   () => route.query.tab,
   (newTab) => {
-    if (newTab && ["categories", "products", "paymentModes", "import", "rateHistoryImport"].includes(newTab)) {
+    if (newTab && ["categories", "products", "paymentModes"].includes(newTab)) {
       activeTab.value = newTab
     }
   }
@@ -62,7 +60,11 @@ function navigateToEdit(type, item) {
       type,
       itemId: item.id,
     },
-    query: { tab: activeTab.value, search: searchQuery.value || undefined, limit: visibleLimit.value !== paginationLimit ? visibleLimit.value : undefined }, // Pass tab, search, and limit to return to correct state
+    query: {
+      tab: activeTab.value,
+      search: searchQuery.value || undefined,
+      limit: visibleLimit.value !== paginationLimit ? visibleLimit.value : undefined,
+    }, // Pass tab, search, and limit to return to correct state
   })
 }
 
@@ -73,7 +75,11 @@ function navigateToAdd(type) {
       bookId,
       type,
     },
-    query: { tab: activeTab.value, search: searchQuery.value || undefined, limit: visibleLimit.value !== paginationLimit ? visibleLimit.value : undefined },
+    query: {
+      tab: activeTab.value,
+      search: searchQuery.value || undefined,
+      limit: visibleLimit.value !== paginationLimit ? visibleLimit.value : undefined,
+    },
   })
 }
 
@@ -91,8 +97,6 @@ const tabs = [
   { id: "categories", label: "Categories" },
   { id: "products", label: "Products" },
   { id: "paymentModes", label: "Payment Modes" },
-  { id: "import", label: "Import Legacy Data" },
-  { id: "rateHistoryImport", label: "Import Rate History" },
 ]
 
 const searchQuery = ref(route.query.search || "")
@@ -198,7 +202,7 @@ watch(visibleLimit, (newLimit) => {
           </div>
 
           <!-- Search Input -->
-          <div v-if="activeTab !== 'import' && activeTab !== 'rateHistoryImport'">
+          <div>
             <SearchInput v-model="searchQuery" placeholder="Search..." />
           </div>
         </div>
@@ -233,7 +237,11 @@ watch(visibleLimit, (newLimit) => {
           >
             <div class="flex items-center gap-4">
               <div v-if="item.attachments && item.attachments.length > 0" class="shrink-0 relative">
-                <span v-if="item.attachments.length > 1" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">{{ item.attachments.length }}</span>
+                <span
+                  v-if="item.attachments.length > 1"
+                  class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
+                  >{{ item.attachments.length }}</span
+                >
                 <img :src="resizedImageUrls({imageUrls: item.attachments})[0]" alt="" class="w-8 h-8 object-cover rounded-full"></img>
               </div>
               <div>
@@ -278,16 +286,6 @@ watch(visibleLimit, (newLimit) => {
           <div v-if="hasMoreItems" class="flex justify-center py-4">
             <BaseButton variant="secondary" @click="loadMore">Load More</BaseButton>
           </div>
-        </div>
-
-        <!-- Legacy Import -->
-        <div v-if="activeTab === 'import'">
-          <LegacyImport :book-id="bookId" />
-        </div>
-
-        <!-- Rate History Import -->
-        <div v-if="activeTab === 'rateHistoryImport'">
-          <ProductRateImport />
         </div>
       </div>
     </main>
