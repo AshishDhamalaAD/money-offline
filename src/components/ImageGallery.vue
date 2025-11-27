@@ -4,6 +4,7 @@ import { resizedImageUrls } from "../utils/imageUtils"
 import { useSettingsStore } from "../stores/settingsStore"
 import IconX from "./icons/IconX.vue"
 import IconChevronRight from "./icons/IconChevronRight.vue"
+import IconSpinner from "./icons/IconSpinner.vue"
 
 const settingsStore = useSettingsStore()
 
@@ -16,6 +17,9 @@ const props = defineProps({
 
 const showModal = ref(false)
 const currentIndex = ref(0)
+const isLoading = ref(false)
+const translateX = ref(0)
+const isDragging = ref(false)
 
 const fullImageUrls = computed(() => {
   return props.images.map((url) => `${settingsStore.apiEndpoint}/storage/${url}`)
@@ -24,7 +28,13 @@ const fullImageUrls = computed(() => {
 function openModal(index) {
   currentIndex.value = index
   showModal.value = true
+  isLoading.value = true
+  translateX.value = 0
   document.body.style.overflow = "hidden" // Prevent background scrolling
+}
+
+function onImageLoad() {
+  isLoading.value = false
 }
 
 function closeModal() {
@@ -35,38 +45,59 @@ function closeModal() {
 function nextImage() {
   if (currentIndex.value < props.images.length - 1) {
     currentIndex.value++
+    isLoading.value = true
+    translateX.value = 0
   } else {
     currentIndex.value = 0 // Loop back to start
+    isLoading.value = true
+    translateX.value = 0
   }
 }
 
 function prevImage() {
   if (currentIndex.value > 0) {
     currentIndex.value--
+    isLoading.value = true
+    translateX.value = 0
   } else {
     currentIndex.value = props.images.length - 1 // Loop to end
+    isLoading.value = true
+    translateX.value = 0
   }
 }
 
 // Swipe detection
 const touchStartX = ref(0)
-const touchEndX = ref(0)
 
 function handleTouchStart(e) {
   touchStartX.value = e.changedTouches[0].screenX
+  isDragging.value = true
+}
+
+function handleTouchMove(e) {
+  if (!isDragging.value) return
+  const currentX = e.changedTouches[0].screenX
+  translateX.value = currentX - touchStartX.value
 }
 
 function handleTouchEnd(e) {
-  touchEndX.value = e.changedTouches[0].screenX
-  handleSwipe()
-}
+  isDragging.value = false
+  const touchEndX = e.changedTouches[0].screenX
+  const diff = touchEndX - touchStartX.value
 
-function handleSwipe() {
-  if (touchEndX.value < touchStartX.value - 50) {
-    nextImage() // Swipe Left -> Next
+  if (Math.abs(diff) > 50) {
+    if (diff < 0) {
+      nextImage()
+    } else {
+      prevImage()
+    }
+  } else {
+    // Reset position if swipe wasn't long enough
+    translateX.value = 0
   }
-  if (touchEndX.value > touchStartX.value + 50) {
-    prevImage() // Swipe Right -> Prev
+
+  if (props.images.length === 1) {
+    isLoading.value = false
   }
 }
 
@@ -101,16 +132,30 @@ onUnmounted(() => {
 
       <!-- Image Container -->
       <div
-        class="relative w-full h-full flex items-center justify-center p-4"
+        class="relative w-full h-full flex items-center justify-center p-4 overflow-hidden"
         @touchstart="handleTouchStart"
+        @touchmove="handleTouchMove"
         @touchend="handleTouchEnd"
         @click.stop
       >
-        <img
-          :src="fullImageUrls[currentIndex]"
-          class="max-w-full max-h-full object-contain select-none"
-          draggable="false"
-        />
+        <div v-if="isLoading" class="absolute inset-0 flex items-center justify-center z-10">
+          <IconSpinner class="w-10 h-10 text-white animate-spin" />
+        </div>
+
+        <div
+          class="relative w-full h-full flex items-center justify-center transition-transform duration-300 ease-out"
+          :style="{
+            transform: `translateX(${translateX}px)`,
+            transition: isDragging ? 'none' : 'transform 0.3s ease-out',
+          }"
+        >
+          <img
+            :src="fullImageUrls[currentIndex]"
+            class="max-w-full max-h-full object-contain select-none"
+            draggable="false"
+            @load="onImageLoad"
+          />
+        </div>
 
         <!-- Navigation Buttons (Visible on desktop/larger screens) -->
         <button
