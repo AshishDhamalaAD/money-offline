@@ -28,7 +28,14 @@ onMounted(async () => {
 
 // Watch for tab changes to update URL
 watch(activeTab, (newTab) => {
-  router.replace({ query: { ...route.query, tab: newTab } })
+  const query = { ...route.query, tab: newTab }
+  // Keep search if switching tabs? Usually better to reset, but user asked to persist when going to edit and back.
+  // If switching tabs, maybe reset search? The existing code resets search when tab changes.
+  // Let's keep that behavior for now.
+  if (route.query.tab !== newTab) {
+    delete query.search
+  }
+  router.replace({ query })
 })
 
 // Watch route query to update activeTab (for back/forward navigation)
@@ -53,7 +60,7 @@ function navigateToEdit(type, item) {
       type,
       itemId: item.id,
     },
-    query: { tab: activeTab.value }, // Pass tab to return to correct tab
+    query: { tab: activeTab.value, search: searchQuery.value || undefined }, // Pass tab and search to return to correct state
   })
 }
 
@@ -64,7 +71,7 @@ function navigateToAdd(type) {
       bookId,
       type,
     },
-    query: { tab: activeTab.value },
+    query: { tab: activeTab.value, search: searchQuery.value || undefined },
   })
 }
 
@@ -75,7 +82,13 @@ const tabs = [
   { id: "import", label: "Import Legacy Data" },
 ]
 
-const searchQuery = ref("")
+const searchQuery = ref(route.query.search || "")
+
+// Update URL when search changes
+watch(searchQuery, (newQuery) => {
+  const query = { ...route.query, search: newQuery || undefined }
+  router.replace({ query })
+})
 
 const filteredItems = computed(() => {
   let items = []
