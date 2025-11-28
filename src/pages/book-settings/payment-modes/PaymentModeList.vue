@@ -105,10 +105,7 @@ function navigateToEdit(item) {
 
 <template>
   <PageLayout>
-    <PageHeader
-      :title="`${book?.name || 'Book'} Settings`"
-      :back-route="{ name: 'book-details', params: { id: bookId } }"
-    />
+    <PageHeader :title="`${book?.name || 'Book'}`" :back-route="{ name: 'book-details', params: { id: bookId } }" />
 
     <main class="p-4 space-y-6">
       <SettingsTabs :book-id="bookId" />
