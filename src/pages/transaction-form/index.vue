@@ -17,7 +17,7 @@ import BaseButton from "@/components/common/BaseButton.vue"
 import BaseInput from "@/components/common/BaseInput.vue"
 import BaseSearchableSelect from "@/components/common/BaseSearchableSelect.vue"
 import BaseModal from "@/components/common/BaseModal.vue"
-import ImageGallery from "@/components/common/ImageGallery.vue"
+import LightGallery from "@/components/common/LightGallery.vue"
 import FixedSaveButton from "@/components/common/FixedSaveButton.vue"
 import PageLayout from "@/components/layout/PageLayout.vue"
 import PageHeader from "@/components/layout/PageHeader.vue"
@@ -392,7 +392,7 @@ function openCategoryModalForProduct() {
         </button>
       </div>
 
-      <ImageGallery :images="allImages" />
+      <LightGallery :images="allImages" />
 
       <!-- Basic Fields -->
       <div class="space-y-4 rounded-sm bg-white p-4 shadow-sm">

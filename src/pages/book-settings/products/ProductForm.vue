@@ -12,7 +12,7 @@ import BaseInput from "@/components/common/BaseInput.vue"
 import BaseSearchableSelect from "@/components/common/BaseSearchableSelect.vue"
 import BaseModal from "@/components/common/BaseModal.vue"
 import BaseToast from "@/components/common/BaseToast.vue"
-import ImageGallery from "@/components/common/ImageGallery.vue"
+import LightGallery from "@/components/common/LightGallery.vue"
 import FixedSaveButton from "@/components/common/FixedSaveButton.vue"
 import ProductHistoryButton from "@/components/common/ProductHistoryButton.vue"
 import PageLayout from "@/components/layout/PageLayout.vue"
@@ -161,7 +161,7 @@ function goBack() {
 
     <main class="p-4 space-y-6">
       <div class="bg-white p-4 rounded-sm shadow-sm space-y-4">
-        <ImageGallery :images="attachments" />
+        <LightGallery :images="attachments" />
 
         <BaseInput v-model="form.name" label="Name" autoFocus required />
 
