@@ -1,5 +1,5 @@
-import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { defineStore } from 'pinia'
 import { db } from '@/db/dexie'
 
 export const useSettingsStore = defineStore('settings', () => {
