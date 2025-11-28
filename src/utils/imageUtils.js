@@ -1,4 +1,4 @@
-import { useSettingsStore } from "../stores/settingsStore";
+import { useSettingsStore } from "@/store/modules/settingsStore";
 
 export const resizedImageUrls = ({ width = 30, height = "", imageUrls = [] }) => {
     const settingsStore = useSettingsStore()

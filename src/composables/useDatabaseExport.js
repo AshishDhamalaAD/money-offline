@@ -1,5 +1,5 @@
-import { db } from "../db"
-import { formatDateTimeForDB } from "../utils/dateUtils"
+import { db } from '@/db/dexie'
+import { formatDateTimeForDB } from "@/utils/dateUtils"
 
 export function useDatabaseExport() {
     async function getDatabaseDump(onProgress) {

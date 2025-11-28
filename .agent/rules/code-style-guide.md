@@ -29,7 +29,6 @@ src/
 │   └── guards.js
 │
 ├── store/
-│   ├── index.js            // Vuex setup with composition API helpers
 │   ├── modules/            // store modules
 │   └── helpers.js          // utility store functions
 │
@@ -79,6 +78,8 @@ src/assets/styles/utilities.css
 ```
 
 ---
+
+## @ in file import represents the root src directory
 
 # 🧩 **3. Component Rules**
 
@@ -138,7 +139,7 @@ useOfflineSync.js
 
 ```
 import { ref } from "vue";
-import { userService } from "../services/userService";
+import { userService } from "@/services/userService";
 
 export function useUsers() {
   const users = ref([]);
@@ -172,52 +173,21 @@ Vuex must use the **composition API helpers** (`useStore()`), not Options API.
 ```
 store/
 │
-├── index.js
 ├── modules/
-│   ├── user.js
-│   ├── auth.js
-│   └── settings.js
+│   ├── userStore.js
 └── helpers.js
 ```
 
 ### ✔ Store Module Example (JavaScript)
 
 ```
-export default {
-  namespaced: true,
+export const useBookStore = defineStore('book', () => {
+    const books = ref([])
 
-  state: () => ({
-    profile: null,
-    loading: false,
-  }),
-
-  getters: {
-    isLoggedIn: (state) => !!state.profile,
-  },
-
-  mutations: {
-    SET_PROFILE(state, payload) { state.profile = payload; },
-    SET_LOADING(state, payload) { state.loading = payload; },
-  },
-
-  actions: {
-    async loadProfile({ commit }) {
-      commit("SET_LOADING", true);
-      const data = await userService.getProfile();
-      commit("SET_PROFILE", data);
-      commit("SET_LOADING", false);
-    },
-  },
-};
-```
-
-### ✔ Using Vuex in Composition API
-
-```
-import { useStore } from "vuex";
-
-const store = useStore();
-store.dispatch("user/loadProfile");
+    return {
+        books,
+    }
+})
 ```
 
 ---
@@ -232,15 +202,15 @@ import Dexie from "dexie";
 export const db = new Dexie("app_db");
 
 db.version(1).stores({
-  users: "id,name,email",
-  tasks: "id,title,status",
+  users: "++id,name,email",
+  tasks: "++id,title,status",
 });
 ```
 
 ### ✔ Repository Layer
 
 ```
-import { db } from "../dexie";
+import { db } from "@/db/dexie";
 
 export const usersRepo = {
   getAll: () => db.users.toArray(),
@@ -303,7 +273,7 @@ router/
 ```
 {
   path: "/users",
-  component: () => import("../pages/users/UserList.vue"),
+  component: () => import("@/pages/users/UserList.vue"),
   meta: { auth: true }
 }
 ```

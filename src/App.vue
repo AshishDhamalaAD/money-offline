@@ -1,7 +1,7 @@
 <script setup>
 import { onMounted } from "vue"
 import { RouterView } from "vue-router"
-import { useSettingsStore } from "./stores/settingsStore"
+import { useSettingsStore } from "@/store/modules/settingsStore"
 
 const settingsStore = useSettingsStore()
 
