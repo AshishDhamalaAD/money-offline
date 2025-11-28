@@ -86,7 +86,7 @@ export const useTransactionStore = defineStore('transaction', () => {
             for (const p of products) {
                 if (p.product_id) {
                     const product = await db.products.get(p.product_id)
-                    if (product && product.rate !== p.rate) {
+                    if (product && String(product.rate) !== String(p.rate)) {
                         await masterStore.addProductRate({
                             product_id: p.product_id,
                             rate: p.rate,
@@ -143,11 +143,8 @@ export const useTransactionStore = defineStore('transaction', () => {
                 if (p.product_id) {
                     const product = await db.products.get(p.product_id)
                     // Note: p.rate is already rounded above if it existed
-                    if (product && product.rate !== p.rate) {
-                        await masterStore.addProductRate({
-                            product_id: p.product_id,
-                            rate: p.rate,
-                        })
+                    if (product && String(product.rate) !== String(p.rate)) {
+                        masterStore.updateProduct(p.product_id, { rate: p.rate });
                     }
                 }
             }

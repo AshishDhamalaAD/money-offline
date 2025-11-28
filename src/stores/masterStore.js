@@ -192,7 +192,7 @@ export const useMasterStore = defineStore('master', () => {
         })
 
         // Check if rate changed and add to history
-        if (updatedData.rate !== undefined && currentProduct && currentProduct.rate !== updatedData.rate) {
+        if (updatedData.rate !== undefined && currentProduct && String(currentProduct.rate) !== String(updatedData.rate)) {
             addProductRate({
                 product_id: id,
                 rate: updatedData.rate,
