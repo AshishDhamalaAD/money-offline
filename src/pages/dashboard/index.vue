@@ -2,7 +2,7 @@
 import { ref } from "vue"
 import { useRouter } from "vue-router"
 import { useBookStore } from "@/store/modules/bookStore"
-import BookCard from "@/components/module/BookCard.vue"
+import BookCard from "@/pages/dashboard/BookCard.vue"
 import BaseButton from "@/components/common/BaseButton.vue"
 import BaseInput from "@/components/common/BaseInput.vue"
 import BaseModal from "@/components/common/BaseModal.vue"

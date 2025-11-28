@@ -3,10 +3,10 @@ import { useRouter, useRoute } from "vue-router"
 import { ref, watch } from "vue"
 import PageLayout from "@/components/layout/PageLayout.vue"
 import PageHeader from "@/components/layout/PageHeader.vue"
-import DatabaseBackup from "@/components/module/DatabaseBackup.vue"
-import ServerSync from "@/components/module/ServerSync.vue"
-import ContactsManager from "@/components/module/settings/ContactsManager.vue"
-import ResetDatabase from "@/components/module/settings/ResetDatabase.vue"
+import DatabaseBackup from "@/pages/settings/DatabaseBackup.vue"
+import ServerSync from "@/pages/settings/ServerSync.vue"
+import ContactsManager from "@/pages/settings/ContactsManager.vue"
+import ResetDatabase from "@/pages/settings/ResetDatabase.vue"
 
 const router = useRouter()
 const route = useRoute()

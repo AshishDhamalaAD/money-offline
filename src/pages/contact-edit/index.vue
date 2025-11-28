@@ -8,7 +8,7 @@ import BaseModal from "@/components/common/BaseModal.vue"
 import BaseToast from "@/components/common/BaseToast.vue"
 import PageLayout from "@/components/layout/PageLayout.vue"
 import PageHeader from "@/components/layout/PageHeader.vue"
-import FixedSaveButton from "@/components/module/FixedSaveButton.vue"
+import FixedSaveButton from "@/components/common/FixedSaveButton.vue"
 
 const route = useRoute()
 const router = useRouter()

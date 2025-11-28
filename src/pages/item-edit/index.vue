@@ -11,9 +11,9 @@ import BaseToast from "@/components/common/BaseToast.vue"
 import PageLayout from "@/components/layout/PageLayout.vue"
 import PageHeader from "@/components/layout/PageHeader.vue"
 import IconPlus from "@/assets/icons/IconPlus.vue"
-import ImageGallery from "@/components/module/ImageGallery.vue"
-import FixedSaveButton from "@/components/module/FixedSaveButton.vue"
-import ProductHistoryButton from "@/components/module/ProductHistoryButton.vue"
+import ImageGallery from "@/components/common/ImageGallery.vue"
+import FixedSaveButton from "@/components/common/FixedSaveButton.vue"
+import ProductHistoryButton from "@/components/common/ProductHistoryButton.vue"
 import IconTrash from "@/assets/icons/IconTrash.vue"
 
 const route = useRoute()

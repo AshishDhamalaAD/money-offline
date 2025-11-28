@@ -8,15 +8,15 @@ import { db } from "@/db/dexie"
 import BaseButton from "@/components/common/BaseButton.vue"
 import BaseInput from "@/components/common/BaseInput.vue"
 import BaseSearchableSelect from "@/components/common/BaseSearchableSelect.vue"
-import ProductLineItem from "@/components/module/ProductLineItem.vue"
+import ProductLineItem from "@/pages/transaction-form/ProductLineItem.vue"
 import BaseModal from "@/components/common/BaseModal.vue"
 import PageLayout from "@/components/layout/PageLayout.vue"
 import PageHeader from "@/components/layout/PageHeader.vue"
 import { formatDateTimeForDB, roundAmount } from "@/utils/dateUtils"
 import IconPlus from "@/assets/icons/IconPlus.vue"
 import IconX from "@/assets/icons/IconX.vue"
-import ImageGallery from "@/components/module/ImageGallery.vue"
-import FixedSaveButton from "@/components/module/FixedSaveButton.vue"
+import ImageGallery from "@/components/common/ImageGallery.vue"
+import FixedSaveButton from "@/components/common/FixedSaveButton.vue"
 
 const route = useRoute()
 const router = useRouter()

@@ -11,7 +11,7 @@ import IconChevronRight from "@/assets/icons/IconChevronRight.vue"
 import IconHistory from "@/assets/icons/IconHistory.vue"
 import { resizedImageUrls } from "@/utils/imageUtils"
 import { formatCurrency } from "@/utils/moneyUtils"
-import ProductHistoryButton from "@/components/module/ProductHistoryButton.vue"
+import ProductHistoryButton from "@/components/common/ProductHistoryButton.vue"
 
 const route = useRoute()
 const router = useRouter()

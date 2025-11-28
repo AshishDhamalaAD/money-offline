@@ -19,8 +19,7 @@ src/
 │
 ├── components/
 │   ├── common/             // Reusable components
-│   ├── layout/             // Navbar, Sidebar
-│   └── module/             // Module-specific components
+│   └── layout/             // Navbar, Sidebar
 │
 ├── composables/            // useXYZ() hooks (fetch, form, sync)
 │
@@ -87,7 +86,6 @@ src/assets/styles/utilities.css
 
 - Reusable components → `BaseButton.vue`, `BaseModal.vue`
 - Layout components → `AppNavbar.vue`
-- Module-specific → `UserList.vue`, `TaskItem.vue`
 
 ### ✔ Component Template Structure
 
@@ -174,7 +172,7 @@ Vuex must use the **composition API helpers** (`useStore()`), not Options API.
 store/
 │
 ├── modules/
-│   ├── userStore.js
+│   └── userStore.js
 └── helpers.js
 ```
 
@@ -409,5 +407,6 @@ When generating code:
 10. Generate clean Tailwind classes only
 11. No unnecessary libraries
 12. Code must be readable & modular
+13. Page related components must remain in the specific page directory
 
 ---
