@@ -273,7 +273,7 @@ router/
 ```
 {
   path: "/users",
-  component: () => import("@/pages/users/UserList.vue"),
+  component: () => import("@/pages/users/index.vue"),
   meta: { auth: true }
 }
 ```

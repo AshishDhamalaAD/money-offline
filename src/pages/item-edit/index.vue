@@ -165,7 +165,7 @@ function goBack() {
           <!-- Delete -->
         </button>
 
-        <ProductHistoryButton v-if="type === 'products'" :product-id="itemId" :book-id="bookId" />
+        <ProductHistoryButton v-if="type === 'products' && !isNew" :product-id="itemId" :book-id="bookId" />
       </template>
     </PageHeader>
 
