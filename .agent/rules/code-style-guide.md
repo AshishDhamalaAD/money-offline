@@ -410,19 +410,3 @@ When generating code:
 13. Page related components must remain in the specific page directory
 
 ---
-
-# 🤖 **15. File Importing Rules**
-
-Import in this order
-
-- vue
-- other packages
-- constants
-- utilities
-- store
-- icons
-- common components
-- layout component
-- page components
-
-Always remove the unused imports
