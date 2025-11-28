@@ -11,6 +11,7 @@ import Modal from "../components/ui/Modal.vue"
 import IconTrash from "../components/icons/IconTrash.vue"
 import IconEdit from "../components/icons/IconEdit.vue"
 import { formatDateTime } from "../utils/dateUtils"
+import { formatCurrency } from "../utils/moneyUtils"
 
 const route = useRoute()
 const router = useRouter()
@@ -96,10 +97,7 @@ async function deleteRate() {
 
 <template>
   <PageLayout>
-    <PageHeader
-      :title="`${product?.name || 'Product'} Rate History`"
-      :back-route="{ name: 'book-settings', params: { bookId }, query: { tab: 'products' } }"
-    />
+    <PageHeader :title="`${product?.name || 'Product'} Rate History`" />
 
     <main class="p-4 space-y-4">
       <div v-if="rates.length === 0" class="text-center text-gray-500 py-8">No history found.</div>
@@ -111,7 +109,7 @@ async function deleteRate() {
           class="bg-white p-4 rounded-sm shadow-sm flex justify-between items-center"
         >
           <div>
-            <p class="font-bold text-lg">Rs. {{ rate.rate }}</p>
+            <p class="font-bold text-lg">Rs. {{ formatCurrency(rate.rate) }}</p>
             <p class="text-xs text-gray-500">{{ formatDateTime(new Date(rate.created_at)) }}</p>
           </div>
 
@@ -120,13 +118,13 @@ async function deleteRate() {
               @click="openEditModal(rate)"
               class="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors"
             >
-              <IconEdit class="w-4 h-4" />
+              <IconEdit class="w-5 h-5" />
             </button>
             <button
               @click="openDeleteModal(rate)"
               class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
             >
-              <IconTrash class="w-4 h-4" />
+              <IconTrash class="w-5 h-5" />
             </button>
           </div>
         </div>

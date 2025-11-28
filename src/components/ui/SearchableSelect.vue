@@ -91,7 +91,7 @@ onClickOutside(containerRef, close, {
         ]"
       >
         <span class="truncate">{{ selectedLabel || placeholder || "Select..." }}</span>
-        <svg class="h-5 w-5 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg class="h-5 w-5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
         </svg>
       </div>

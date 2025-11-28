@@ -1,4 +1,6 @@
-<script setup></script>
+<script setup>
+import { twMerge } from "tailwind-merge"
+</script>
 
 <template>
   <svg
@@ -7,7 +9,7 @@
     viewBox="0 0 24 24"
     stroke-width="1.5"
     stroke="currentColor"
-    class="h-6 w-6"
+    :class="twMerge('h-6 w-6', $attrs.class)"
   >
     <path
       stroke-linecap="round"

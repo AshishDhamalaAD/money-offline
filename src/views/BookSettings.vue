@@ -11,6 +11,7 @@ import IconChevronRight from "../components/icons/IconChevronRight.vue"
 import IconHistory from "../components/icons/IconHistory.vue"
 import { resizedImageUrls } from "../utils/imageUtils"
 import { formatCurrency } from "../utils/moneyUtils"
+import ProductHistoryButton from "../components/ProductHistoryButton.vue"
 
 const route = useRoute()
 const router = useRouter()
@@ -95,8 +96,8 @@ function navigateToHistory(product) {
 }
 
 const tabs = [
-  { id: "categories", label: "Categories" },
   { id: "products", label: "Products" },
+  { id: "categories", label: "Categories" },
   { id: "paymentModes", label: "Payment Modes" },
 ]
 
@@ -243,7 +244,11 @@ watch(visibleLimit, (newLimit) => {
                   class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
                   >{{ item.attachments.length }}</span
                 >
-                <img :src="resizedImageUrls({imageUrls: item.attachments})[0]" alt="" class="w-8 h-8 object-cover rounded-full"></img>
+                <img
+                  :src="resizedImageUrls({ imageUrls: item.attachments })[0]"
+                  alt=""
+                  class="w-8 h-8 object-cover rounded-full"
+                />
               </div>
               <div>
                 <p class="font-medium">{{ item.name }}</p>
@@ -253,13 +258,7 @@ watch(visibleLimit, (newLimit) => {
             </div>
 
             <div class="flex items-center gap-2">
-              <button
-                @click.stop="navigateToHistory(item)"
-                class="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors"
-                title="View Rate History"
-              >
-                <IconHistory class="w-5 h-5" />
-              </button>
+              <ProductHistoryButton :product-id="item.id" :book-id="bookId" />
               <IconChevronRight class="text-gray-400" />
             </div>
           </div>

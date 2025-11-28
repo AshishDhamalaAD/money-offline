@@ -13,6 +13,8 @@ import PageHeader from "../components/layout/PageHeader.vue"
 import IconPlus from "../components/icons/IconPlus.vue"
 import ImageGallery from "../components/ImageGallery.vue"
 import FixedSaveButton from "../components/FixedSaveButton.vue"
+import ProductHistoryButton from "../components/ProductHistoryButton.vue"
+import IconTrash from "../components/icons/IconTrash.vue"
 
 const route = useRoute()
 const router = useRouter()
@@ -159,8 +161,11 @@ function goBack() {
           @click="showDeleteModal = true"
           class="rounded-lg px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
         >
-          Delete
+          <IconTrash class="h-5 w-5" />
+          <!-- Delete -->
         </button>
+
+        <ProductHistoryButton v-if="type === 'products'" :product-id="itemId" :book-id="bookId" />
       </template>
     </PageHeader>
 
