@@ -50,7 +50,7 @@ const inputType = computed(() => {
         { 'border-red-500 focus:border-red-500 focus:ring-red-500': error },
       ]"
     ></textarea>
-    <div v-else class="relative">
+    <div v-else :class="['relative', { 'flex items-center gap-1': $slots['after-input'] }]">
       <input
         :id="id"
         :type="inputType"
@@ -62,8 +62,10 @@ const inputType = computed(() => {
           'w-full max-w-full rounded-sm border-gray-200 bg-gray-50 px-4 py-2.5 text-gray-900 placeholder-gray-400 transition-colors focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500',
           { 'border-red-500 focus:border-red-500 focus:ring-red-500': error },
           { 'pr-10': type === 'password' },
+          { 'flex-1': $slots['after-input'] },
         ]"
       />
+      <slot name="after-input" />
       <button
         v-if="type === 'password'"
         type="button"

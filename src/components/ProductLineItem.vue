@@ -4,6 +4,8 @@ import BaseInput from "./ui/BaseInput.vue"
 import SearchableSelect from "./ui/SearchableSelect.vue"
 import { roundAmount } from "../utils/dateUtils"
 import IconX from "./icons/IconX.vue"
+import IconPlus from "./icons/IconPlus.vue"
+import IconMinus from "./icons/IconMinus.vue"
 
 const props = defineProps({
   modelValue: {
@@ -54,6 +56,17 @@ function emitUpdate() {
   emit("update:modelValue", item.value)
 }
 
+function incrementQuantity() {
+  item.value.quantity++
+  updateAmount()
+}
+
+function decrementQuantity() {
+  if (item.value.quantity === 1) return
+  item.value.quantity--
+  updateAmount()
+}
+
 function onProductSelect(productId) {
   const product = props.products.find((p) => p.id === productId)
   if (product) {
@@ -97,15 +110,32 @@ function onProductSelect(productId) {
 
       <div class="grid grid-cols-3 gap-2">
         <BaseInput
-          v-model="item.quantity"
+          v-model.number="item.quantity"
           type="number"
           step="0.01"
           label="Qty"
           placeholder="0"
           @input="updateAmount"
-        />
+        >
+          <template #after-input>
+            <div class="flex flex-col justify-end gap-0.5 h-full">
+              <button
+                class="border rounded-sm border-gray-200 p-1 w-8 flex items-center justify-center"
+                @click.prevent="incrementQuantity"
+              >
+                <IconPlus class="h-3 w-3" />
+              </button>
+              <button
+                class="border rounded-sm border-gray-200 p-1 w-8 flex items-center justify-center"
+                @click.prevent="decrementQuantity"
+              >
+                <IconMinus class="h-3 w-3" />
+              </button>
+            </div>
+          </template>
+        </BaseInput>
         <BaseInput
-          v-model="item.rate"
+          v-model.number="item.rate"
           type="number"
           step="0.01"
           label="Rate"
@@ -113,7 +143,7 @@ function onProductSelect(productId) {
           @input="updateAmount"
         />
         <BaseInput
-          v-model="item.amount"
+          v-model.number="item.amount"
           type="number"
           step="0.01"
           label="Amount"
