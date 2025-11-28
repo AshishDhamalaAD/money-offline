@@ -26,6 +26,10 @@ export const useSyncStore = defineStore('sync', () => {
                 throw new Error("API Endpoint not configured")
             }
 
+            if (!token || !token.value) {
+                throw new Error("API Token not configured")
+            }
+
             const data = await getDatabaseDump()
 
             const response = await fetch(`${endpoint.value}/sync-app-data`, {
