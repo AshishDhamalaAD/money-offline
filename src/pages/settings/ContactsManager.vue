@@ -2,19 +2,19 @@
 import { ref, computed } from "vue"
 import { useRouter } from "vue-router"
 
-import { useMasterStore } from "@/store/modules/masterStore"
+import { useContactStore } from "@/store/modules/contactStore"
 import BaseButton from "@/components/common/BaseButton.vue"
 import SearchInput from "@/components/common/BaseSearchInput.vue"
 
 const router = useRouter()
-const masterStore = useMasterStore()
+const contactStore = useContactStore()
 const searchQuery = ref("")
 
 const filteredContacts = computed(() => {
-  if (!searchQuery.value) return masterStore.contacts
+  if (!searchQuery.value) return contactStore.contacts
 
   const query = searchQuery.value.toLowerCase()
-  return masterStore.contacts.filter(
+  return contactStore.contacts.filter(
     (contact) => contact.name.toLowerCase().includes(query) || (contact.phone && contact.phone.includes(query))
   )
 })

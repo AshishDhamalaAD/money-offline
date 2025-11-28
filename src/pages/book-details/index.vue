@@ -6,7 +6,10 @@ import { formatDate, getNepalDate } from "@/utils/dateUtils"
 import { formatCurrency } from "@/utils/moneyUtils"
 import { useBookStore } from "@/store/modules/bookStore"
 import { useTransactionStore } from "@/store/modules/transactionStore"
-import { useMasterStore } from "@/store/modules/masterStore"
+import { useCategoryStore } from "@/store/modules/categoryStore"
+import { useContactStore } from "@/store/modules/contactStore"
+import { usePaymentModeStore } from "@/store/modules/paymentModeStore"
+import { useProductStore } from "@/store/modules/productStore"
 import IconCaretDown from "@/assets/icons/IconCaretDown.vue"
 import IconSettings from "@/assets/icons/IconSettings.vue"
 import IconEdit from "@/assets/icons/IconEdit.vue"
@@ -28,7 +31,10 @@ const route = useRoute()
 const router = useRouter()
 const bookStore = useBookStore()
 const transactionStore = useTransactionStore()
-const masterStore = useMasterStore()
+const categoryStore = useCategoryStore()
+const contactStore = useContactStore()
+const paymentModeStore = usePaymentModeStore()
+const productStore = useProductStore()
 
 const book = ref(null)
 const bookId = ref(null)
@@ -65,7 +71,11 @@ onMounted(async () => {
   bookId.value = bookIdParam
   book.value = await bookStore.getBook(bookId.value)
   transactionStore.setBookId(bookId.value)
-  masterStore.watchBookData(bookId.value)
+
+  categoryStore.watchCategories(bookId.value)
+  paymentModeStore.watchPaymentModes(bookId.value)
+  productStore.watchProducts(bookId.value)
+  // Contacts are global, already watched/loaded in store
 
   // Restore filters from URL query params
   const query = route.query
@@ -457,25 +467,25 @@ async function saveBookName() {
       <div v-if="activeFiltersCount > 0" class="flex flex-wrap gap-2 mt-2">
         <template v-if="filterCategory">
           <span class="bg-gray-200 text-gray-800 text-sm px-2 py-1 rounded flex items-center">
-            Category: {{ masterStore.categories.find((c) => c.id === filterCategory).name }}
+            Category: {{ categoryStore.categories.find((c) => c.id === filterCategory)?.name }}
             <button @click="clearFilter('category')" class="ml-1 text-gray-500 hover:text-gray-700">&times;</button>
           </span>
         </template>
         <template v-if="filterPaymentMode">
           <span class="bg-gray-200 text-gray-800 text-sm px-2 py-1 rounded flex items-center">
-            Payment: {{ masterStore.paymentModes.find((p) => p.id === filterPaymentMode).name }}
+            Payment: {{ paymentModeStore.paymentModes.find((p) => p.id === filterPaymentMode)?.name }}
             <button @click="clearFilter('payment')" class="ml-1 text-gray-500 hover:text-gray-700">&times;</button>
           </span>
         </template>
         <template v-if="filterContact">
           <span class="bg-gray-200 text-gray-800 text-sm px-2 py-1 rounded flex items-center">
-            Contact: {{ masterStore.contacts.find((c) => c.id === filterContact).name }}
+            Contact: {{ contactStore.contacts.find((c) => c.id === filterContact)?.name }}
             <button @click="clearFilter('contact')" class="ml-1 text-gray-500 hover:text-gray-700">&times;</button>
           </span>
         </template>
         <template v-if="filterProduct">
           <span class="bg-gray-200 text-gray-800 text-sm px-2 py-1 rounded flex items-center">
-            Product: {{ masterStore.products.find((p) => p.id === filterProduct).name }}
+            Product: {{ productStore.products.find((p) => p.id === filterProduct)?.name }}
             <button @click="clearFilter('product')" class="ml-1 text-gray-500 hover:text-gray-700">&times;</button>
           </span>
         </template>
@@ -541,7 +551,7 @@ async function saveBookName() {
           label="Category"
           :options="[
             { label: 'All Categories', value: '' },
-            ...masterStore.categories.map((c) => ({ label: c.name, value: c.id, description: c.description })),
+            ...categoryStore.categories.map((c) => ({ label: c.name, value: c.id, description: c.description })),
           ]"
           placeholder="All Categories"
         />
@@ -551,7 +561,7 @@ async function saveBookName() {
           label="Payment Mode"
           :options="[
             { label: 'All Payment Modes', value: '' },
-            ...masterStore.paymentModes.map((p) => ({ label: p.name, value: p.id, description: p.description })),
+            ...paymentModeStore.paymentModes.map((p) => ({ label: p.name, value: p.id, description: p.description })),
           ]"
           placeholder="All Payment Modes"
         />
@@ -561,7 +571,7 @@ async function saveBookName() {
           label="Contact"
           :options="[
             { label: 'All Contacts', value: '' },
-            ...masterStore.contacts.map((c) => ({ label: c.name, value: c.id, description: c.phone })),
+            ...contactStore.contacts.map((c) => ({ label: c.name, value: c.id, description: c.phone })),
           ]"
           placeholder="All Contacts"
         />
@@ -571,7 +581,7 @@ async function saveBookName() {
           label="Product"
           :options="[
             { label: 'All Products', value: '' },
-            ...masterStore.products.map((p) => ({ label: p.name, value: p.id, description: p.description })),
+            ...productStore.products.map((p) => ({ label: p.name, value: p.id, description: p.description })),
           ]"
           placeholder="All Products"
         />

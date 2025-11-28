@@ -1,3 +1,4 @@
+```vue
 <script setup>
 import { ref, onMounted, computed, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
@@ -6,7 +7,10 @@ import { QUANTITY_TYPES } from "@/constants"
 import { roundAmount } from "@/utils/dateUtils"
 import { db } from "@/db/dexie"
 import { useTransactionStore } from "@/store/modules/transactionStore"
-import { useMasterStore } from "@/store/modules/masterStore"
+import { useCategoryStore } from "@/store/modules/categoryStore"
+import { useContactStore } from "@/store/modules/contactStore"
+import { usePaymentModeStore } from "@/store/modules/paymentModeStore"
+import { useProductStore } from "@/store/modules/productStore"
 import IconPlus from "@/assets/icons/IconPlus.vue"
 import IconX from "@/assets/icons/IconX.vue"
 import BaseButton from "@/components/common/BaseButton.vue"
@@ -22,7 +26,10 @@ import ProductLineItem from "@/pages/transaction-form/ProductLineItem.vue"
 const route = useRoute()
 const router = useRouter()
 const transactionStore = useTransactionStore()
-const masterStore = useMasterStore()
+const categoryStore = useCategoryStore()
+const contactStore = useContactStore()
+const paymentModeStore = usePaymentModeStore()
+const productStore = useProductStore()
 
 const bookId = parseInt(route.params.bookId)
 const isEdit = !!route.params.id
@@ -62,7 +69,7 @@ const allImages = computed(() => {
   if (form.value.products) {
     form.value.products.forEach((p) => {
       if (p.product_id) {
-        const product = masterStore.products.find((mp) => mp.id === p.product_id)
+        const product = productStore.products.find((mp) => mp.id === p.product_id)
         if (product && product.attachments) {
           images.push(...product.attachments)
         }
@@ -73,11 +80,11 @@ const allImages = computed(() => {
 })
 
 const selectedCategories = computed(() => {
-  return form.value.category_ids.map((id) => masterStore.categories.find((c) => c.id === id)).filter(Boolean)
+  return form.value.category_ids.map((id) => categoryStore.categories.find((c) => c.id === id)).filter(Boolean)
 })
 
 const availableCategories = computed(() => {
-  return masterStore.categories.filter((c) => !form.value.category_ids.includes(c.id))
+  return categoryStore.categories.filter((c) => !form.value.category_ids.includes(c.id))
 })
 
 function addCategory(id) {
@@ -93,8 +100,11 @@ function removeCategory(id) {
 const saving = ref(false)
 
 onMounted(async () => {
-  await masterStore.initDefaults()
-  masterStore.watchBookData(bookId) // Load categories, products, payment modes for this book
+  // Load categories, products, payment modes for this book
+  categoryStore.watchCategories(bookId)
+  paymentModeStore.watchPaymentModes(bookId)
+  productStore.watchProducts(bookId)
+  // Contacts are global
 
   if (isEdit) {
     const id = parseInt(route.params.id)
@@ -188,7 +198,7 @@ async function save() {
     for (const p of form.value.products) {
       // If products exist in master, require selection (product_id)
       // If no products in master, require name
-      if (masterStore.products.length > 0) {
+      if (productStore.products.length > 0) {
         if (!p.product_id) {
           alert("Please select a product for all items.")
           return
@@ -250,7 +260,7 @@ async function saveNewCategory() {
 
   try {
     // Pass bookId to addCategory
-    const id = await masterStore.addCategory(newCategoryName.value, newCategoryDescription.value, bookId)
+    const id = await categoryStore.addCategory(newCategoryName.value, newCategoryDescription.value, bookId)
 
     if (addingCategoryForProduct.value) {
       newProductCategoryId.value = id
@@ -277,7 +287,7 @@ async function saveNewPaymentMode() {
   if (!newPaymentModeName.value.trim()) return
 
   try {
-    const id = await masterStore.addPaymentMode(newPaymentModeName.value, newPaymentModeDescription.value, bookId)
+    const id = await paymentModeStore.addPaymentMode(newPaymentModeName.value, newPaymentModeDescription.value, bookId)
     form.value.payment_mode_id = id
     showPaymentModeModal.value = false
     newPaymentModeName.value = ""
@@ -300,7 +310,7 @@ async function saveNewProduct() {
   if (!newProductName.value.trim()) return
 
   try {
-    const id = await masterStore.addProduct(
+    const id = await productStore.addProduct(
       newProductName.value,
       roundAmount(newProductRate.value),
       newProductDescription.value,
@@ -432,7 +442,7 @@ function openCategoryModalForProduct() {
               v-model="form.payment_mode_id"
               label="Payment Mode"
               :options="
-                masterStore.paymentModes.map((p) => ({ label: p.name, value: p.id, description: p.description }))
+                paymentModeStore.paymentModes.map((p) => ({ label: p.name, value: p.id, description: p.description }))
               "
               placeholder="Select Payment Mode"
               required
@@ -449,7 +459,7 @@ function openCategoryModalForProduct() {
         <BaseSearchableSelect
           v-model="form.contact_id"
           label="Contact"
-          :options="masterStore.contacts.map((c) => ({ label: c.name, value: c.id, description: c.phone }))"
+          :options="contactStore.contacts.map((c) => ({ label: c.name, value: c.id, description: c.phone }))"
           placeholder="Select Contact"
         />
       </div>
@@ -473,7 +483,7 @@ function openCategoryModalForProduct() {
             v-for="(p, index) in form.products"
             :key="p.id"
             :model-value="p"
-            :products="masterStore.products"
+            :products="productStore.products"
             :product-index="index"
             @update:model-value="updateProduct(index, $event)"
             @remove="removeProduct(index)"
@@ -561,7 +571,7 @@ function openCategoryModalForProduct() {
             <BaseSearchableSelect
               v-model="newProductCategoryId"
               label="Category"
-              :options="masterStore.categories.map((c) => ({ label: c.name, value: c.id }))"
+              :options="categoryStore.categories.map((c) => ({ label: c.name, value: c.id }))"
               placeholder="Select Category"
             />
           </div>

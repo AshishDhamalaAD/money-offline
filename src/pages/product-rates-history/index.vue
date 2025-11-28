@@ -4,7 +4,7 @@ import { useRoute, useRouter } from "vue-router"
 
 import { formatDateTime } from "@/utils/dateUtils"
 import { formatCurrency } from "@/utils/moneyUtils"
-import { useMasterStore } from "@/store/modules/masterStore"
+import { useProductStore } from "@/store/modules/productStore"
 import { useBookStore } from "@/store/modules/bookStore"
 import IconTrash from "@/assets/icons/IconTrash.vue"
 import IconEdit from "@/assets/icons/IconEdit.vue"
@@ -16,7 +16,7 @@ import PageHeader from "@/components/layout/PageHeader.vue"
 
 const route = useRoute()
 const router = useRouter()
-const masterStore = useMasterStore()
+const productStore = useProductStore()
 const bookStore = useBookStore()
 
 const bookId = parseInt(route.params.bookId)
@@ -37,23 +37,23 @@ onMounted(async () => {
   if (!bookId || !productId) return
 
   book.value = await bookStore.getBook(bookId)
-  masterStore.watchBookData(bookId)
+  productStore.watchProducts(bookId)
 
   // Wait for products to load
-  const unsubscribe = masterStore.$subscribe((mutation, state) => {
+  const unsubscribe = productStore.$subscribe((mutation, state) => {
     if (!product.value) {
       product.value = state.products.find((p) => p.id === productId)
     }
   })
 
   // Try immediately
-  product.value = masterStore.products.find((p) => p.id === productId)
+  product.value = productStore.products.find((p) => p.id === productId)
 
   await loadRates()
 })
 
 async function loadRates() {
-  rates.value = await masterStore.getProductRates(productId)
+  rates.value = await productStore.getProductRates(productId)
 }
 
 function openEditModal(rate) {
@@ -76,7 +76,7 @@ function openDeleteModal(rate) {
 async function saveRate() {
   if (!selectedRate.value) return
 
-  await masterStore.updateProductRate(selectedRate.value.id, {
+  await productStore.updateProductRate(selectedRate.value.id, {
     rate: editForm.value.rate,
     created_at: editForm.value.created_at.replace("T", " ") + ":00", // Simple format fix, ideally use dateUtils
   })
@@ -89,7 +89,7 @@ async function saveRate() {
 async function deleteRate() {
   if (!selectedRate.value) return
 
-  await masterStore.deleteProductRate(selectedRate.value.id)
+  await productStore.deleteProductRate(selectedRate.value.id)
   await loadRates()
   showDeleteModal.value = false
   selectedRate.value = null

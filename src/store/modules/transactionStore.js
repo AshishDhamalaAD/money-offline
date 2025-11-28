@@ -6,12 +6,12 @@ import { formatDateTimeForDB, roundAmount } from '@/utils/dateUtils'
 import { db } from '@/db/dexie'
 import { useSyncStore } from '@/store/modules/syncStore'
 import { useSettingsStore } from '@/store/modules/settingsStore'
-import { useMasterStore } from '@/store/modules/masterStore'
+import { useProductStore } from '@/store/modules/productStore'
 
 export const useTransactionStore = defineStore('transaction', () => {
     const transactions = ref([])
     const currentBookId = ref(null)
-    const masterStore = useMasterStore()
+    const productStore = useProductStore()
 
     // Subscribe to transactions for the current book
     // We'll update this subscription when currentBookId changes
@@ -88,7 +88,7 @@ export const useTransactionStore = defineStore('transaction', () => {
                 if (p.product_id) {
                     const product = await db.products.get(p.product_id)
                     if (product && String(product.rate) !== String(p.rate)) {
-                        await masterStore.addProductRate({
+                        await productStore.addProductRate({
                             product_id: p.product_id,
                             rate: p.rate,
                         });
@@ -145,7 +145,7 @@ export const useTransactionStore = defineStore('transaction', () => {
                     const product = await db.products.get(p.product_id)
                     // Note: p.rate is already rounded above if it existed
                     if (product && String(product.rate) !== String(p.rate)) {
-                        masterStore.updateProduct(p.product_id, { rate: p.rate });
+                        productStore.updateProduct(p.product_id, { rate: p.rate });
                     }
                 }
             }

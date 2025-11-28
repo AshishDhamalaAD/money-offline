@@ -1,10 +1,11 @@
 <script setup>
-import { computed, onMounted } from "vue"
+import { computed } from "vue"
 
 import { formatTime } from "@/utils/dateUtils"
 import { formatCurrency } from "@/utils/moneyUtils"
 import { resizedImageUrls } from "@/utils/imageUtils"
-import { useMasterStore } from "@/store/modules/masterStore"
+import { useCategoryStore } from "@/store/modules/categoryStore"
+import { usePaymentModeStore } from "@/store/modules/paymentModeStore"
 
 const props = defineProps({
   transaction: {
@@ -17,21 +18,19 @@ const formattedTime = computed(() => {
   return formatTime(props.transaction.date)
 })
 
-const masterStore = useMasterStore()
-
-onMounted(() => {
-  masterStore.watchBookData(props.transaction.book_id)
-})
-
-const formattedAmount = computed(() => formatCurrency(props.transaction.amount))
+const categoryStore = useCategoryStore()
+const paymentModeStore = usePaymentModeStore()
 
 const categories = computed(() => {
-  return masterStore.categories.filter((c) => props.transaction.category_ids.includes(c.id))
+  return categoryStore.categories.filter((c) => props.transaction.category_ids.includes(c.id))
 })
 
 const paymentMode = computed(() => {
-  return masterStore.paymentModes.find((p) => p.id === props.transaction.payment_mode_id)
+  if (!props.transaction.payment_mode_id) return null
+  return paymentModeStore.paymentModes.find((p) => p.id === props.transaction.payment_mode_id)
 })
+
+const formattedAmount = computed(() => formatCurrency(props.transaction.amount))
 
 const productsTotal = computed(() => {
   if (!props.transaction.products || props.transaction.products.length === 0) return 0

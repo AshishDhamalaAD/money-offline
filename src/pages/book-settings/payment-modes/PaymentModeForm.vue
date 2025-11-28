@@ -2,7 +2,7 @@
 import { ref, onMounted, computed } from "vue"
 import { useRoute, useRouter } from "vue-router"
 
-import { useMasterStore } from "@/store/modules/masterStore"
+import { usePaymentModeStore } from "@/store/modules/paymentModeStore"
 import IconTrash from "@/assets/icons/IconTrash.vue"
 import BaseButton from "@/components/common/BaseButton.vue"
 import BaseInput from "@/components/common/BaseInput.vue"
@@ -14,7 +14,7 @@ import PageHeader from "@/components/layout/PageHeader.vue"
 
 const route = useRoute()
 const router = useRouter()
-const masterStore = useMasterStore()
+const paymentModeStore = usePaymentModeStore()
 
 const bookId = parseInt(route.params.bookId)
 const itemId = route.params.id ? parseInt(route.params.id) : null
@@ -34,11 +34,11 @@ const title = computed(() => {
 })
 
 onMounted(async () => {
-  masterStore.watchBookData(bookId)
+  paymentModeStore.watchPaymentModes(bookId)
 
   if (!isNew) {
     // Hack: wait for data
-    const unsubscribe = masterStore.$subscribe((mutation, state) => {
+    const unsubscribe = paymentModeStore.$subscribe((mutation, state) => {
       const list = state.paymentModes
       const item = list.find((i) => i.id === itemId)
       if (item) {
@@ -47,7 +47,7 @@ onMounted(async () => {
     })
 
     // Also try immediately
-    const list = masterStore.paymentModes
+    const list = paymentModeStore.paymentModes
     const item = list.find((i) => i.id === itemId)
     if (item) fillForm(item)
   }
@@ -62,9 +62,9 @@ async function save() {
   if (!form.value.name) return
 
   if (isNew) {
-    await masterStore.addPaymentMode(form.value.name, form.value.description, bookId)
+    await paymentModeStore.addPaymentMode(form.value.name, form.value.description, bookId)
   } else {
-    await masterStore.updatePaymentMode(itemId, {
+    await paymentModeStore.updatePaymentMode(itemId, {
       name: form.value.name,
       description: form.value.description,
     })
@@ -75,7 +75,7 @@ async function save() {
 
 async function handleDelete() {
   try {
-    await masterStore.deletePaymentMode(itemId)
+    await paymentModeStore.deletePaymentMode(itemId)
     goBack()
   } catch (error) {
     toastMessage.value = error.message

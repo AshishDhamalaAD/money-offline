@@ -3,7 +3,8 @@ import { ref, onMounted, computed } from "vue"
 import { useRoute, useRouter } from "vue-router"
 
 import { QUANTITY_TYPES } from "@/constants"
-import { useMasterStore } from "@/store/modules/masterStore"
+import { useProductStore } from "@/store/modules/productStore"
+import { useCategoryStore } from "@/store/modules/categoryStore"
 import IconPlus from "@/assets/icons/IconPlus.vue"
 import IconTrash from "@/assets/icons/IconTrash.vue"
 import BaseButton from "@/components/common/BaseButton.vue"
@@ -19,7 +20,8 @@ import PageHeader from "@/components/layout/PageHeader.vue"
 
 const route = useRoute()
 const router = useRouter()
-const masterStore = useMasterStore()
+const productStore = useProductStore()
+const categoryStore = useCategoryStore()
 
 const bookId = parseInt(route.params.bookId)
 const itemId = route.params.id ? parseInt(route.params.id) : null
@@ -48,7 +50,7 @@ async function saveNewCategory() {
   if (!newCategoryName.value.trim()) return
 
   try {
-    const id = await masterStore.addCategory(newCategoryName.value, newCategoryDescription.value, bookId)
+    const id = await categoryStore.addCategory(newCategoryName.value, newCategoryDescription.value, bookId)
     form.value.category_id = id
     showCategoryModal.value = false
     newCategoryName.value = ""
@@ -64,11 +66,12 @@ const title = computed(() => {
 })
 
 onMounted(async () => {
-  masterStore.watchBookData(bookId)
+  productStore.watchProducts(bookId)
+  categoryStore.watchCategories(bookId)
 
   if (!isNew) {
     // Hack: wait for data
-    const unsubscribe = masterStore.$subscribe((mutation, state) => {
+    const unsubscribe = productStore.$subscribe((mutation, state) => {
       const list = state.products
       const item = list.find((i) => i.id === itemId)
       if (item) {
@@ -77,7 +80,7 @@ onMounted(async () => {
     })
 
     // Also try immediately
-    const list = masterStore.products
+    const list = productStore.products
     const item = list.find((i) => i.id === itemId)
     if (item) fillForm(item)
   }
@@ -99,7 +102,7 @@ async function save() {
   if (!form.value.name) return
 
   if (isNew) {
-    await masterStore.addProduct(
+    await productStore.addProduct(
       form.value.name,
       form.value.rate,
       form.value.description,
@@ -108,7 +111,7 @@ async function save() {
       form.value.category_id
     )
   } else {
-    await masterStore.updateProduct(itemId, {
+    await productStore.updateProduct(itemId, {
       name: form.value.name,
       rate: form.value.rate,
       description: form.value.description,
@@ -122,7 +125,7 @@ async function save() {
 
 async function handleDelete() {
   try {
-    await masterStore.deleteProduct(itemId)
+    await productStore.deleteProduct(itemId)
     goBack()
   } catch (error) {
     toastMessage.value = error.message
@@ -177,7 +180,7 @@ function goBack() {
               <BaseSearchableSelect
                 v-model="form.category_id"
                 label="Category"
-                :options="masterStore.categories.map((c) => ({ label: c.name, value: c.id }))"
+                :options="categoryStore.categories.map((c) => ({ label: c.name, value: c.id }))"
                 placeholder="Select Category"
               />
             </div>

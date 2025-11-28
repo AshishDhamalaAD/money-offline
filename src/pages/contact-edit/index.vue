@@ -1,8 +1,9 @@
 <script setup>
-import { ref, onMounted } from "vue"
+import { ref, onMounted, computed } from "vue"
 import { useRoute, useRouter } from "vue-router"
 
-import { useMasterStore } from "@/store/modules/masterStore"
+import { useContactStore } from "@/store/modules/contactStore"
+import IconTrash from "@/assets/icons/IconTrash.vue"
 import BaseButton from "@/components/common/BaseButton.vue"
 import BaseInput from "@/components/common/BaseInput.vue"
 import BaseModal from "@/components/common/BaseModal.vue"
@@ -13,7 +14,7 @@ import PageHeader from "@/components/layout/PageHeader.vue"
 
 const route = useRoute()
 const router = useRouter()
-const masterStore = useMasterStore()
+const contactStore = useContactStore()
 
 const contactId = route.params.id ? parseInt(route.params.id) : null
 const isNew = !contactId
@@ -27,38 +28,43 @@ const showDeleteModal = ref(false)
 const showToast = ref(false)
 const toastMessage = ref("")
 
+const title = computed(() => {
+  return (isNew ? "New " : "Edit ") + "Contact"
+})
+
 onMounted(async () => {
   if (!isNew) {
-    // Ensure contacts are loaded
-    // masterStore.contacts is a liveQuery array, so it should be populated if we wait a bit or if already loaded
-    // Ideally we should have a getContact method or wait for subscription
-    // For now, let's assume it's populated since we came from the list
-    const contact = masterStore.contacts.find((c) => c.id === contactId)
-    if (contact) {
-      form.value.name = contact.name
-      form.value.phone = contact.phone || ""
-    } else {
-      // If refreshed, might need to wait.
-      // Simple hack: watch contacts
-      const unwatch = masterStore.$subscribe((mutation, state) => {
-        const c = state.contacts.find((c) => c.id === contactId)
-        if (c) {
-          form.value.name = c.name
-          form.value.phone = c.phone || ""
-          unwatch()
-        }
-      })
-    }
+    // Hack: wait for data
+    const unsubscribe = contactStore.$subscribe((mutation, state) => {
+      const list = state.contacts
+      const item = list.find((i) => i.id === contactId)
+      if (item) {
+        fillForm(item)
+      }
+    })
+
+    // Also try immediately
+    const list = contactStore.contacts
+    const item = list.find((i) => i.id === contactId)
+    if (item) fillForm(item)
   }
 })
+
+function fillForm(item) {
+  form.value.name = item.name
+  form.value.phone = item.phone || ""
+}
 
 async function save() {
   if (!form.value.name) return
 
   if (isNew) {
-    await masterStore.addContact(form.value.name, form.value.phone)
+    await contactStore.addContact(form.value.name, form.value.phone)
   } else {
-    await masterStore.updateContact(contactId, { name: form.value.name, phone: form.value.phone })
+    await contactStore.updateContact(contactId, {
+      name: form.value.name,
+      phone: form.value.phone,
+    })
   }
 
   goBack()
@@ -66,7 +72,7 @@ async function save() {
 
 async function handleDelete() {
   try {
-    await masterStore.deleteContact(contactId)
+    await contactStore.deleteContact(contactId)
     goBack()
   } catch (error) {
     toastMessage.value = error.message

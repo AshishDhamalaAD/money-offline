@@ -3,7 +3,7 @@ import { ref, onMounted, computed, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
 
 import { useBookStore } from "@/store/modules/bookStore"
-import { useMasterStore } from "@/store/modules/masterStore"
+import { useCategoryStore } from "@/store/modules/categoryStore"
 import IconChevronRight from "@/assets/icons/IconChevronRight.vue"
 import BaseButton from "@/components/common/BaseButton.vue"
 import BaseSearchInput from "@/components/common/BaseSearchInput.vue"
@@ -14,7 +14,7 @@ import SettingsTabs from "../components/SettingsTabs.vue"
 const route = useRoute()
 const router = useRouter()
 const bookStore = useBookStore()
-const masterStore = useMasterStore()
+const categoryStore = useCategoryStore()
 
 const bookId = parseInt(route.params.bookId)
 const book = ref(null)
@@ -22,7 +22,7 @@ const book = ref(null)
 onMounted(async () => {
   if (!bookId) return
   book.value = await bookStore.getBook(bookId)
-  masterStore.watchBookData(bookId)
+  categoryStore.watchCategories(bookId)
 })
 
 const searchQuery = ref(route.query.search || "")
@@ -34,7 +34,7 @@ watch(searchQuery, (newQuery) => {
 })
 
 const filteredItems = computed(() => {
-  const items = masterStore.categories
+  const items = categoryStore.categories
   if (!searchQuery.value) return items
 
   const query = searchQuery.value.toLowerCase()
