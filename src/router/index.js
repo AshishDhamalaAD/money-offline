@@ -97,6 +97,11 @@ const router = createRouter({
             path: '/settings/contacts/:id/edit',
             name: 'edit-contact',
             component: () => import('@/pages/contact-edit/index.vue')
+        },
+        {
+            path: '/book/:bookId/charts',
+            name: 'book-charts',
+            component: () => import('@/pages/book-charts/index.vue')
         }
     ]
 })

@@ -5,6 +5,7 @@ import { useRouter } from "vue-router"
 import { formatDate } from "@/utils/dateUtils"
 import IconBook from "@/assets/icons/IconBook.vue"
 import IconEllipsisVertical from "@/assets/icons/IconEllipsisVertical.vue"
+import IconChartBar from "@/assets/icons/IconChartBar.vue"
 
 const props = defineProps({
   book: {
@@ -35,9 +36,18 @@ const formattedDate = computed(() => {
       >
         <IconBook />
       </div>
-      <button class="rounded-full p-1 text-gray-400 hover:text-gray-600">
-        <IconEllipsisVertical class="h-5 w-5" />
-      </button>
+      <div class="flex gap-1">
+        <button
+          @click.stop="router.push({ name: 'book-charts', params: { bookId: book.id } })"
+          class="rounded-full p-2 text-gray-400 hover:text-indigo-600 hover:bg-gray-100 transition-colors"
+          title="View Charts"
+        >
+          <IconChartBar class="h-5 w-5" />
+        </button>
+        <button class="rounded-full p-1 text-gray-400 hover:text-gray-600">
+          <IconEllipsisVertical class="h-5 w-5" />
+        </button>
+      </div>
     </div>
 
     <div class="mt-4">
