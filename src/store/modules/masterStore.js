@@ -218,6 +218,15 @@ export const useMasterStore = defineStore('master', () => {
             throw new Error(`Cannot delete product. It is being used in ${usageCount} transaction(s).`)
         }
 
+        const productRates = await db.product_rates
+            .where('product_id')
+            .equals(id)
+            .toArray()
+
+        for (const productRate of productRates) {
+            await deleteProductRate(productRate.id)
+        }
+
         return await db.products.delete(id)
     }
 

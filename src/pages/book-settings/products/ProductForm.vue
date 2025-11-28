@@ -22,8 +22,7 @@ const router = useRouter()
 const masterStore = useMasterStore()
 
 const bookId = parseInt(route.params.bookId)
-const type = route.params.type // 'categories', 'products', 'paymentModes'
-const itemId = route.params.itemId ? parseInt(route.params.itemId) : null
+const itemId = route.params.id ? parseInt(route.params.id) : null
 const isNew = !itemId
 
 const attachments = ref([])
@@ -61,9 +60,7 @@ async function saveNewCategory() {
 }
 
 const title = computed(() => {
-  const typeLabel =
-    type === "paymentModes" ? "Payment Mode" : type.slice(0, -1).charAt(0).toUpperCase() + type.slice(0, -1).slice(1)
-  return (isNew ? "New " : "Edit ") + typeLabel
+  return (isNew ? "New " : "Edit ") + "Product"
 })
 
 onMounted(async () => {
@@ -72,7 +69,7 @@ onMounted(async () => {
   if (!isNew) {
     // Hack: wait for data
     const unsubscribe = masterStore.$subscribe((mutation, state) => {
-      const list = state[type]
+      const list = state.products
       const item = list.find((i) => i.id === itemId)
       if (item) {
         fillForm(item)
@@ -80,7 +77,7 @@ onMounted(async () => {
     })
 
     // Also try immediately
-    const list = masterStore[type]
+    const list = masterStore.products
     const item = list.find((i) => i.id === itemId)
     if (item) fillForm(item)
   }
@@ -93,7 +90,7 @@ function fillForm(item) {
   form.value.quantity_type = item.quantity_type || ""
   form.value.category_id = item.category_id || ""
 
-  if (type === "products" && item.attachments && item.attachments.length > 0) {
+  if (item.attachments && item.attachments.length > 0) {
     attachments.value = item.attachments
   }
 }
@@ -101,30 +98,23 @@ function fillForm(item) {
 async function save() {
   if (!form.value.name) return
 
-  if (type === "categories") {
-    if (isNew) await masterStore.addCategory(form.value.name, form.value.description, bookId)
-    else await masterStore.updateCategory(itemId, { name: form.value.name, description: form.value.description })
-  } else if (type === "products") {
-    if (isNew)
-      await masterStore.addProduct(
-        form.value.name,
-        form.value.rate,
-        form.value.description,
-        form.value.quantity_type,
-        bookId,
-        form.value.category_id
-      )
-    else
-      await masterStore.updateProduct(itemId, {
-        name: form.value.name,
-        rate: form.value.rate,
-        description: form.value.description,
-        quantity_type: form.value.quantity_type,
-        category_id: form.value.category_id,
-      })
-  } else if (type === "paymentModes") {
-    if (isNew) await masterStore.addPaymentMode(form.value.name, form.value.description, bookId)
-    else await masterStore.updatePaymentMode(itemId, { name: form.value.name, description: form.value.description })
+  if (isNew) {
+    await masterStore.addProduct(
+      form.value.name,
+      form.value.rate,
+      form.value.description,
+      form.value.quantity_type,
+      bookId,
+      form.value.category_id
+    )
+  } else {
+    await masterStore.updateProduct(itemId, {
+      name: form.value.name,
+      rate: form.value.rate,
+      description: form.value.description,
+      quantity_type: form.value.quantity_type,
+      category_id: form.value.category_id,
+    })
   }
 
   goBack()
@@ -132,10 +122,7 @@ async function save() {
 
 async function handleDelete() {
   try {
-    if (type === "categories") await masterStore.deleteCategory(itemId)
-    else if (type === "products") await masterStore.deleteProduct(itemId)
-    else if (type === "paymentModes") await masterStore.deletePaymentMode(itemId)
-
+    await masterStore.deleteProduct(itemId)
     goBack()
   } catch (error) {
     toastMessage.value = error.message
@@ -146,16 +133,16 @@ async function handleDelete() {
 
 function goBack() {
   router.push({
-    name: "book-settings",
+    name: "book-settings-products",
     params: { bookId },
-    query: route.query, // Preserve tab
+    query: route.query,
   })
 }
 </script>
 
 <template>
   <PageLayout>
-    <PageHeader :title="title" :back-route="{ name: 'book-settings', params: { bookId }, query: route.query }">
+    <PageHeader :title="title" :back-route="{ name: 'book-settings-products', params: { bookId }, query: route.query }">
       <template #actions>
         <button
           v-if="!isNew"
@@ -163,10 +150,9 @@ function goBack() {
           class="rounded-lg px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
         >
           <IconTrash class="h-5 w-5" />
-          <!-- Delete -->
         </button>
 
-        <ProductHistoryButton v-if="type === 'products' && !isNew" :product-id="itemId" :book-id="bookId" />
+        <ProductHistoryButton v-if="!isNew" :product-id="itemId" :book-id="bookId" />
       </template>
     </PageHeader>
 
@@ -176,7 +162,7 @@ function goBack() {
 
         <BaseInput v-model="form.name" label="Name" autoFocus required />
 
-        <div v-if="type === 'products'" class="space-y-4">
+        <div class="space-y-4">
           <BaseInput v-model="form.rate" type="number" label="Rate" required />
           <BaseSearchableSelect
             v-model="form.quantity_type"
@@ -204,7 +190,6 @@ function goBack() {
           </div>
         </div>
 
-        <!-- Description at bottom for all -->
         <BaseInput v-model="form.description" label="Description" placeholder="Optional" />
       </div>
     </main>
@@ -227,7 +212,7 @@ function goBack() {
 
     <!-- Delete Confirmation Modal -->
     <BaseModal :show="showDeleteModal" title="Confirm Delete" @close="showDeleteModal = false">
-      <p class="text-gray-600">Are you sure you want to delete this item? This action cannot be undone.</p>
+      <p class="text-gray-600">Are you sure you want to delete this product? This action cannot be undone.</p>
       <div class="flex justify-end gap-3 mt-6">
         <BaseButton variant="ghost" @click="showDeleteModal = false">Cancel</BaseButton>
         <BaseButton variant="danger" @click="handleDelete">Delete</BaseButton>

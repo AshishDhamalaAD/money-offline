@@ -16,18 +16,57 @@ const router = createRouter({
         },
         {
             path: '/book/:bookId/settings',
-            name: 'book-settings',
-            component: () => import('@/pages/book-settings/index.vue')
+            redirect: to => {
+                return { name: 'book-settings-products', params: { bookId: to.params.bookId } }
+            }
+        },
+        // Products
+        {
+            path: '/book/:bookId/settings/products',
+            name: 'book-settings-products',
+            component: () => import('@/pages/book-settings/products/ProductList.vue')
         },
         {
-            path: '/book/:bookId/:type/new',
-            name: 'new-item',
-            component: () => import('@/pages/item-edit/index.vue')
+            path: '/book/:bookId/settings/products/new',
+            name: 'book-settings-products-new',
+            component: () => import('@/pages/book-settings/products/ProductForm.vue')
         },
         {
-            path: '/book/:bookId/:type/:itemId/edit',
-            name: 'edit-item',
-            component: () => import('@/pages/item-edit/index.vue')
+            path: '/book/:bookId/settings/products/:id/edit',
+            name: 'book-settings-products-edit',
+            component: () => import('@/pages/book-settings/products/ProductForm.vue')
+        },
+        // Categories
+        {
+            path: '/book/:bookId/settings/categories',
+            name: 'book-settings-categories',
+            component: () => import('@/pages/book-settings/categories/CategoryList.vue')
+        },
+        {
+            path: '/book/:bookId/settings/categories/new',
+            name: 'book-settings-categories-new',
+            component: () => import('@/pages/book-settings/categories/CategoryForm.vue')
+        },
+        {
+            path: '/book/:bookId/settings/categories/:id/edit',
+            name: 'book-settings-categories-edit',
+            component: () => import('@/pages/book-settings/categories/CategoryForm.vue')
+        },
+        // Payment Modes
+        {
+            path: '/book/:bookId/settings/payment-modes',
+            name: 'book-settings-payment-modes',
+            component: () => import('@/pages/book-settings/payment-modes/PaymentModeList.vue')
+        },
+        {
+            path: '/book/:bookId/settings/payment-modes/new',
+            name: 'book-settings-payment-modes-new',
+            component: () => import('@/pages/book-settings/payment-modes/PaymentModeForm.vue')
+        },
+        {
+            path: '/book/:bookId/settings/payment-modes/:id/edit',
+            name: 'book-settings-payment-modes-edit',
+            component: () => import('@/pages/book-settings/payment-modes/PaymentModeForm.vue')
         },
         {
             path: '/book/:bookId/products/:productId/history',
