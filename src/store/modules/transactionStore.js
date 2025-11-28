@@ -1,8 +1,9 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { liveQuery } from 'dexie'
-import { db } from '@/db/dexie'
+
 import { formatDateTimeForDB, roundAmount } from '@/utils/dateUtils'
+import { db } from '@/db/dexie'
 import { useSyncStore } from '@/store/modules/syncStore'
 import { useSettingsStore } from '@/store/modules/settingsStore'
 import { useMasterStore } from '@/store/modules/masterStore'

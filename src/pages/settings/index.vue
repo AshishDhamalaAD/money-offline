@@ -1,6 +1,7 @@
 <script setup>
-import { useRouter, useRoute } from "vue-router"
 import { ref, watch } from "vue"
+import { useRouter, useRoute } from "vue-router"
+
 import PageLayout from "@/components/layout/PageLayout.vue"
 import PageHeader from "@/components/layout/PageHeader.vue"
 import DatabaseBackup from "@/pages/settings/DatabaseBackup.vue"

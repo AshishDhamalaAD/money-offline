@@ -1,6 +1,7 @@
 <script setup>
-import IconHistory from "@/assets/icons/IconHistory.vue"
 import { useRouter } from "vue-router"
+
+import IconHistory from "@/assets/icons/IconHistory.vue"
 
 const router = useRouter()
 

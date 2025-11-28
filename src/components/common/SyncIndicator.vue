@@ -1,6 +1,7 @@
 <script setup>
-import { useSyncStore } from "@/store/modules/syncStore"
 import { storeToRefs } from "pinia"
+
+import { useSyncStore } from "@/store/modules/syncStore"
 import IconSpinner from "@/assets/icons/IconSpinner.vue"
 
 const syncStore = useSyncStore()

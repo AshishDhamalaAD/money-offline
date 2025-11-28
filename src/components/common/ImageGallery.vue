@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, onUnmounted } from "vue"
+
 import { resizedImageUrls } from "@/utils/imageUtils"
 import { useSettingsStore } from "@/store/modules/settingsStore"
 import IconX from "@/assets/icons/IconX.vue"
