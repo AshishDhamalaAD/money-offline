@@ -14,6 +14,7 @@ import IconCaretDown from "@/assets/icons/IconCaretDown.vue"
 import IconSettings from "@/assets/icons/IconSettings.vue"
 import IconEdit from "@/assets/icons/IconEdit.vue"
 import IconFilter from "@/assets/icons/IconFilter.vue"
+import IconChartBar from "@/assets/icons/IconChartBar.vue"
 import SyncIndicator from "@/components/common/SyncIndicator.vue"
 import BaseSearchableSelect from "@/components/common/BaseSearchableSelect.vue"
 import BaseInput from "@/components/common/BaseInput.vue"
@@ -202,7 +203,11 @@ const filteredTransactions = computed(() => {
 
   // 2. Advanced Filters
   if (filterCategory.value) {
-    transactions = transactions.filter((t) => t.category_id === filterCategory.value)
+    transactions = transactions.filter((t) => {
+      const productCategoryIds = t.products?.filter((p) => p.category_id)?.map((p) => p.category_id) || []
+
+      return [...t.category_ids, ...productCategoryIds].includes(filterCategory.value)
+    })
   }
   if (filterPaymentMode.value) {
     transactions = transactions.filter((t) => t.payment_mode_id === filterPaymentMode.value)
@@ -380,6 +385,12 @@ async function saveBookName() {
   <PageLayout>
     <PageHeader :title="book?.name || 'Book Details'" :back-route="{ name: 'dashboard' }">
       <template #actions>
+        <button
+          @click="router.push({ name: 'book-charts', params: { bookId } })"
+          class="rounded-full bg-gray-100 p-2 text-gray-600 hover:bg-gray-200"
+        >
+          <IconChartBar class="h-5 w-5" />
+        </button>
         <button
           @click="router.push({ name: 'book-settings-products', params: { bookId } })"
           class="rounded-full bg-gray-100 p-2 text-gray-600 hover:bg-gray-200"

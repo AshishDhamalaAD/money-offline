@@ -4,7 +4,6 @@ import { useRouter } from "vue-router"
 
 import { formatDate } from "@/utils/dateUtils"
 import IconBook from "@/assets/icons/IconBook.vue"
-import IconEllipsisVertical from "@/assets/icons/IconEllipsisVertical.vue"
 import IconChartBar from "@/assets/icons/IconChartBar.vue"
 
 const props = defineProps({
@@ -43,9 +42,6 @@ const formattedDate = computed(() => {
           title="View Charts"
         >
           <IconChartBar class="h-5 w-5" />
-        </button>
-        <button class="rounded-full p-1 text-gray-400 hover:text-gray-600">
-          <IconEllipsisVertical class="h-5 w-5" />
         </button>
       </div>
     </div>
