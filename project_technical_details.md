@@ -104,7 +104,24 @@ Image uploads are handled separately from the main database sync to ensure effic
   3.  **Storage**: The server returns the image URL, which is then stored in the `attachments` array of the respective product or transaction in IndexedDB.
   4.  **Deletion**: Deleting an image removes the URL from the local database. No delete request is sent to the server (preserves server-side history/backups).
 
-## 8. Routing
+## 8. Security & Authentication
+
+### Biometric Lock (WebAuthn)
+
+The application implements a local-only biometric lock using the **Web Authentication API (WebAuthn)**.
+
+- **Mechanism**: Uses `navigator.credentials.create()` for registration and `navigator.credentials.get()` for verification.
+- **Storage**:
+  - **Credential ID**: Stored in `settings` table (`biometricCredentialId`).
+  - **State**: Enabled/Disabled state stored in `settings` table (`biometricEnabled`).
+- **Flow**:
+  1.  **Startup**: `App.vue` checks `settingsStore.biometricEnabled`.
+  2.  **Lock**: If enabled, `BiometricLock.vue` overlay is shown immediately.
+  3.  **Unlock**: User authenticates via platform authenticator (TouchID, FaceID, Windows Hello).
+  4.  **Access**: On success, the overlay is removed.
+- **Privacy**: Biometric data never leaves the device. The app only receives a cryptographic proof of authentication.
+
+## 9. Routing
 
 Routes are defined in `src/router/index.js` and use **Lazy Loading** for all pages to optimize initial load time.
 
@@ -115,7 +132,7 @@ Routes are defined in `src/router/index.js` and use **Lazy Loading** for all pag
 - **Transaction Form**: `/book/:bookId/transaction/...` (Create/Edit)
 - **Charts**: `/book/:bookId/charts`
 
-## 9. Build & Deployment
+## 10. Build & Deployment
 
 - **Development**: `npm run dev` (starts Vite dev server)
 - **Production Build**: `npm run build` (uses Vite to build for production)

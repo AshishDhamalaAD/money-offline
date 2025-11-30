@@ -410,10 +410,3 @@ When generating code:
 13. Page related components must remain in the specific page directory
 
 ---
-
-# 🤖 **15. After Code Generation (For AI)**
-
-- Update the project_features.md file as per the changes done
-- Update the project_technical_details.md file as per the changes done
-
----

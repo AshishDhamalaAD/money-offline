@@ -42,7 +42,15 @@ Extensive configuration options to tailor the application to user needs.
 - **Payment Modes**: Define and manage available payment methods (`/book/:bookId/settings/payment-modes`).
 - **Database Reset**: Option to completely wipe the local database and start fresh.
 
-## 5. Analytics & Visualization
+## 5. Security
+
+Robust security features to protect your financial data.
+
+- **Biometric Lock**: Secure the application with your device's native biometric authentication (Fingerprint, FaceID, TouchID) or screen lock (PIN/Pattern).
+  - **Auto-Lock**: Automatically locks the app on startup.
+  - **Local Authentication**: Uses the Web Authentication API (WebAuthn) for secure, local-only verification without sending biometric data to any server.
+
+## 6. Analytics & Visualization
 
 Visual tools to understand spending habits and financial trends.
 
@@ -51,7 +59,7 @@ Visual tools to understand spending habits and financial trends.
   - **Yearly View**: Line chart showing outgoing transactions by year.
   - **Date Filtering**: Filter chart data by specific date ranges.
 
-## 6. Technical & Infrastructure
+## 7. Technical & Infrastructure
 
 Built with modern web technologies for performance and reliability.
 
@@ -65,7 +73,7 @@ Built with modern web technologies for performance and reliability.
   - **Manual Import/Export**: Export data to a file for backup and import it back when needed.
   - **Auto-Backup**: Automated database backup functionality.
 
-## 7. User Interface & Experience (UI/UX)
+## 8. User Interface & Experience (UI/UX)
 
 Polished interface for a premium user experience.
 

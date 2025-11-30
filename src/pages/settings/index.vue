@@ -8,6 +8,7 @@ import DatabaseBackup from "@/pages/settings/DatabaseBackup.vue"
 import ServerSync from "@/pages/settings/ServerSync.vue"
 import ContactsManager from "@/pages/settings/ContactsManager.vue"
 import ResetDatabase from "@/pages/settings/ResetDatabase.vue"
+import SecuritySettings from "@/pages/settings/SecuritySettings.vue"
 
 const router = useRouter()
 const route = useRoute()
@@ -16,6 +17,7 @@ const activeTab = ref(route.query.tab || "contacts")
 
 const tabs = [
   { id: "contacts", label: "Manage Contacts" },
+  { id: "security", label: "Security" },
   { id: "data", label: "Import / Export" },
   { id: "reset", label: "Reset Database" },
 ]
@@ -29,7 +31,7 @@ watch(activeTab, (newTab) => {
 watch(
   () => route.query.tab,
   (newTab) => {
-    if (newTab && ["contacts", "data", "reset"].includes(newTab)) {
+    if (newTab && ["contacts", "data", "security", "reset"].includes(newTab)) {
       activeTab.value = newTab
     }
   }
@@ -68,6 +70,11 @@ watch(
         <DatabaseBackup />
 
         <ServerSync />
+      </div>
+
+      <!-- Security Section -->
+      <div v-if="activeTab === 'security'">
+        <SecuritySettings />
       </div>
 
       <!-- Danger Zone -->
