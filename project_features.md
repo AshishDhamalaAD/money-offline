@@ -21,7 +21,7 @@ Comprehensive tools for recording and managing financial transactions.
   - **Contact**: Associate transactions with specific people or entities (Payee/Payer).
   - **Payment Mode**: Specify the method of payment (e.g., Cash, Card, UPI).
   - **Discount & Charges**: Add specific adjustments to the final amount.
-  - **Attachments**: Upload and view receipts or related images.
+  - **Attachments**: Upload multiple images (receipts, bills) directly from the device. Supports offline queuing and management.
 - **Calculations**: Automatic computation of totals based on line items, discounts, and extra charges.
 
 ## 3. Inventory & Product Management
@@ -31,6 +31,7 @@ Manage items and services associated with transactions.
 - **Product List**: Maintain a catalog of products or services.
 - **Rate History**: Track the history of product rates over time (`/book/:bookId/products/:productId/history`).
 - **Line Items**: Add multiple products to a single transaction entry.
+- **Attachments**: Upload product images for better identification.
 
 ## 4. Data Management & Settings
 
@@ -70,6 +71,7 @@ Polished interface for a premium user experience.
 
 - **Dark Mode**: Full system-wide dark mode support for low-light environments.
 - **Image Gallery**: Integrated **LightGallery** for viewing transaction attachments with zoom and swipe gestures.
+- **Image Upload**: Seamless image uploading using **FilePond** with drag-and-drop support, image previews, and validation.
 - **Toast Notifications**: Non-intrusive feedback messages for user actions (success, error).
 - **Searchable Selects**: Enhanced dropdown menus with search functionality for quickly finding contacts, categories, or products.
 - **Responsive Design**: Optimized for both desktop and mobile devices.

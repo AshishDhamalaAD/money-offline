@@ -21,6 +21,7 @@ The application follows an **Offline-First** architecture, built as a **Progress
 - **Routing**: [Vue Router](https://router.vuejs.org/)
 - **Charts**: [Chart.js](https://www.chartjs.org/) with `vue-chartjs` wrapper
 - **Image Gallery**: [LightGallery](https://www.lightgalleryjs.com/)
+- **Image Upload**: [FilePond](https://pqina.nl/filepond/) with `vue-filepond` adapter
 - **PWA**: `vite-plugin-pwa`
 
 ## 3. Project Structure
@@ -91,7 +92,19 @@ The synchronization logic is centralized in `src/store/modules/syncStore.js`.
   4.  **Push**: Sends the dump to `${apiEndpoint}/sync-app-data` via POST request.
 - **Status**: Tracks `isSyncing`, `lastSyncTime`, and `error` state.
 
-## 7. Routing
+## 7. Image Uploads
+
+Image uploads are handled separately from the main database sync to ensure efficiency.
+
+- **Component**: `ImageUpload.vue` uses **FilePond** for handling file selection, validation (size, type), and previews.
+- **Service**: `uploadService.js` handles the API communication.
+- **Process**:
+  1.  **Validation**: Checks for internet connection, file type (JPG/PNG), and size (<5MB).
+  2.  **Direct Upload**: Images are uploaded immediately to `${apiEndpoint}/upload-image` via POST.
+  3.  **Storage**: The server returns the image URL, which is then stored in the `attachments` array of the respective product or transaction in IndexedDB.
+  4.  **Deletion**: Deleting an image removes the URL from the local database. No delete request is sent to the server (preserves server-side history/backups).
+
+## 8. Routing
 
 Routes are defined in `src/router/index.js` and use **Lazy Loading** for all pages to optimize initial load time.
 
@@ -102,7 +115,7 @@ Routes are defined in `src/router/index.js` and use **Lazy Loading** for all pag
 - **Transaction Form**: `/book/:bookId/transaction/...` (Create/Edit)
 - **Charts**: `/book/:bookId/charts`
 
-## 8. Build & Deployment
+## 9. Build & Deployment
 
 - **Development**: `npm run dev` (starts Vite dev server)
 - **Production Build**: `npm run build` (uses Vite to build for production)
