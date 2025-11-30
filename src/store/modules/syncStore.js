@@ -1,7 +1,9 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import { db } from '@/db/dexie'
+import pako from "pako";
 import { useDatabaseExport } from '@/composables/useDatabaseExport'
+import { SYNC_APP_DATA_API_URL } from "@/constants";
 
 export const useSyncStore = defineStore('sync', () => {
     const isSyncing = ref(false)
@@ -32,14 +34,23 @@ export const useSyncStore = defineStore('sync', () => {
 
             const data = await getDatabaseDump()
 
-            const response = await fetch(`${endpoint.value}/sync-app-data`, {
+            const jsonString = JSON.stringify(data);
+
+            const compressed = pako.gzip(jsonString);
+
+            const fileBlob = new Blob([compressed], { type: "application/gzip" });
+
+            const form = new FormData();
+
+            form.append("file", fileBlob, "data.json.gz");
+
+            const response = await fetch(`${endpoint.value}${SYNC_APP_DATA_API_URL}`, {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json",
                     "Accept": "application/json",
                     "X-TOKEN": token.value,
                 },
-                body: JSON.stringify(data),
+                body: form,
             })
 
             if (!response.ok) {
