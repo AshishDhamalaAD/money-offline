@@ -24,7 +24,7 @@ export const useProductStore = defineStore('product', () => {
         })
     }
 
-    async function addProduct(name, rate, description, quantityType, bookId, categoryId) {
+    async function addProduct(name, rate, description, quantityType, bookId, categoryId, attachments = []) {
         const productId = await db.products.add({
             name,
             rate: roundAmount(rate),
@@ -32,6 +32,7 @@ export const useProductStore = defineStore('product', () => {
             quantity_type: quantityType,
             book_id: bookId,
             category_id: categoryId,
+            attachments,
             created_at: formatDateTimeForDB(),
             updated_at: formatDateTimeForDB(),
             sync_status: 'pending'

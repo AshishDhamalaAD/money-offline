@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed } from "vue"
+import { ref, onMounted, computed, toRaw } from "vue"
 import { useRoute, useRouter } from "vue-router"
 
 import { QUANTITY_TYPES } from "@/constants"
@@ -15,6 +15,7 @@ import BaseToast from "@/components/common/BaseToast.vue"
 import LightGallery from "@/components/common/LightGallery.vue"
 import FixedSaveButton from "@/components/common/FixedSaveButton.vue"
 import ProductHistoryButton from "@/components/common/ProductHistoryButton.vue"
+import ImageUpload from "@/components/common/ImageUpload.vue"
 import PageLayout from "@/components/layout/PageLayout.vue"
 import PageHeader from "@/components/layout/PageHeader.vue"
 
@@ -94,7 +95,17 @@ function fillForm(item) {
   form.value.category_id = item.category_id || ""
 
   if (item.attachments && item.attachments.length > 0) {
-    attachments.value = item.attachments
+    attachments.value = [...item.attachments]
+  }
+}
+
+function handleUpload(url) {
+  attachments.value.push(url)
+}
+
+function removeAttachment(index) {
+  if (confirm("Are you sure you want to delete this image?")) {
+    attachments.value.splice(index, 1)
   }
 }
 
@@ -108,7 +119,8 @@ async function save() {
       form.value.description,
       form.value.quantity_type,
       bookId,
-      form.value.category_id
+      form.value.category_id,
+      toRaw(attachments.value)
     )
   } else {
     await productStore.updateProduct(itemId, {
@@ -117,6 +129,7 @@ async function save() {
       description: form.value.description,
       quantity_type: form.value.quantity_type,
       category_id: form.value.category_id,
+      attachments: toRaw(attachments.value),
     })
   }
 
@@ -161,7 +174,8 @@ function goBack() {
 
     <main class="p-4 space-y-6">
       <div class="bg-white p-4 rounded-sm shadow-sm space-y-4">
-        <LightGallery :images="attachments" />
+        <LightGallery :images="attachments" editable @delete="removeAttachment" />
+        <ImageUpload @upload="handleUpload" from="products" />
 
         <BaseInput v-model="form.name" label="Name" autoFocus required />
 

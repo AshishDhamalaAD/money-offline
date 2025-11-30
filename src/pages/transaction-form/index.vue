@@ -22,6 +22,7 @@ import FixedSaveButton from "@/components/common/FixedSaveButton.vue"
 import PageLayout from "@/components/layout/PageLayout.vue"
 import PageHeader from "@/components/layout/PageHeader.vue"
 import ProductLineItem from "@/pages/transaction-form/ProductLineItem.vue"
+import ImageUpload from "@/components/common/ImageUpload.vue"
 
 const route = useRoute()
 const router = useRouter()
@@ -59,12 +60,8 @@ const form = ref({
   charge: 0,
 })
 
-const allImages = computed(() => {
+const productImages = computed(() => {
   const images = []
-  // Transaction attachments
-  if (transactionAttachments.value.length > 0) {
-    images.push(...transactionAttachments.value)
-  }
   // Product attachments
   if (form.value.products) {
     form.value.products.forEach((p) => {
@@ -78,6 +75,16 @@ const allImages = computed(() => {
   }
   return images
 })
+
+function handleUpload(url) {
+  transactionAttachments.value.push(url)
+}
+
+function removeAttachment(index) {
+  if (confirm("Are you sure you want to delete this image?")) {
+    transactionAttachments.value.splice(index, 1)
+  }
+}
 
 const selectedCategories = computed(() => {
   return form.value.category_ids.map((id) => categoryStore.categories.find((c) => c.id === id)).filter(Boolean)
@@ -215,11 +222,15 @@ async function save() {
   saving.value = true
   try {
     if (isEdit) {
-      await transactionStore.updateTransaction(parseInt(route.params.id), form.value)
+      await transactionStore.updateTransaction(parseInt(route.params.id), {
+        ...form.value,
+        attachments: transactionAttachments.value,
+      })
     } else {
       await transactionStore.createTransaction({
         ...form.value,
         book_id: bookId,
+        attachments: transactionAttachments.value,
       })
     }
     router.back()
@@ -392,8 +403,6 @@ function openCategoryModalForProduct() {
         </button>
       </div>
 
-      <LightGallery :images="allImages" />
-
       <!-- Basic Fields -->
       <div class="space-y-4 rounded-sm bg-white p-4 shadow-sm">
         <BaseInput v-model="form.date" type="datetime-local" label="Date" required />
@@ -532,6 +541,21 @@ function openCategoryModalForProduct() {
             required
           />
         </div>
+      </div>
+
+      <!-- Image Upload -->
+      <div class="space-y-4 rounded-sm bg-white p-4 shadow-sm">
+        <div v-if="productImages.length > 0">
+          <h3 class="font-medium text-gray-900 mb-2">Product Images</h3>
+          <LightGallery :images="productImages" />
+        </div>
+
+        <div v-if="transactionAttachments.length > 0">
+          <h3 class="font-medium text-gray-900 mb-2">Transaction Images</h3>
+          <LightGallery :images="transactionAttachments" editable @delete="removeAttachment" />
+        </div>
+
+        <ImageUpload @upload="handleUpload" from="transactions" />
       </div>
     </main>
 

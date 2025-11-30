@@ -10,3 +10,5 @@ export const QUANTITY_TYPES = [
     { "label": "Meter", "value": 8 },
     { "label": "Tola", "value": 9 },
 ]
+
+export const UPLOAD_IMAGE_API_URL = '/upload-image'
