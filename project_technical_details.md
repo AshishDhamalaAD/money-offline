@@ -89,7 +89,8 @@ The synchronization logic is centralized in `src/store/modules/syncStore.js`.
   1.  **Check Connectivity**: Verifies `navigator.onLine`.
   2.  **Authentication**: Retrieves `apiEndpoint` and `apiToken` from `settings` table.
   3.  **Data Dump**: Generates a full JSON dump of the database using `useDatabaseExport`.
-  4.  **Push**: Sends the dump to `${apiEndpoint}/sync-app-data` via POST request.
+  4.  **Compression**: The JSON dump is compressed using **GZIP** (via `pako`) to minimize bandwidth usage.
+  5.  **Push**: Sends the compressed file (`data.json.gz`) as `FormData` to `${apiEndpoint}/sync-app-data` via POST request.
 - **Status**: Tracks `isSyncing`, `lastSyncTime`, and `error` state.
 
 ## 7. Image Uploads

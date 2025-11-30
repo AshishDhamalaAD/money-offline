@@ -68,6 +68,7 @@ Built with modern web technologies for performance and reliability.
   - **PWA (Progressive Web App)**: Installable on devices, capable of working offline, and provides an app-like experience.
 - **Data Synchronization**:
   - **Server Sync**: Capability to sync local data with a backend server (`ServerSync` component).
+  - **Bandwidth Optimization**: Data is compressed (GZIP) before uploading to ensure fast and efficient synchronization.
   - **Sync Status**: Visual indicators for data synchronization state.
 - **Backup & Restore**:
   - **Manual Import/Export**: Export data to a file for backup and import it back when needed.
