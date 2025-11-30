@@ -37,7 +37,7 @@ watch(searchQuery, (newQuery) => {
 })
 
 const filteredItems = computed(() => {
-  const items = productStore.products
+  const items = productStore.products.sort((p1, p2) => new Date(p2.created_at) - new Date(p1.created_at))
   if (!searchQuery.value) return items
 
   const query = searchQuery.value.toLowerCase()
