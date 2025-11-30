@@ -517,6 +517,7 @@ function openCategoryModalForProduct() {
             placeholder="0.00"
             @input="calculateTotal"
           />
+
           <BaseInput
             v-model="form.charge"
             type="number"
@@ -525,21 +526,18 @@ function openCategoryModalForProduct() {
             placeholder="0.00"
             @input="calculateTotal"
           />
-        </div>
-      </div>
 
-      <!-- Total Amount (Moved to bottom) -->
-      <div class="bg-gray-50 pb-6">
-        <div class="rounded-sm bg-white p-4 shadow-sm ring-1 ring-gray-200">
-          <BaseInput
-            v-model="form.amount"
-            type="number"
-            step="0.01"
-            label="Total Amount"
-            class="font-bold text-indigo-600"
-            :readonly="form.products.length > 0"
-            required
-          />
+          <div class="col-span-2">
+            <BaseInput
+              v-model="form.amount"
+              type="number"
+              step="0.01"
+              label="Total Amount"
+              class="font-bold text-indigo-600"
+              :readonly="form.products.length > 0"
+              required
+            />
+          </div>
         </div>
       </div>
 
