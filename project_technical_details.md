@@ -30,7 +30,7 @@ The application follows an **Offline-First** architecture, built as a **Progress
 src/
 ├── assets/             # Static assets (images, icons, global styles)
 ├── components/         # Vue components
-│   ├── common/         # Reusable UI components (BaseButton, BaseInput, etc.)
+│   ├── common/         # Reusable UI components (BaseButton, BaseInput, DateRangeTabs, ActiveFilterChips, etc.)
 │   └── layout/         # Layout components (PageLayout, PageHeader)
 ├── composables/        # Shared logic (Composition API hooks)
 ├── constants/          # Application constants
@@ -143,3 +143,11 @@ Routes are defined in `src/router/index.js` and use **Lazy Loading** for all pag
 
 - **Vite**: Configured with `@vitejs/plugin-vue` and `VitePWA`. Alias `@` maps to `./src`.
 - **Tailwind**: Scans all source files for class usage.
+
+## 11. Date Handling & Filtering
+
+To ensure consistency across the application, date logic is centralized:
+
+- **DateRangeTabs Component**: Encapsulates the logic for calculating date ranges (e.g., "This Month", "Last Year"). It emits standardized `startDate` and `endDate` strings (YYYY-MM-DD) to consumer components.
+- **Filtering Utility**: `filterByDateRange` (in `src/utils/dateUtils.js`) is used by charts and tables to filter data arrays based on the provided date range.
+- **Lazy Rendering**: Heavy chart components are wrapped in `LazyRender.vue` with `IntersectionObserver` to improve initial page load performance.

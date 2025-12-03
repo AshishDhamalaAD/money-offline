@@ -57,7 +57,12 @@ Visual tools to understand spending habits and financial trends.
 - **Charts**: Dedicated charts page (`/book/:bookId/charts`) featuring:
   - **Monthly View**: Line chart showing outgoing transactions by month.
   - **Yearly View**: Line chart showing outgoing transactions by year.
-  - **Date Filtering**: Filter chart data by specific date ranges.
+  - **Comparison View**: Bar chart comparing monthly expenses year-over-year.
+  - **Summary Tables**: Detailed product and category-wise summaries for the selected period.
+  - **Enhanced Filtering**:
+    - **Global Date Filter**: Quickly switch between common ranges (This Month, Last Year, etc.) or set custom dates.
+    - **Advanced Filters**: Filter by Transaction Type, Categories, and Products.
+    - **Active Filter Chips**: Visual indicators of applied filters with one-click removal.
 
 ## 7. Technical & Infrastructure
 
