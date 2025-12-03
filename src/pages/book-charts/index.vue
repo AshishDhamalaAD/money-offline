@@ -1,18 +1,6 @@
 <script setup>
 import { ref, onMounted, computed, reactive } from "vue"
 import { useRoute } from "vue-router"
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-} from "chart.js"
-import { Line, Bar } from "vue-chartjs"
 
 import { useTransactionStore } from "@/store/transactionStore"
 import { useBookStore } from "@/store/bookStore"
@@ -23,10 +11,14 @@ import PageHeader from "@/components/layout/PageHeader.vue"
 import BaseInput from "@/components/common/BaseInput.vue"
 import BaseButton from "@/components/common/BaseButton.vue"
 import BaseSearchableSelect from "@/components/common/BaseSearchableSelect.vue"
+import LazyRender from "@/components/common/LazyRender.vue"
+import TransactionsMonthChart from "@/pages/book-charts/TransactionsMonthChart.vue"
+import TransactionsYearChart from "@/pages/book-charts/TransactionsYearChart.vue"
+import TransactionsMonthBarChart from "@/pages/book-charts/TransactionsMonthBarChart.vue"
+import ProductSummaryTable from "@/pages/book-charts/ProductSummaryTable.vue"
+import CategorySummaryTable from "@/pages/book-charts/CategorySummaryTable.vue"
 import IconFilter from "@/assets/icons/IconFilter.vue"
 import IconX from "@/assets/icons/IconX.vue"
-
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend)
 
 const route = useRoute()
 const transactionStore = useTransactionStore()
@@ -141,99 +133,6 @@ const filteredTransactions = computed(() => {
 
   return transactions.sort((a, b) => new Date(a.date) - new Date(b.date))
 })
-
-// --- Chart Data Generators ---
-
-// Monthly Expenses (Line)
-const monthlyChartData = computed(() => {
-  const data = {}
-  filteredTransactions.value.forEach((t) => {
-    const date = new Date(t.date)
-    const key = `${date.toLocaleString("default", { month: "short" })} ${date.getFullYear()}`
-    if (!data[key]) data[key] = 0
-    data[key] += parseFloat(t.amount)
-  })
-
-  const sortedKeys = Object.keys(data).sort((a, b) => new Date(a) - new Date(b))
-
-  return {
-    labels: sortedKeys,
-    datasets: [
-      {
-        label: appliedFilters.value.type === "out" ? "Monthly Expenses" : "Monthly Income",
-        backgroundColor: "#f87979",
-        borderColor: "#f87979",
-        data: sortedKeys.map((key) => data[key]),
-        tension: 0.1,
-      },
-    ],
-  }
-})
-
-// Yearly Expenses (Line)
-const yearlyChartData = computed(() => {
-  const data = {}
-  filteredTransactions.value.forEach((t) => {
-    const date = new Date(t.date)
-    const key = `${date.getFullYear()}`
-    if (!data[key]) data[key] = 0
-    data[key] += parseFloat(t.amount)
-  })
-
-  const sortedKeys = Object.keys(data).sort()
-
-  return {
-    labels: sortedKeys,
-    datasets: [
-      {
-        label: appliedFilters.value.type === "out" ? "Yearly Expenses" : "Yearly Income",
-        backgroundColor: "#36A2EB",
-        borderColor: "#36A2EB",
-        data: sortedKeys.map((key) => data[key]),
-        tension: 0.1,
-      },
-    ],
-  }
-})
-
-// Yearly Comparison (Grouped Bar)
-const yearlyComparisonChartData = computed(() => {
-  const data = {} // { year: { Jan: 0, Feb: 0, ... } }
-  const years = new Set()
-
-  filteredTransactions.value.forEach((t) => {
-    const date = new Date(t.date)
-    const year = date.getFullYear()
-    const month = date.toLocaleString("default", { month: "short" })
-
-    years.add(year)
-    if (!data[year]) data[year] = {}
-    if (!data[year][month]) data[year][month] = 0
-    data[year][month] += parseFloat(t.amount)
-  })
-
-  const sortedYears = Array.from(years).sort()
-  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-
-  // Distinct colors for years
-  const colors = ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF", "#FF9F40"]
-
-  const datasets = sortedYears.map((year, index) => ({
-    label: `Year ${year}`,
-    backgroundColor: colors[index % colors.length],
-    data: months.map((m) => data[year]?.[m] || 0),
-  }))
-
-  return {
-    labels: months,
-    datasets,
-  }
-})
-
-const chartOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-}
 </script>
 
 <template>
@@ -391,35 +290,28 @@ const chartOptions = {
       <!-- Charts Grid -->
       <div class="grid gap-6">
         <!-- Monthly Chart -->
-        <div class="bg-white p-4 rounded-lg shadow-sm h-80">
-          <h3 class="font-medium text-gray-900 mb-4">Transactions Month Wise Chart</h3>
-          <div class="h-64">
-            <Line v-if="monthlyChartData.labels.length > 0" :data="monthlyChartData" :options="chartOptions" />
-            <div v-else class="h-full flex items-center justify-center text-gray-500">No data available</div>
-          </div>
-        </div>
+        <LazyRender>
+          <TransactionsMonthChart :transactions="filteredTransactions" :filter-type="appliedFilters.type" />
+        </LazyRender>
 
         <!-- Yearly Chart -->
-        <div class="bg-white p-4 rounded-lg shadow-sm h-80">
-          <h3 class="font-medium text-gray-900 mb-4">Transactions Year Wise Chart</h3>
-          <div class="h-64">
-            <Line v-if="yearlyChartData.labels.length > 0" :data="yearlyChartData" :options="chartOptions" />
-            <div v-else class="h-full flex items-center justify-center text-gray-500">No data available</div>
-          </div>
-        </div>
+        <LazyRender>
+          <TransactionsYearChart :transactions="filteredTransactions" :filter-type="appliedFilters.type" />
+        </LazyRender>
 
         <!-- Yearly Comparison Chart (Grouped Bar) -->
-        <div class="bg-white p-4 rounded-lg shadow-sm h-80">
-          <h3 class="font-medium text-gray-900 mb-4">Transactions Month Wise Bar Chart (Yearly Comparison)</h3>
-          <div class="h-64">
-            <Bar
-              v-if="yearlyComparisonChartData.datasets.length > 0"
-              :data="yearlyComparisonChartData"
-              :options="chartOptions"
-            />
-            <div v-else class="h-full flex items-center justify-center text-gray-500">No data available</div>
-          </div>
-        </div>
+        <LazyRender>
+          <TransactionsMonthBarChart :transactions="filteredTransactions" />
+        </LazyRender>
+
+        <!-- Summary Tables (Cash Out Only) -->
+        <LazyRender v-if="appliedFilters.type === 'out'">
+          <ProductSummaryTable :transactions="filteredTransactions" />
+        </LazyRender>
+
+        <LazyRender v-if="appliedFilters.type === 'out'">
+          <CategorySummaryTable :transactions="filteredTransactions" />
+        </LazyRender>
       </div>
     </main>
   </PageLayout>
