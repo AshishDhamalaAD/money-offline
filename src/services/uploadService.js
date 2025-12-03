@@ -1,5 +1,5 @@
 import { db } from "@/db/dexie"
-import { UPLOAD_IMAGE_API_URL } from "@/constants"
+import { UPLOAD_IMAGE_API_URL } from "@/constants/routes"
 
 export const uploadService = {
     async uploadImage(file, from) {
