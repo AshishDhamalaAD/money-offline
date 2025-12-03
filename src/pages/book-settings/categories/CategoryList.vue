@@ -2,8 +2,8 @@
 import { ref, onMounted, computed, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
 
-import { useBookStore } from "@/store/modules/bookStore"
-import { useCategoryStore } from "@/store/modules/categoryStore"
+import { useBookStore } from "@/store/bookStore"
+import { useCategoryStore } from "@/store/categoryStore"
 import IconChevronRight from "@/assets/icons/IconChevronRight.vue"
 import BaseButton from "@/components/common/BaseButton.vue"
 import BaseSearchInput from "@/components/common/BaseSearchInput.vue"

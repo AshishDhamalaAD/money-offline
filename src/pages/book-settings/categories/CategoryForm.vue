@@ -2,7 +2,7 @@
 import { ref, onMounted, computed } from "vue"
 import { useRoute, useRouter } from "vue-router"
 
-import { useCategoryStore } from "@/store/modules/categoryStore"
+import { useCategoryStore } from "@/store/categoryStore"
 import IconTrash from "@/assets/icons/IconTrash.vue"
 import BaseButton from "@/components/common/BaseButton.vue"
 import BaseInput from "@/components/common/BaseInput.vue"

@@ -2,7 +2,7 @@
 import { ref } from "vue"
 import { useRouter } from "vue-router"
 
-import { useBookStore } from "@/store/modules/bookStore"
+import { useBookStore } from "@/store/bookStore"
 import IconSettings from "@/assets/icons/IconSettings.vue"
 import IconBook from "@/assets/icons/IconBook.vue"
 import BaseButton from "@/components/common/BaseButton.vue"

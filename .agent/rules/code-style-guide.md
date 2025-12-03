@@ -28,8 +28,8 @@ src/
 │   └── guards.js
 │
 ├── store/
-│   ├── modules/            // store modules
-│   └── helpers.js          // utility store functions
+│   ├── booktore.js
+│   └── categoryStore.js
 │
 ├── db/
 │   ├── dexie.js            // Dexie instance

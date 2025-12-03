@@ -2,7 +2,7 @@
 import { ref, computed } from "vue"
 import { useRouter } from "vue-router"
 
-import { useContactStore } from "@/store/modules/contactStore"
+import { useContactStore } from "@/store/contactStore"
 import BaseButton from "@/components/common/BaseButton.vue"
 import SearchInput from "@/components/common/BaseSearchInput.vue"
 

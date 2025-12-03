@@ -4,9 +4,9 @@ import { liveQuery } from 'dexie'
 
 import { formatDateTimeForDB, roundAmount } from '@/utils/dateUtils'
 import { db } from '@/db/dexie'
-import { useSyncStore } from '@/store/modules/syncStore'
-import { useSettingsStore } from '@/store/modules/settingsStore'
-import { useProductStore } from '@/store/modules/productStore'
+import { useSyncStore } from '@/store/syncStore'
+import { useSettingsStore } from '@/store/settingsStore'
+import { useProductStore } from '@/store/productStore'
 
 export const useTransactionStore = defineStore('transaction', () => {
     const transactions = ref([])

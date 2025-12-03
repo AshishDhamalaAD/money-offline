@@ -2,7 +2,7 @@
 import { onMounted, ref } from "vue"
 import { RouterView } from "vue-router"
 
-import { useSettingsStore } from "@/store/modules/settingsStore"
+import { useSettingsStore } from "@/store/settingsStore"
 import BiometricLock from "@/components/common/BiometricLock.vue"
 
 const settingsStore = useSettingsStore()

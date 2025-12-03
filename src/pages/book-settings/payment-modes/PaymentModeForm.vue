@@ -2,7 +2,7 @@
 import { ref, onMounted, computed } from "vue"
 import { useRoute, useRouter } from "vue-router"
 
-import { usePaymentModeStore } from "@/store/modules/paymentModeStore"
+import { usePaymentModeStore } from "@/store/paymentModeStore"
 import IconTrash from "@/assets/icons/IconTrash.vue"
 import BaseButton from "@/components/common/BaseButton.vue"
 import BaseInput from "@/components/common/BaseInput.vue"

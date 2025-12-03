@@ -10,7 +10,7 @@ import "lightgallery/css/lg-zoom.css"
 import "lightgallery/css/lg-thumbnail.css"
 
 import { resizedImageUrls } from "@/utils/imageUtils"
-import { useSettingsStore } from "@/store/modules/settingsStore"
+import { useSettingsStore } from "@/store/settingsStore"
 
 const settingsStore = useSettingsStore()
 

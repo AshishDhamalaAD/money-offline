@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted } from "vue"
-import { useSettingsStore } from "@/store/modules/settingsStore"
+import { useSettingsStore } from "@/store/settingsStore"
 import IconLock from "@/assets/icons/IconLock.vue"
 
 const emit = defineEmits(["unlocked"])

@@ -2,8 +2,8 @@
 import { ref, onMounted } from "vue"
 import { storeToRefs } from "pinia"
 
-import { useSyncStore } from "@/store/modules/syncStore"
-import { useSettingsStore } from "@/store/modules/settingsStore"
+import { useSyncStore } from "@/store/syncStore"
+import { useSettingsStore } from "@/store/settingsStore"
 import BaseButton from "@/components/common/BaseButton.vue"
 import BaseInput from "@/components/common/BaseInput.vue"
 import Toast from "@/components/common/BaseToast.vue"

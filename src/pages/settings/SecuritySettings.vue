@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed } from "vue"
-import { useSettingsStore } from "@/store/modules/settingsStore"
+import { useSettingsStore } from "@/store/settingsStore"
 
 const settingsStore = useSettingsStore()
 const loading = ref(false)

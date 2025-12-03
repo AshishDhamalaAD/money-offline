@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from "vue"
 
-import { useBookStore } from "@/store/modules/bookStore"
+import { useBookStore } from "@/store/bookStore"
 import BaseButton from "@/components/common/BaseButton.vue"
 import Toast from "@/components/common/BaseToast.vue"
 import Modal from "@/components/common/BaseModal.vue"

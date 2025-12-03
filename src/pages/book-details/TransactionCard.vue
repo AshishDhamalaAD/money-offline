@@ -4,8 +4,8 @@ import { computed } from "vue"
 import { formatTime } from "@/utils/dateUtils"
 import { formatCurrency } from "@/utils/moneyUtils"
 import { resizedImageUrls } from "@/utils/imageUtils"
-import { useCategoryStore } from "@/store/modules/categoryStore"
-import { usePaymentModeStore } from "@/store/modules/paymentModeStore"
+import { useCategoryStore } from "@/store/categoryStore"
+import { usePaymentModeStore } from "@/store/paymentModeStore"
 
 const props = defineProps({
   transaction: {
