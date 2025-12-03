@@ -27,6 +27,8 @@ import PageHeader from "@/components/layout/PageHeader.vue"
 import TransactionCard from "@/pages/book-details/TransactionCard.vue"
 import StatsSummary from "@/pages/book-details/StatsSummary.vue"
 import DeleteBook from "@/pages/book-details/DeleteBook.vue"
+import DateRangeTabs from "@/components/common/DateRangeTabs.vue"
+import ActiveFilterChips from "@/components/common/ActiveFilterChips.vue"
 
 const route = useRoute()
 const router = useRouter()
@@ -91,12 +93,6 @@ onMounted(async () => {
 })
 
 // Reset custom date range when switching to other filters
-watch(selectedFilter, (newValue) => {
-  if (newValue !== "custom") {
-    startDate.value = ""
-    endDate.value = ""
-  }
-})
 
 // Persist filters to URL query params
 watch(
@@ -116,21 +112,6 @@ watch(
     router.replace({ query })
   }
 )
-
-const filterOptions = computed(() => {
-  return [
-    { label: "All", value: "all" },
-    { label: "This Month", value: "month" },
-    { label: "Last Month", value: "last-month" },
-    { label: "Today", value: "today" },
-    { label: "Yesterday", value: "yesterday" },
-    // { label: 'This Week', value: 'this-week' },
-    // { label: 'Last Week', value: 'last-week' },
-    { label: "This Year", value: "this-year" },
-    { label: "Last Year", value: "last-year" },
-    { label: "Custom Date Range", value: "custom" },
-  ]
-})
 
 const activeFiltersCount = computed(() => {
   let count = 0
@@ -187,18 +168,16 @@ const filteredTransactions = computed(() => {
   // 1. Date Filtering
   if (selectedFilter.value === "all") {
     transactions = transactionStore.transactions
-  } else if (selectedFilter.value === "custom") {
-    if (startDate.value && endDate.value) {
-      transactions = transactionStore.getFilteredTransactions({
-        dateRange: "custom",
-        startDate: startDate.value,
-        endDate: endDate.value,
-      })
-    } else {
-      transactions = transactionStore.transactions
-    }
+  } else if (startDate.value && endDate.value) {
+    // Use custom date range logic for all filters that have dates
+    transactions = transactionStore.getFilteredTransactions({
+      dateRange: "custom",
+      startDate: startDate.value,
+      endDate: endDate.value,
+    })
   } else {
-    transactions = transactionStore.getFilteredTransactions({ dateRange: selectedFilter.value })
+    // Fallback (should not happen if DateRangeTabs works correctly for non-all filters)
+    transactions = transactionStore.transactions
   }
 
   // 2. Advanced Filters
@@ -283,36 +262,9 @@ const filteredStats = computed(() => {
 
   // Calculate opening balance (net balance from transactions before the filter period)
   if (selectedFilter.value !== "all") {
-    const now = getNepalDate()
-    now.setHours(0, 0, 0, 0)
-
     let filterStartDate = null
 
-    if (selectedFilter.value === "today") {
-      filterStartDate = new Date(now)
-    } else if (selectedFilter.value === "yesterday") {
-      filterStartDate = new Date(now)
-      filterStartDate.setDate(filterStartDate.getDate() - 1)
-    } else if (selectedFilter.value === "week") {
-      filterStartDate = new Date(now)
-      filterStartDate.setDate(filterStartDate.getDate() - 6)
-    } else if (selectedFilter.value === "this-week") {
-      const dayOfWeek = now.getDay()
-      filterStartDate = new Date(now)
-      filterStartDate.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1))
-    } else if (selectedFilter.value === "last-week") {
-      const dayOfWeek = now.getDay()
-      filterStartDate = new Date(now)
-      filterStartDate.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1) - 7)
-    } else if (selectedFilter.value === "month") {
-      filterStartDate = new Date(now.getFullYear(), now.getMonth(), 1)
-    } else if (selectedFilter.value === "last-month") {
-      filterStartDate = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-    } else if (selectedFilter.value === "this-year") {
-      filterStartDate = new Date(now.getFullYear(), 0, 1)
-    } else if (selectedFilter.value === "last-year") {
-      filterStartDate = new Date(now.getFullYear() - 1, 0, 1)
-    } else if (selectedFilter.value === "custom" && startDate.value) {
+    if (startDate.value) {
       filterStartDate = new Date(startDate.value)
       filterStartDate.setHours(0, 0, 0, 0)
     }
@@ -423,40 +375,7 @@ async function saveBookName() {
       </div>
 
       <!-- Date Filters -->
-      <div class="space-y-3">
-        <div class="flex items-center gap-2 overflow-x-auto pb-2 pt-1 no-scrollbar -mx-4 px-4">
-          <button
-            v-for="opt in filterOptions.slice(0, -1)"
-            :key="opt.value"
-            @click="selectedFilter = opt.value"
-            :class="[
-              'rounded-full px-4 py-1.5 text-sm font-medium whitespace-nowrap transition-colors',
-              selectedFilter === opt.value
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'bg-white text-gray-600 ring-1 ring-gray-200 shadow-sm',
-            ]"
-          >
-            {{ opt.label }}
-          </button>
-          <button
-            @click="selectedFilter = 'custom'"
-            :class="[
-              'rounded-full px-4 py-1.5 text-sm font-medium whitespace-nowrap transition-colors',
-              selectedFilter === 'custom'
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'bg-white text-gray-600 ring-1 ring-gray-200 shadow-sm',
-            ]"
-          >
-            Custom
-          </button>
-        </div>
-
-        <!-- Custom Date Range Pickers -->
-        <div v-if="selectedFilter === 'custom'" class="grid grid-cols-2 gap-3 bg-white p-4 rounded-sm shadow-sm">
-          <BaseInput v-model="startDate" type="date" label="Start Date" />
-          <BaseInput v-model="endDate" type="date" label="End Date" />
-        </div>
-      </div>
+      <DateRangeTabs v-model="selectedFilter" v-model:start-date="startDate" v-model:end-date="endDate" />
 
       <!-- Search & Advanced Filters -->
       <div class="flex gap-2">
@@ -474,33 +393,18 @@ async function saveBookName() {
           </div>
         </button>
       </div>
+
       <!-- Selected Filters -->
-      <div v-if="activeFiltersCount > 0" class="flex flex-wrap gap-2 mt-2">
-        <template v-if="filterCategory">
-          <span class="bg-gray-200 text-gray-800 text-sm px-2 py-1 rounded flex items-center">
-            Category: {{ categoryStore.categories.find((c) => c.id === filterCategory)?.name }}
-            <button @click="clearFilter('category')" class="ml-1 text-gray-500 hover:text-gray-700">&times;</button>
-          </span>
-        </template>
-        <template v-if="filterPaymentMode">
-          <span class="bg-gray-200 text-gray-800 text-sm px-2 py-1 rounded flex items-center">
-            Payment: {{ paymentModeStore.paymentModes.find((p) => p.id === filterPaymentMode)?.name }}
-            <button @click="clearFilter('payment')" class="ml-1 text-gray-500 hover:text-gray-700">&times;</button>
-          </span>
-        </template>
-        <template v-if="filterContact">
-          <span class="bg-gray-200 text-gray-800 text-sm px-2 py-1 rounded flex items-center">
-            Contact: {{ contactStore.contacts.find((c) => c.id === filterContact)?.name }}
-            <button @click="clearFilter('contact')" class="ml-1 text-gray-500 hover:text-gray-700">&times;</button>
-          </span>
-        </template>
-        <template v-if="filterProduct">
-          <span class="bg-gray-200 text-gray-800 text-sm px-2 py-1 rounded flex items-center">
-            Product: {{ productStore.products.find((p) => p.id === filterProduct)?.name }}
-            <button @click="clearFilter('product')" class="ml-1 text-gray-500 hover:text-gray-700">&times;</button>
-          </span>
-        </template>
-      </div>
+      <ActiveFilterChips
+        v-if="activeFiltersCount > 0"
+        :filters="{
+          category: filterCategory,
+          paymentMode: filterPaymentMode,
+          contact: filterContact,
+          product: filterProduct,
+        }"
+        @clear="clearFilter"
+      />
 
       <!-- Transactions -->
       <div class="space-y-6">

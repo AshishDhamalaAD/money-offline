@@ -1,14 +1,15 @@
 <script setup>
-import { ref, onMounted, computed, reactive } from "vue"
-import { useRoute } from "vue-router"
+import { ref, computed, onMounted, watch } from "vue"
+import { useRoute, useRouter } from "vue-router"
 
-import { useTransactionStore } from "@/store/transactionStore"
 import { useBookStore } from "@/store/bookStore"
+import { useTransactionStore } from "@/store/transactionStore"
 import { useCategoryStore } from "@/store/categoryStore"
+import { useContactStore } from "@/store/contactStore"
+import { usePaymentModeStore } from "@/store/paymentModeStore"
 import { useProductStore } from "@/store/productStore"
 import PageLayout from "@/components/layout/PageLayout.vue"
 import PageHeader from "@/components/layout/PageHeader.vue"
-import BaseInput from "@/components/common/BaseInput.vue"
 import BaseButton from "@/components/common/BaseButton.vue"
 import BaseSearchableSelect from "@/components/common/BaseSearchableSelect.vue"
 import LazyRender from "@/components/common/LazyRender.vue"
@@ -19,83 +20,96 @@ import ProductSummaryTable from "@/pages/book-charts/ProductSummaryTable.vue"
 import CategorySummaryTable from "@/pages/book-charts/CategorySummaryTable.vue"
 import IconFilter from "@/assets/icons/IconFilter.vue"
 import IconX from "@/assets/icons/IconX.vue"
+import ActiveFilterChips from "@/components/common/ActiveFilterChips.vue"
+import DateRangeTabs from "@/components/common/DateRangeTabs.vue"
 
 const route = useRoute()
-const transactionStore = useTransactionStore()
+const router = useRouter()
 const bookStore = useBookStore()
+const transactionStore = useTransactionStore()
 const categoryStore = useCategoryStore()
+const contactStore = useContactStore()
+const paymentModeStore = usePaymentModeStore()
 const productStore = useProductStore()
 
-const bookId = parseInt(route.params.bookId)
 const book = ref(null)
-
-// Filter State
+const bookId = ref(null)
 const showFilters = ref(false)
-const filters = reactive({
+
+// Global Date Filter (Top Card)
+const globalDateFilter = ref("all")
+const globalStartDate = ref("")
+const globalEndDate = ref("")
+
+// Filters
+const appliedFilters = ref({
   type: "out", // 'in' or 'out'
-  startDate: "",
-  endDate: "",
   includeCategoryIds: [],
   excludeCategoryIds: [],
   includeProductIds: [],
   excludeProductIds: [],
 })
 
-// Applied Filters (Snapshot for charts)
-const appliedFilters = ref({ ...filters })
-
-onMounted(async () => {
-  book.value = await bookStore.getBook(bookId)
-  transactionStore.setBookId(bookId)
-  categoryStore.watchCategories(bookId)
-  productStore.watchProducts(bookId)
+// Temporary filters for the filter card
+const tempFilters = ref({
+  type: "out",
+  includeCategoryIds: [],
+  excludeCategoryIds: [],
+  includeProductIds: [],
+  excludeProductIds: [],
 })
 
+onMounted(async () => {
+  const bookIdParam = parseInt(route.params.bookId)
+  if (!bookIdParam) return
+
+  bookId.value = bookIdParam
+  book.value = await bookStore.getBook(bookId.value)
+  transactionStore.setBookId(bookId.value)
+
+  categoryStore.watchCategories(bookId.value)
+  paymentModeStore.watchPaymentModes(bookId.value)
+  productStore.watchProducts(bookId.value)
+})
+
+function toggleFilters() {
+  if (!showFilters.value) {
+    // Open: copy applied to temp
+    tempFilters.value = JSON.parse(JSON.stringify(appliedFilters.value))
+  }
+  showFilters.value = !showFilters.value
+}
+
 function applyFilters() {
-  appliedFilters.value = JSON.parse(JSON.stringify(filters))
-  // showFilters.value = false // Optional: keep open or close
+  appliedFilters.value = JSON.parse(JSON.stringify(tempFilters.value))
+  //   showFilters.value = false // Close filter card on apply
 }
 
 function resetFilters() {
-  filters.type = "out"
-  filters.startDate = ""
-  filters.endDate = ""
-  filters.includeCategoryIds = []
-  filters.excludeCategoryIds = []
-  filters.includeProductIds = []
-  filters.excludeProductIds = []
-  applyFilters()
+  tempFilters.value = {
+    type: "out",
+    includeCategoryIds: [],
+    excludeCategoryIds: [],
+    includeProductIds: [],
+    excludeProductIds: [],
+  }
 }
 
-// Helper to add/remove from arrays
-function addItem(array, id) {
-  if (id && !array.includes(id)) array.push(id)
-}
-function removeItem(array, index) {
-  array.splice(index, 1)
+// Helper to clear specific filters from chips
+function clearFilter(type) {
+  // Not used directly, we render manual chips for arrays
 }
 
-const filteredTransactions = computed(() => {
+// Computed property for "Base" transactions (Filtered by Type, Category, Product ONLY)
+// Date filtering will be handled by individual charts/tables using globalDateFilter as initial state
+const baseTransactions = computed(() => {
   let transactions = transactionStore.transactions.filter((t) => t.type === appliedFilters.value.type)
-
-  // Date Range
-  if (appliedFilters.value.startDate) {
-    transactions = transactions.filter((t) => new Date(t.date) >= new Date(appliedFilters.value.startDate))
-  }
-  if (appliedFilters.value.endDate) {
-    const end = new Date(appliedFilters.value.endDate)
-    end.setHours(23, 59, 59, 999)
-    transactions = transactions.filter((t) => new Date(t.date) <= end)
-  }
 
   // Include Categories
   if (appliedFilters.value.includeCategoryIds.length > 0) {
     transactions = transactions.filter((t) => {
-      // Transaction has category_ids array
       if (!t.category_ids || t.category_ids.length === 0) return false
-
       const transactionProductCategoryIds = t.products?.filter((p) => p.category_id)?.map((p) => p.category_id) || []
-
       return [...t.category_ids, ...transactionProductCategoryIds].some((id) =>
         appliedFilters.value.includeCategoryIds.includes(id)
       )
@@ -106,10 +120,8 @@ const filteredTransactions = computed(() => {
   if (appliedFilters.value.excludeCategoryIds.length > 0) {
     transactions = transactions.filter((t) => {
       if (!t.category_ids) return true
-
       const transactionProductCategoryIds = t.products?.filter((p) => p.category_id)?.map((p) => p.category_id) || []
-
-      return [...t.category_ids, ...transactionProductCategoryIds].some((id) =>
+      return ![...t.category_ids, ...transactionProductCategoryIds].some((id) =>
         appliedFilters.value.excludeCategoryIds.includes(id)
       )
     })
@@ -133,186 +145,176 @@ const filteredTransactions = computed(() => {
 
   return transactions.sort((a, b) => new Date(a.date) - new Date(b.date))
 })
+
+// Global Date Filter Object to pass to children
+const globalFilterObj = computed(() => ({
+  filter: globalDateFilter.value,
+  startDate: globalStartDate.value,
+  endDate: globalEndDate.value,
+}))
+
+function removeCategory(id) {
+  appliedFilters.value.includeCategoryIds = appliedFilters.value.includeCategoryIds.filter((c) => c !== id)
+}
+function removeProduct(id) {
+  appliedFilters.value.includeProductIds = appliedFilters.value.includeProductIds.filter((p) => p !== id)
+}
 </script>
 
 <template>
   <PageLayout>
-    <PageHeader :title="`${book?.name || 'Book'} Charts`">
-      <template #actions>
-        <button
-          @click="showFilters = !showFilters"
-          :class="[
-            'p-2 rounded-full transition-colors',
-            showFilters ? 'bg-indigo-100 text-indigo-600' : 'text-gray-500 hover:bg-gray-100',
-          ]"
-        >
-          <IconFilter class="w-6 h-6" />
-        </button>
-      </template>
+    <PageHeader :title="book?.name || 'Book Charts'" :back-route="{ name: 'book-details', params: { id: bookId } }">
     </PageHeader>
 
     <main class="p-4 space-y-6 pb-24">
-      <!-- Filters Section -->
-      <div v-if="showFilters" class="bg-white p-4 rounded-lg shadow-sm space-y-6 border border-indigo-100">
-        <!-- Type Toggle -->
-        <div class="flex rounded-sm bg-gray-100 p-1 w-full md:w-64">
+      <!-- Top Filter Section -->
+      <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100 space-y-4">
+        <div class="flex justify-between items-center">
+          <h2 class="font-semibold text-gray-800">Global Filters</h2>
           <button
-            @click="filters.type = 'in'"
-            :class="[
-              'flex-1 rounded-sm py-1.5 text-sm font-medium transition-all',
-              filters.type === 'in' ? 'bg-white text-green-600 shadow-sm' : 'text-gray-600',
-            ]"
+            @click="toggleFilters"
+            class="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700"
           >
-            Cash In (+)
-          </button>
-          <button
-            @click="filters.type = 'out'"
-            :class="[
-              'flex-1 rounded-sm py-1.5 text-sm font-medium transition-all',
-              filters.type === 'out' ? 'bg-white text-red-600 shadow-sm' : 'text-gray-600',
-            ]"
-          >
-            Cash Out (-)
+            <IconFilter class="w-4 h-4" />
+            {{ showFilters ? "Hide Filters" : "Show Filters" }}
           </button>
         </div>
 
-        <!-- Date Range -->
-        <div class="grid grid-cols-2 gap-3">
-          <BaseInput v-model="filters.startDate" type="date" label="Start Date" />
-          <BaseInput v-model="filters.endDate" type="date" label="End Date" />
-        </div>
+        <!-- Date Range Tabs (Global) -->
+        <DateRangeTabs
+          v-model="globalDateFilter"
+          v-model:start-date="globalStartDate"
+          v-model:end-date="globalEndDate"
+        />
 
-        <!-- Categories Filter -->
-        <div class="grid md:grid-cols-2 gap-4">
-          <!-- Include Categories -->
-          <div class="space-y-2">
-            <BaseSearchableSelect
-              :model-value="''"
-              @update:model-value="(id) => addItem(filters.includeCategoryIds, id)"
-              label="Include Categories"
-              :options="categoryStore.categories.map((c) => ({ label: c.name, value: c.id }))"
-              placeholder="Select categories to include"
-            />
-            <div class="flex flex-wrap gap-2">
-              <span
-                v-for="(id, index) in filters.includeCategoryIds"
-                :key="id"
-                class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800"
-              >
-                {{ categoryStore.categories.find((c) => c.id === id)?.name || "Unknown" }}
-                <button @click="removeItem(filters.includeCategoryIds, index)" class="ml-1 hover:text-green-900">
-                  <IconX class="w-3 h-3" />
-                </button>
-              </span>
-            </div>
+        <!-- Collapsible Advanced Filters -->
+        <div v-if="showFilters" class="pt-4 border-t border-gray-100 space-y-4">
+          <!-- Transaction Type -->
+          <div class="flex rounded-sm bg-gray-100 p-1 w-full md:w-64">
+            <button
+              @click="tempFilters.type = 'in'"
+              :class="[
+                'flex-1 rounded-sm py-1.5 text-sm font-medium transition-all',
+                tempFilters.type === 'in' ? 'bg-white text-green-600 shadow-sm' : 'text-gray-600',
+              ]"
+            >
+              Cash In (+)
+            </button>
+            <button
+              @click="tempFilters.type = 'out'"
+              :class="[
+                'flex-1 rounded-sm py-1.5 text-sm font-medium transition-all',
+                tempFilters.type === 'out' ? 'bg-white text-red-600 shadow-sm' : 'text-gray-600',
+              ]"
+            >
+              Cash Out (-)
+            </button>
           </div>
 
-          <!-- Exclude Categories -->
-          <div class="space-y-2">
-            <BaseSearchableSelect
-              :model-value="''"
-              @update:model-value="(id) => addItem(filters.excludeCategoryIds, id)"
-              label="Exclude Categories"
-              :options="categoryStore.categories.map((c) => ({ label: c.name, value: c.id }))"
-              placeholder="Select categories to exclude"
-            />
-            <div class="flex flex-wrap gap-2">
-              <span
-                v-for="(id, index) in filters.excludeCategoryIds"
-                :key="id"
-                class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800"
-              >
-                {{ categoryStore.categories.find((c) => c.id === id)?.name || "Unknown" }}
-                <button @click="removeItem(filters.excludeCategoryIds, index)" class="ml-1 hover:text-red-900">
-                  <IconX class="w-3 h-3" />
-                </button>
-              </span>
-            </div>
-          </div>
-        </div>
+          <!-- Categories -->
+          <BaseSearchableSelect
+            :model-value="''"
+            @update:model-value="(val) => tempFilters.includeCategoryIds.push(val)"
+            label="Include Categories"
+            multiple
+            :options="categoryStore.categories.map((c) => ({ label: c.name, value: c.id }))"
+            placeholder="Select categories to include"
+          />
+          <BaseSearchableSelect
+            :model-value="''"
+            @update:model-value="(val) => tempFilters.excludeCategoryIds.push(val)"
+            label="Exclude Categories"
+            multiple
+            :options="categoryStore.categories.map((c) => ({ label: c.name, value: c.id }))"
+            placeholder="Select categories to exclude"
+          />
 
-        <!-- Products Filter -->
-        <div class="grid md:grid-cols-2 gap-4">
-          <!-- Include Products -->
-          <div class="space-y-2">
-            <BaseSearchableSelect
-              :model-value="''"
-              @update:model-value="(id) => addItem(filters.includeProductIds, id)"
-              label="Include Products"
-              :options="productStore.products.map((p) => ({ label: p.name, value: p.id }))"
-              placeholder="Select products to include"
-            />
-            <div class="flex flex-wrap gap-2">
-              <span
-                v-for="(id, index) in filters.includeProductIds"
-                :key="id"
-                class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800"
-              >
-                {{ productStore.products.find((p) => p.id === id)?.name || "Unknown" }}
-                <button @click="removeItem(filters.includeProductIds, index)" class="ml-1 hover:text-green-900">
-                  <IconX class="w-3 h-3" />
-                </button>
-              </span>
-            </div>
-          </div>
+          <!-- Products -->
+          <BaseSearchableSelect
+            :model-value="''"
+            @update:model-value="(val) => tempFilters.includeProductIds.push(val)"
+            label="Include Products"
+            multiple
+            :options="productStore.products.map((p) => ({ label: p.name, value: p.id }))"
+            placeholder="Select products to include"
+          />
+          <BaseSearchableSelect
+            :model-value="''"
+            @update:model-value="(val) => tempFilters.excludeProductIds.push(val)"
+            label="Exclude Products"
+            multiple
+            :options="productStore.products.map((p) => ({ label: p.name, value: p.id }))"
+            placeholder="Select products to exclude"
+          />
 
-          <!-- Exclude Products -->
-          <div class="space-y-2">
-            <BaseSearchableSelect
-              :model-value="''"
-              @update:model-value="(id) => addItem(filters.excludeProductIds, id)"
-              label="Exclude Products"
-              :options="productStore.products.map((p) => ({ label: p.name, value: p.id }))"
-              placeholder="Select products to exclude"
-            />
-            <div class="flex flex-wrap gap-2">
-              <span
-                v-for="(id, index) in filters.excludeProductIds"
-                :key="id"
-                class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800"
-              >
-                {{ productStore.products.find((p) => p.id === id)?.name || "Unknown" }}
-                <button @click="removeItem(filters.excludeProductIds, index)" class="ml-1 hover:text-red-900">
-                  <IconX class="w-3 h-3" />
-                </button>
-              </span>
-            </div>
+          <div class="flex justify-end gap-3 pt-2">
+            <BaseButton variant="ghost" @click="resetFilters">Reset</BaseButton>
+            <BaseButton @click="applyFilters">Apply Filters</BaseButton>
           </div>
         </div>
 
-        <!-- Actions -->
-        <div class="flex justify-end gap-3 pt-2 border-t border-gray-100">
-          <BaseButton variant="ghost" @click="resetFilters">Reset</BaseButton>
-          <BaseButton @click="applyFilters">Apply Filters</BaseButton>
+        <!-- Active Filter Chips (Manual implementation for arrays) -->
+        <div class="flex flex-wrap gap-2">
+          <span
+            v-if="appliedFilters.type === 'out'"
+            class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full font-medium"
+          >
+            Type: Cash Out
+          </span>
+          <span v-else class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-medium">
+            Type: Cash In
+          </span>
+
+          <span
+            v-for="id in appliedFilters.includeCategoryIds"
+            :key="'inc-cat-' + id"
+            class="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full flex items-center gap-1"
+          >
+            + Cat: {{ categoryStore.categories.find((c) => c.id === id)?.name }}
+            <button @click="removeCategory(id)" class="hover:text-gray-900"><IconX class="w-3 h-3" /></button>
+          </span>
+
+          <span
+            v-for="id in appliedFilters.includeProductIds"
+            :key="'inc-prod-' + id"
+            class="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full flex items-center gap-1"
+          >
+            + Prod: {{ productStore.products.find((p) => p.id === id)?.name }}
+            <button @click="removeProduct(id)" class="hover:text-gray-900"><IconX class="w-3 h-3" /></button>
+          </span>
         </div>
       </div>
 
-      <!-- Charts Grid -->
-      <div class="grid gap-6">
-        <!-- Monthly Chart -->
-        <LazyRender>
-          <TransactionsMonthChart :transactions="filteredTransactions" :filter-type="appliedFilters.type" />
-        </LazyRender>
+      <!-- Charts & Tables -->
+      <!-- Pass baseTransactions (filtered by type/cat/prod) and globalFilterObj (date) -->
 
-        <!-- Yearly Chart -->
-        <LazyRender>
-          <TransactionsYearChart :transactions="filteredTransactions" :filter-type="appliedFilters.type" />
-        </LazyRender>
+      <LazyRender min-height="380px">
+        <TransactionsMonthChart
+          :transactions="baseTransactions"
+          :filter-type="appliedFilters.type"
+          :global-filter="globalFilterObj"
+        />
+      </LazyRender>
 
-        <!-- Yearly Comparison Chart (Grouped Bar) -->
-        <LazyRender>
-          <TransactionsMonthBarChart :transactions="filteredTransactions" />
-        </LazyRender>
+      <LazyRender min-height="380px">
+        <TransactionsYearChart
+          :transactions="baseTransactions"
+          :filter-type="appliedFilters.type"
+          :global-filter="globalFilterObj"
+        />
+      </LazyRender>
 
-        <!-- Summary Tables (Cash Out Only) -->
-        <LazyRender v-if="appliedFilters.type === 'out'">
-          <ProductSummaryTable :transactions="filteredTransactions" />
-        </LazyRender>
+      <LazyRender min-height="380px">
+        <TransactionsMonthBarChart :transactions="baseTransactions" :global-filter="globalFilterObj" />
+      </LazyRender>
 
-        <LazyRender v-if="appliedFilters.type === 'out'">
-          <CategorySummaryTable :transactions="filteredTransactions" />
-        </LazyRender>
-      </div>
+      <LazyRender min-height="300px">
+        <ProductSummaryTable :transactions="baseTransactions" :global-filter="globalFilterObj" />
+      </LazyRender>
+
+      <LazyRender min-height="300px">
+        <CategorySummaryTable :transactions="baseTransactions" :global-filter="globalFilterObj" />
+      </LazyRender>
     </main>
   </PageLayout>
 </template>

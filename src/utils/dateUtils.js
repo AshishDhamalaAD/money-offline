@@ -48,3 +48,19 @@ export const formatDateTimeForDB = (date = new Date()) => {
 export const roundAmount = (amount) => {
     return Math.round((parseFloat(amount) || 0) * 100) / 100
 }
+
+export const filterByDateRange = (items, property, startDate, endDate) => {
+    let txs = items
+
+    if (startDate && endDate) {
+        const start = new Date(startDate)
+        const end = new Date(endDate)
+        end.setHours(23, 59, 59, 999)
+        txs = txs.filter((t) => {
+            const d = new Date(t[property])
+            return d >= start && d <= end
+        })
+    }
+
+    return txs
+}

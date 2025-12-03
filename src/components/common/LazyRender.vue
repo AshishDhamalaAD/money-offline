@@ -1,6 +1,13 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from "vue"
 
+const props = defineProps({
+  minHeight: {
+    type: String,
+    default: "100px",
+  },
+})
+
 const target = ref(null)
 const isVisible = ref(false)
 let observer = null
@@ -14,7 +21,7 @@ onMounted(() => {
       }
     },
     {
-      rootMargin: "100px", // Preload a bit before it comes into view
+      rootMargin: "50px", // Preload a bit before it comes into view
     }
   )
 
@@ -29,7 +36,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div ref="target" class="min-h-[100px]">
+  <div ref="target" :style="{ minHeight }">
     <slot v-if="isVisible" />
     <div v-else class="h-full flex items-center justify-center text-gray-400">Loading...</div>
   </div>

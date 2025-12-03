@@ -119,6 +119,10 @@ function prevPage() {
       </div>
     </div>
 
+    <div v-if="$slots.filters" class="px-4 py-2">
+      <slot name="filters"></slot>
+    </div>
+
     <!-- Table -->
     <div class="overflow-x-auto">
       <table class="w-full text-sm text-left">

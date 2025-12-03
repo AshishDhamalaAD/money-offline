@@ -1,22 +1,46 @@
 <script setup>
-import { computed } from "vue"
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from "chart.js"
+import { computed, ref, watch } from "vue"
 import { Bar } from "vue-chartjs"
+import { Chart as ChartJS, Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale } from "chart.js"
+import DateRangeTabs from "@/components/common/DateRangeTabs.vue"
+import { filterByDateRange } from "@/utils/dateUtils"
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
+ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale)
 
 const props = defineProps({
   transactions: {
     type: Array,
     required: true,
   },
+  globalFilter: {
+    type: Object,
+    default: () => ({ filter: "all", startDate: "", endDate: "" }),
+  },
+})
+
+const localFilter = ref("all")
+const localStartDate = ref("")
+const localEndDate = ref("")
+
+watch(
+  () => props.globalFilter,
+  (newVal) => {
+    localFilter.value = newVal.filter
+    localStartDate.value = newVal.startDate
+    localEndDate.value = newVal.endDate
+  },
+  { deep: true }
+)
+
+const filteredTransactions = computed(() => {
+  return filterByDateRange(props.transactions, "date", localStartDate.value, localEndDate.value)
 })
 
 const chartData = computed(() => {
   const data = {} // { year: { Jan: 0, Feb: 0, ... } }
   const years = new Set()
 
-  props.transactions.forEach((t) => {
+  filteredTransactions.value.forEach((t) => {
     const date = new Date(t.date)
     const year = date.getFullYear()
     const month = date.toLocaleString("default", { month: "short" })
@@ -52,8 +76,11 @@ const chartOptions = {
 </script>
 
 <template>
-  <div class="bg-white p-4 rounded-lg shadow-sm h-80">
-    <h3 class="font-medium text-gray-900 mb-4">Transactions Month Wise Bar Chart (Yearly Comparison)</h3>
+  <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+    <div class="mb-4">
+      <h3 class="font-medium text-gray-900 mb-2">Yearly Comparison</h3>
+      <DateRangeTabs v-model="localFilter" v-model:start-date="localStartDate" v-model:end-date="localEndDate" />
+    </div>
     <div class="h-64">
       <Bar v-if="chartData.datasets.length > 0" :data="chartData" :options="chartOptions" />
       <div v-else class="h-full flex items-center justify-center text-gray-500">No data available</div>
