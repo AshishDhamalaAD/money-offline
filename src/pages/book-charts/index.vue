@@ -86,18 +86,24 @@ function applyFilters() {
 }
 
 function resetFilters() {
-  tempFilters.value = {
+  const defaults = {
     type: "out",
     includeCategoryIds: [],
     excludeCategoryIds: [],
     includeProductIds: [],
     excludeProductIds: [],
   }
-}
 
-// Helper to clear specific filters from chips
-function clearFilter(type) {
-  // Not used directly, we render manual chips for arrays
+  // Reset temp filters (form state)
+  tempFilters.value = JSON.parse(JSON.stringify(defaults))
+
+  // Also reset applied filters if you want "Reset" to apply immediately?
+  // The user requirement says "when i reset the filters, it must reset all the filters to the default stage"
+  // Usually "Reset" in a form just clears the form, but if the user wants it "perfectly",
+  // they might expect the chart to update if they click reset.
+  // However, standard pattern is Reset Form -> Apply.
+  // BUT, the user also said "just from the form, i need to click on the apply filter button".
+  // So I will ONLY reset the tempFilters here to respect the "Apply" button requirement for the form.
 }
 
 // Computed property for "Base" transactions (Filtered by Type, Category, Product ONLY)
@@ -153,11 +159,28 @@ const globalFilterObj = computed(() => ({
   endDate: globalEndDate.value,
 }))
 
-function removeCategory(id) {
+// Instant removal functions
+// These update BOTH appliedFilters (for instant chart update)
+// AND tempFilters (so the form stays in sync if it's open)
+
+function removeIncludeCategory(id) {
   appliedFilters.value.includeCategoryIds = appliedFilters.value.includeCategoryIds.filter((c) => c !== id)
+  tempFilters.value.includeCategoryIds = tempFilters.value.includeCategoryIds.filter((c) => c !== id)
 }
-function removeProduct(id) {
+
+function removeExcludeCategory(id) {
+  appliedFilters.value.excludeCategoryIds = appliedFilters.value.excludeCategoryIds.filter((c) => c !== id)
+  tempFilters.value.excludeCategoryIds = tempFilters.value.excludeCategoryIds.filter((c) => c !== id)
+}
+
+function removeIncludeProduct(id) {
   appliedFilters.value.includeProductIds = appliedFilters.value.includeProductIds.filter((p) => p !== id)
+  tempFilters.value.includeProductIds = tempFilters.value.includeProductIds.filter((p) => p !== id)
+}
+
+function removeExcludeProduct(id) {
+  appliedFilters.value.excludeProductIds = appliedFilters.value.excludeProductIds.filter((p) => p !== id)
+  tempFilters.value.excludeProductIds = tempFilters.value.excludeProductIds.filter((p) => p !== id)
 }
 </script>
 
@@ -261,20 +284,48 @@ function removeProduct(id) {
             Type: Cash In
           </span>
 
+          <!-- Include Categories -->
           <span
             v-for="id in appliedFilters.includeCategoryIds"
             :key="'inc-cat-' + id"
-            class="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full flex items-center gap-1"
+            class="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full flex items-center gap-1 cursor-pointer hover:bg-gray-200 transition-colors"
+            @click="removeIncludeCategory(id)"
           >
             + Cat: {{ categoryStore.categories.find((c) => c.id === id)?.name }}
+            <IconX class="w-3 h-3 text-gray-500 hover:text-red-500" />
           </span>
 
+          <!-- Exclude Categories -->
+          <span
+            v-for="id in appliedFilters.excludeCategoryIds"
+            :key="'exc-cat-' + id"
+            class="bg-red-50 text-red-700 text-xs px-2 py-1 rounded-full flex items-center gap-1 cursor-pointer hover:bg-red-100 transition-colors"
+            @click="removeExcludeCategory(id)"
+          >
+            - Cat: {{ categoryStore.categories.find((c) => c.id === id)?.name }}
+            <IconX class="w-3 h-3 text-red-500 hover:text-red-700" />
+          </span>
+
+          <!-- Include Products -->
           <span
             v-for="id in appliedFilters.includeProductIds"
             :key="'inc-prod-' + id"
-            class="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full flex items-center gap-1"
+            class="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full flex items-center gap-1 cursor-pointer hover:bg-gray-200 transition-colors"
+            @click="removeIncludeProduct(id)"
           >
             + Prod: {{ productStore.products.find((p) => p.id === id)?.name }}
+            <IconX class="w-3 h-3 text-gray-500 hover:text-red-500" />
+          </span>
+
+          <!-- Exclude Products -->
+          <span
+            v-for="id in appliedFilters.excludeProductIds"
+            :key="'exc-prod-' + id"
+            class="bg-red-50 text-red-700 text-xs px-2 py-1 rounded-full flex items-center gap-1 cursor-pointer hover:bg-red-100 transition-colors"
+            @click="removeExcludeProduct(id)"
+          >
+            - Prod: {{ productStore.products.find((p) => p.id === id)?.name }}
+            <IconX class="w-3 h-3 text-red-500 hover:text-red-700" />
           </span>
         </div>
       </div>
