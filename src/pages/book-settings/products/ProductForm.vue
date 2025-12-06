@@ -163,7 +163,7 @@ function goBack() {
         <button
           v-if="!isNew"
           @click="showDeleteModal = true"
-          class="rounded-lg px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+          class="rounded-lg px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors dark:hover:bg-red-900/20"
         >
           <IconTrash class="h-5 w-5" />
         </button>
@@ -173,7 +173,7 @@ function goBack() {
     </PageHeader>
 
     <main class="p-4 space-y-6">
-      <div class="bg-white p-4 rounded-sm shadow-sm space-y-4">
+      <div class="bg-white p-4 rounded-sm shadow-sm space-y-4 dark:bg-gray-900 dark:border dark:border-gray-800">
         <LightGallery :images="attachments" editable @delete="removeAttachment" />
         <ImageUpload @upload="handleUpload" from="products" />
 
@@ -200,7 +200,7 @@ function goBack() {
             </div>
             <button
               @click="showCategoryModal = true"
-              class="mb-0.5 flex h-[42px] w-[42px] items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 active:scale-95 transition-all"
+              class="mb-0.5 flex h-[42px] w-[42px] items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 active:scale-95 transition-all dark:bg-indigo-900/40 dark:text-indigo-100 dark:hover:bg-indigo-900/60"
             >
               <IconPlus />
             </button>
@@ -229,7 +229,9 @@ function goBack() {
 
     <!-- Delete Confirmation Modal -->
     <BaseModal :show="showDeleteModal" title="Confirm Delete" @close="showDeleteModal = false">
-      <p class="text-gray-600">Are you sure you want to delete this product? This action cannot be undone.</p>
+      <p class="text-gray-600 dark:text-gray-300">
+        Are you sure you want to delete this product? This action cannot be undone.
+      </p>
       <div class="flex justify-end gap-3 mt-6">
         <BaseButton variant="ghost" @click="showDeleteModal = false">Cancel</BaseButton>
         <BaseButton variant="danger" @click="handleDelete">Delete</BaseButton>

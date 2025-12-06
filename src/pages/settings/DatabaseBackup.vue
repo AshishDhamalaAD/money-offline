@@ -136,15 +136,15 @@ async function startImport() {
 
 <template>
   <div class="space-y-4">
-    <h2 class="text-lg font-semibold text-gray-800">Database Backup & Restore</h2>
+    <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100">Database Backup & Restore</h2>
 
-    <div class="bg-white rounded-sm p-4 shadow-sm space-y-4">
+    <div class="bg-white rounded-sm p-4 shadow-sm space-y-4 border border-gray-100 dark:bg-gray-900 dark:border-gray-800">
       <!-- Export Section -->
       <div class="space-y-3">
         <div class="flex items-center justify-between">
           <div>
-            <h3 class="font-medium text-gray-900">Export Database</h3>
-            <p class="text-sm text-gray-500">Download all your data as a backup file</p>
+            <h3 class="font-medium text-gray-900 dark:text-gray-100">Export Database</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Download all your data as a backup file</p>
           </div>
           <BaseButton @click="exportDatabase" :disabled="isExporting" size="sm">
             <span v-if="isExporting" class="flex items-center gap-2">
@@ -165,10 +165,10 @@ async function startImport() {
         <!-- Export Progress -->
         <div v-if="isExporting" class="space-y-2">
           <div class="flex items-center justify-between text-sm">
-            <span class="text-gray-600">Exporting data...</span>
-            <span class="font-medium text-indigo-600">{{ exportProgress }}%</span>
+            <span class="text-gray-600 dark:text-gray-300">Exporting data...</span>
+            <span class="font-medium text-indigo-600 dark:text-indigo-300">{{ exportProgress }}%</span>
           </div>
-          <div class="w-full bg-gray-200 rounded-full h-2">
+          <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
             <div
               class="bg-indigo-600 h-2 rounded-full transition-all duration-300"
               :style="{ width: exportProgress + '%' }"
@@ -177,14 +177,14 @@ async function startImport() {
         </div>
       </div>
 
-      <div class="border-t border-gray-200"></div>
+      <div class="border-t border-gray-200 dark:border-gray-800"></div>
 
       <!-- Import Section -->
       <div class="space-y-3">
         <div class="flex items-center justify-between">
           <div>
-            <h3 class="font-medium text-gray-900">Import Database</h3>
-            <p class="text-sm text-gray-500">Restore data from a backup file</p>
+            <h3 class="font-medium text-gray-900 dark:text-gray-100">Import Database</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Restore data from a backup file</p>
           </div>
           <BaseButton @click="openImportDialog" :disabled="isImporting" variant="secondary" size="sm">
             <span v-if="isImporting" class="flex items-center gap-2">
@@ -203,8 +203,8 @@ async function startImport() {
         </div>
       </div>
 
-      <div class="bg-yellow-50 border border-yellow-200 rounded-sm p-3">
-        <p class="text-xs text-yellow-800">
+      <div class="bg-yellow-50 border border-yellow-200 rounded-sm p-3 dark:bg-yellow-900/30 dark:border-yellow-800">
+        <p class="text-xs text-yellow-800 dark:text-yellow-100">
           <strong>Warning:</strong> Importing will replace all existing data. Make sure to export your current data
           first!
         </p>
@@ -214,34 +214,34 @@ async function startImport() {
     <!-- Import Modal -->
     <Modal :show="showImportModal" title="Import Database" @close="cancelImport">
       <div class="space-y-4">
-        <p class="text-gray-600">Select a backup file to import. This will replace all existing data.</p>
+        <p class="text-gray-600 dark:text-gray-300">Select a backup file to import. This will replace all existing data.</p>
 
-        <div class="bg-red-50 border border-red-200 rounded-sm p-3">
-          <p class="text-sm text-red-800">
+        <div class="bg-red-50 border border-red-200 rounded-sm p-3 dark:bg-red-900/40 dark:border-red-800">
+          <p class="text-sm text-red-800 dark:text-red-100">
             <strong>Warning:</strong> This action cannot be undone. All current data will be permanently replaced.
           </p>
         </div>
 
         <!-- File Input -->
         <div class="space-y-2">
-          <label class="block text-sm font-medium text-gray-700">Select Backup File</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Select Backup File</label>
           <input
             ref="fileInput"
             type="file"
             accept=".json"
             @change="handleFileSelect"
-            class="block py-2 px-3 w-full text-sm text-gray-900 border border-gray-300 rounded-sm cursor-pointer bg-gray-50 focus:outline-none"
+            class="block py-2 px-3 w-full text-sm text-gray-900 border border-gray-300 rounded-sm cursor-pointer bg-gray-50 focus:outline-none dark:text-gray-100 dark:border-gray-700 dark:bg-gray-900"
           />
-          <p v-if="selectedFile" class="text-sm text-green-600">✓ Selected: {{ selectedFile.name }}</p>
+          <p v-if="selectedFile" class="text-sm text-green-600 dark:text-green-400">✓ Selected: {{ selectedFile.name }}</p>
         </div>
 
         <!-- Import Progress -->
         <div v-if="isImporting" class="space-y-2">
           <div class="flex items-center justify-between text-sm">
-            <span class="text-gray-600">Importing data...</span>
-            <span class="font-medium text-indigo-600">{{ importProgress }}%</span>
+            <span class="text-gray-600 dark:text-gray-300">Importing data...</span>
+            <span class="font-medium text-indigo-600 dark:text-indigo-300">{{ importProgress }}%</span>
           </div>
-          <div class="w-full bg-gray-200 rounded-full h-2">
+          <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
             <div
               class="bg-indigo-600 h-2 rounded-full transition-all duration-300"
               :style="{ width: importProgress + '%' }"
@@ -250,7 +250,7 @@ async function startImport() {
         </div>
 
         <!-- Import Error -->
-        <div v-if="importError" class="text-sm text-red-600 bg-red-50 p-3 rounded-sm">
+        <div v-if="importError" class="text-sm text-red-600 bg-red-50 p-3 rounded-sm dark:bg-red-900/40 dark:text-red-200">
           {{ importError }}
         </div>
 

@@ -49,7 +49,7 @@ const fullImageUrls = computed(() => {
       <div v-for="(image, index) in fullImageUrls" :key="index" class="relative inline-block mr-2 mb-2">
         <a
           :href="image.src"
-          class="gallery-item block rounded-lg overflow-hidden border border-gray-200 hover:opacity-90 transition-opacity"
+          class="gallery-item block rounded-lg overflow-hidden border border-gray-200 hover:opacity-90 transition-opacity dark:border-gray-700"
         >
           <img :src="image.thumb" class="w-24 h-24 object-cover" />
         </a>

@@ -101,8 +101,8 @@ watch(
         :class="[
           'rounded-full px-4 py-1.5 text-sm font-medium whitespace-nowrap transition-colors',
           modelValue === opt.value
-            ? 'bg-indigo-600 text-white shadow-md'
-            : 'bg-white text-gray-600 ring-1 ring-gray-200 shadow-sm',
+            ? 'bg-indigo-600 text-white shadow-md dark:bg-indigo-500'
+            : 'bg-white text-gray-600 ring-1 ring-gray-200 shadow-sm dark:bg-gray-800 dark:text-gray-200 dark:ring-gray-700',
         ]"
       >
         {{ opt.label }}
@@ -110,7 +110,10 @@ watch(
     </div>
 
     <!-- Custom Date Range Pickers -->
-    <div v-if="modelValue === 'custom'" class="grid grid-cols-2 gap-3 bg-white p-4 rounded-sm shadow-sm">
+    <div
+      v-if="modelValue === 'custom'"
+      class="grid grid-cols-2 gap-3 bg-white p-4 rounded-sm shadow-sm dark:bg-gray-900 dark:border dark:border-gray-800"
+    >
       <BaseInput
         :model-value="startDate"
         @update:model-value="$emit('update:startDate', $event)"

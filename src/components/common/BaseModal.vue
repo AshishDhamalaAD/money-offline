@@ -64,13 +64,13 @@ onUnmounted(() => document.removeEventListener("keydown", handleEscape))
           leave-to-class="opacity-0 scale-95 translate-y-4"
         >
           <div
-            class="relative w-full max-w-lg transform overflow-hidden rounded-sm bg-white p-6 shadow-xl transition-all"
+            class="relative w-full max-w-lg transform overflow-hidden rounded-sm bg-white p-6 shadow-xl transition-all dark:bg-gray-900 dark:text-gray-100 dark:shadow-gray-900/40"
           >
             <div class="flex items-center justify-between mb-4">
-              <h3 v-if="title" class="text-lg font-semibold text-gray-900">{{ title }}</h3>
+              <h3 v-if="title" class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ title }}</h3>
               <button
                 @click="$emit('close')"
-                class="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-500"
+                class="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-500 dark:text-gray-300 dark:hover:bg-gray-800"
               >
                 <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />

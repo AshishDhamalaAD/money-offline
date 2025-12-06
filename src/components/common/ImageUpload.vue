@@ -83,7 +83,10 @@ const serverOptions = {
 
 <template>
   <div class="image-upload-container">
-    <div v-if="!isOnline" class="bg-yellow-50 border border-yellow-200 text-yellow-800 p-3 rounded-lg text-sm mb-2">
+    <div
+      v-if="!isOnline"
+      class="bg-yellow-50 border border-yellow-200 text-yellow-800 p-3 rounded-lg text-sm mb-2 dark:bg-yellow-900/30 dark:border-yellow-800 dark:text-yellow-100"
+    >
       Internet connection is required to upload images.
     </div>
 

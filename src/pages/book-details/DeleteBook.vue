@@ -36,14 +36,14 @@ async function handleDeleteBook() {
 <template>
   <button
     @click="showDeleteModal = true"
-    class="rounded-lg pl-0.5 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+    class="rounded-lg pl-0.5 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors dark:hover:bg-red-900/20"
   >
     Delete Book
   </button>
 
   <!-- Delete Confirmation Modal -->
   <Modal :show="showDeleteModal" title="Delete Book" @close="showDeleteModal = false">
-    <p class="text-gray-600">
+    <p class="text-gray-600 dark:text-gray-300">
       Are you sure you want to delete this book? This will also delete all associated categories, products, and payment
       modes. This action cannot be undone.
     </p>

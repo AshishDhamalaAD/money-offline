@@ -9,7 +9,7 @@ const { isSyncing } = storeToRefs(syncStore)
 </script>
 
 <template>
-  <div v-if="isSyncing" class="flex items-center gap-2 text-sm text-gray-500">
+  <div v-if="isSyncing" class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-300">
     <IconSpinner />
     <span>Syncing...</span>
   </div>

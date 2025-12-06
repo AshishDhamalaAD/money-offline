@@ -191,12 +191,12 @@ function removeExcludeProduct(id) {
 
     <main class="p-4 space-y-6 pb-24">
       <!-- Top Filter Section -->
-      <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100 space-y-4">
+      <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100 space-y-4 dark:bg-gray-900 dark:border-gray-800">
         <div class="flex justify-between items-center">
-          <h2 class="font-semibold text-gray-800">Global Filters</h2>
+          <h2 class="font-semibold text-gray-800 dark:text-gray-100">Global Filters</h2>
           <button
             @click="toggleFilters"
-            class="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700"
+            class="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-300"
           >
             <IconFilter class="w-4 h-4" />
             {{ showFilters ? "Hide Filters" : "Show Filters" }}
@@ -211,14 +211,16 @@ function removeExcludeProduct(id) {
         />
 
         <!-- Collapsible Advanced Filters -->
-        <div v-if="showFilters" class="pt-4 border-t border-gray-100 space-y-4">
+        <div v-if="showFilters" class="pt-4 border-t border-gray-100 space-y-4 dark:border-gray-800">
           <!-- Transaction Type -->
-          <div class="flex rounded-sm bg-gray-100 p-1 w-full md:w-64">
+          <div class="flex rounded-sm bg-gray-100 p-1 w-full md:w-64 dark:bg-gray-800">
             <button
               @click="tempFilters.type = 'in'"
               :class="[
                 'flex-1 rounded-sm py-1.5 text-sm font-medium transition-all',
-                tempFilters.type === 'in' ? 'bg-white text-green-600 shadow-sm' : 'text-gray-600',
+                tempFilters.type === 'in'
+                  ? 'bg-white text-green-600 shadow-sm dark:bg-gray-900 dark:text-green-400'
+                  : 'text-gray-600 dark:text-gray-300',
               ]"
             >
               Cash In (+)
@@ -227,7 +229,9 @@ function removeExcludeProduct(id) {
               @click="tempFilters.type = 'out'"
               :class="[
                 'flex-1 rounded-sm py-1.5 text-sm font-medium transition-all',
-                tempFilters.type === 'out' ? 'bg-white text-red-600 shadow-sm' : 'text-gray-600',
+                tempFilters.type === 'out'
+                  ? 'bg-white text-red-600 shadow-sm dark:bg-gray-900 dark:text-red-400'
+                  : 'text-gray-600 dark:text-gray-300',
               ]"
             >
               Cash Out (-)
@@ -276,11 +280,14 @@ function removeExcludeProduct(id) {
         <div class="flex flex-wrap gap-2">
           <span
             v-if="appliedFilters.type === 'out'"
-            class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full font-medium"
+            class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full font-medium dark:bg-red-900/30 dark:text-red-200"
           >
             Type: Cash Out
           </span>
-          <span v-else class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-medium">
+          <span
+            v-else
+            class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-medium dark:bg-green-900/30 dark:text-green-200"
+          >
             Type: Cash In
           </span>
 
@@ -288,18 +295,18 @@ function removeExcludeProduct(id) {
           <span
             v-for="id in appliedFilters.includeCategoryIds"
             :key="'inc-cat-' + id"
-            class="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full flex items-center gap-1 cursor-pointer hover:bg-gray-200 transition-colors"
+            class="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full flex items-center gap-1 cursor-pointer hover:bg-gray-200 transition-colors dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
             @click="removeIncludeCategory(id)"
           >
             + Cat: {{ categoryStore.categories.find((c) => c.id === id)?.name }}
-            <IconX class="w-3 h-3 text-gray-500 hover:text-red-500" />
+            <IconX class="w-3 h-3 text-gray-500 hover:text-red-500 dark:text-gray-300" />
           </span>
 
           <!-- Exclude Categories -->
           <span
             v-for="id in appliedFilters.excludeCategoryIds"
             :key="'exc-cat-' + id"
-            class="bg-red-50 text-red-700 text-xs px-2 py-1 rounded-full flex items-center gap-1 cursor-pointer hover:bg-red-100 transition-colors"
+            class="bg-red-50 text-red-700 text-xs px-2 py-1 rounded-full flex items-center gap-1 cursor-pointer hover:bg-red-100 transition-colors dark:bg-red-900/30 dark:text-red-200"
             @click="removeExcludeCategory(id)"
           >
             - Cat: {{ categoryStore.categories.find((c) => c.id === id)?.name }}
@@ -310,18 +317,18 @@ function removeExcludeProduct(id) {
           <span
             v-for="id in appliedFilters.includeProductIds"
             :key="'inc-prod-' + id"
-            class="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full flex items-center gap-1 cursor-pointer hover:bg-gray-200 transition-colors"
+            class="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full flex items-center gap-1 cursor-pointer hover:bg-gray-200 transition-colors dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
             @click="removeIncludeProduct(id)"
           >
             + Prod: {{ productStore.products.find((p) => p.id === id)?.name }}
-            <IconX class="w-3 h-3 text-gray-500 hover:text-red-500" />
+            <IconX class="w-3 h-3 text-gray-500 hover:text-red-500 dark:text-gray-300" />
           </span>
 
           <!-- Exclude Products -->
           <span
             v-for="id in appliedFilters.excludeProductIds"
             :key="'exc-prod-' + id"
-            class="bg-red-50 text-red-700 text-xs px-2 py-1 rounded-full flex items-center gap-1 cursor-pointer hover:bg-red-100 transition-colors"
+            class="bg-red-50 text-red-700 text-xs px-2 py-1 rounded-full flex items-center gap-1 cursor-pointer hover:bg-red-100 transition-colors dark:bg-red-900/30 dark:text-red-200"
             @click="removeExcludeProduct(id)"
           >
             - Prod: {{ productStore.products.find((p) => p.id === id)?.name }}

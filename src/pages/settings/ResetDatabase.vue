@@ -24,11 +24,11 @@ async function resetDatabase() {
 <template>
   <div class="space-y-4">
     <h2 class="text-lg font-semibold text-red-600">Danger Zone</h2>
-    <div class="bg-red-50 border border-red-100 rounded-sm p-4">
+    <div class="bg-red-50 border border-red-100 rounded-sm p-4 dark:bg-red-900/30 dark:border-red-800">
       <div class="">
         <div>
-          <h3 class="font-medium text-red-800">Reset Database</h3>
-          <p class="text-sm text-red-600 mt-1">
+          <h3 class="font-medium text-red-800 dark:text-red-100">Reset Database</h3>
+          <p class="text-sm text-red-600 mt-1 dark:text-red-200">
             This will permanently delete all your data. This action cannot be undone.
           </p>
         </div>
@@ -39,13 +39,13 @@ async function resetDatabase() {
     <!-- Reset Confirmation Modal -->
     <Modal :show="showResetModal" title="Reset Database" @close="showResetModal = false">
       <div class="space-y-4">
-        <p class="text-gray-600">
+        <p class="text-gray-600 dark:text-gray-300">
           Are you sure you want to reset the database? This will wipe all your data including books, transactions,
           contacts, and settings.
         </p>
 
-        <div class="bg-red-50 border border-red-200 rounded-lg p-3">
-          <p class="text-sm text-red-800"><strong>Warning:</strong> This action is irreversible!</p>
+        <div class="bg-red-50 border border-red-200 rounded-lg p-3 dark:bg-red-900/30 dark:border-red-800">
+          <p class="text-sm text-red-800 dark:text-red-200"><strong>Warning:</strong> This action is irreversible!</p>
         </div>
 
         <div class="flex justify-end gap-3 mt-6">

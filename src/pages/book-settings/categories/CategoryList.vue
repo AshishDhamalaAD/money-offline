@@ -113,7 +113,7 @@ function navigateToEdit(item) {
       <div class="space-y-4">
         <div class="flex flex-col gap-4">
           <div class="flex justify-between items-center">
-            <h2 class="text-lg font-semibold text-gray-800">
+            <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100">
               Manage Categories
               <span class="text-sm font-normal" v-if="filteredItems.length > 0 && filteredItems.length > visibleLimit">
                 ({{ paginatedItems.length }}/{{ filteredItems.length }})
@@ -132,15 +132,17 @@ function navigateToEdit(item) {
             v-for="item in paginatedItems"
             :key="item.id"
             @click="navigateToEdit(item)"
-            class="flex justify-between items-center bg-white p-4 rounded-sm shadow-sm cursor-pointer hover:bg-gray-50 transition-colors"
+            class="flex justify-between items-center bg-white p-4 rounded-sm shadow-sm cursor-pointer hover:bg-gray-50 transition-colors dark:bg-gray-900 dark:hover:bg-gray-800 dark:border dark:border-gray-800"
           >
             <div>
-              <p class="font-medium">{{ item.name }}</p>
-              <p class="text-xs text-gray-500">{{ item.description }}</p>
+              <p class="font-medium text-gray-900 dark:text-gray-100">{{ item.name }}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">{{ item.description }}</p>
             </div>
-            <IconChevronRight class="text-gray-400" />
+            <IconChevronRight class="text-gray-400 dark:text-gray-500" />
           </div>
-          <div v-if="filteredItems.length === 0" class="text-center text-gray-500 py-8">No categories found.</div>
+          <div v-if="filteredItems.length === 0" class="text-center text-gray-500 py-8 dark:text-gray-400">
+            No categories found.
+          </div>
           <div v-if="hasMoreItems" class="flex justify-center py-4">
             <BaseButton variant="secondary" @click="loadMore">Load More</BaseButton>
           </div>

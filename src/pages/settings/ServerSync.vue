@@ -59,11 +59,11 @@ async function syncToServer() {
 
 <template>
   <div>
-    <div class="bg-white rounded-sm p-4 shadow-sm space-y-4">
+    <div class="bg-white rounded-sm p-4 shadow-sm space-y-4 border border-gray-100 dark:bg-gray-900 dark:border-gray-800">
       <div class="space-y-4">
         <div>
-          <h2 class="text-lg font-semibold text-gray-800">Server Sync</h2>
-          <p class="text-sm text-gray-500">Sync your backup to a remote server</p>
+          <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100">Server Sync</h2>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Sync your backup to a remote server</p>
         </div>
 
         <div class="grid gap-4">

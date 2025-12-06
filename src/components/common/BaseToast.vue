@@ -37,9 +37,9 @@ watch(
 )
 
 const bgColor = {
-  error: "bg-red-500",
-  success: "bg-green-500",
-  info: "bg-blue-500",
+  error: "bg-red-500 dark:bg-red-600",
+  success: "bg-green-500 dark:bg-green-600",
+  info: "bg-blue-500 dark:bg-blue-600",
 }
 </script>
 
@@ -54,7 +54,7 @@ const bgColor = {
       leave-to-class="translate-y-2 opacity-0"
     >
       <div v-if="isVisible" class="fixed top-4 left-1/2 -translate-x-1/2 z-9999 max-w-md w-full px-4">
-        <div :class="[bgColor[type], 'rounded-lg shadow-lg p-4 flex items-start gap-3 text-white']">
+        <div :class="[bgColor[type], 'rounded-lg shadow-lg p-4 flex items-start gap-3 text-white dark:shadow-black/30']">
           <!-- Icon -->
           <div class="shrink-0">
             <svg v-if="type === 'error'" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -79,7 +79,7 @@ const bgColor = {
           </div>
 
           <!-- Message -->
-          <p class="flex-1 text-sm font-medium">{{ message }}</p>
+          <p class="flex-1 text-sm font-medium text-white">{{ message }}</p>
 
           <!-- Close button -->
           <button @click="emit('close')" class="shrink-0 hover:bg-white/20 rounded p-1 transition-colors">

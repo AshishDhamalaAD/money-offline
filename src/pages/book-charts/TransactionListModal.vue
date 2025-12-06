@@ -80,35 +80,35 @@ const flatData = computed(() => {
     <div class="max-h-[60vh] overflow-y-auto">
       <BaseTable :columns="columns" :data="flatData" :page-size="50">
         <template #cell-date="{ row }">
-          <span v-if="row.rowType !== 'product'" class="whitespace-nowrap text-gray-500">
+          <span v-if="row.rowType !== 'product'" class="whitespace-nowrap text-gray-500 dark:text-gray-400">
             {{ formatDate(row.displayDate) }}
           </span>
         </template>
 
         <template #cell-description="{ row }">
           <!-- Header Row -->
-          <div v-if="row.rowType === 'header'" class="font-medium text-gray-900">
+          <div v-if="row.rowType === 'header'" class="font-medium text-gray-900 dark:text-gray-100">
             {{ row.displayDescription }}
-            <span class="text-xs text-gray-500 font-normal ml-1">({{ row.itemCount }} items)</span>
+            <span class="text-xs text-gray-500 font-normal ml-1 dark:text-gray-400">({{ row.itemCount }} items)</span>
           </div>
 
           <!-- Product Row -->
-          <div v-else-if="row.rowType === 'product'" class="pl-4 text-gray-600 flex items-center gap-2">
-            <span class="w-1.5 h-1.5 rounded-full bg-gray-300"></span>
+          <div v-else-if="row.rowType === 'product'" class="pl-4 text-gray-600 flex items-center gap-2 dark:text-gray-300">
+            <span class="w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-gray-600"></span>
             {{ row.description }}
           </div>
 
           <!-- Single Row -->
           <div v-else>
-            <div class="text-gray-900">{{ row.displayDescription }}</div>
-            <div class="text-xs text-gray-500" v-if="row.category_ids && row.category_ids.length">
+            <div class="text-gray-900 dark:text-gray-100">{{ row.displayDescription }}</div>
+            <div class="text-xs text-gray-500 dark:text-gray-400" v-if="row.category_ids && row.category_ids.length">
               {{ row.category_ids.map(getCategoryName).join(", ") }}
             </div>
           </div>
         </template>
 
         <template #cell-rate="{ row }">
-          <span v-if="row.rate" class="text-gray-500 text-xs">
+          <span v-if="row.rate" class="text-gray-500 text-xs dark:text-gray-400">
             {{ formatCurrency(row.rate) }}
           </span>
         </template>
@@ -117,8 +117,8 @@ const flatData = computed(() => {
           <span
             class="font-medium"
             :class="{
-              'text-green-600': row.type === 'in',
-              'text-red-600': row.type === 'out',
+              'text-green-600 dark:text-green-300': row.type === 'in',
+              'text-red-600 dark:text-red-300': row.type === 'out',
               'font-bold': row.rowType === 'header',
             }"
           >
@@ -130,7 +130,7 @@ const flatData = computed(() => {
     <div class="flex justify-end mt-4">
       <button
         @click="emit('close')"
-        class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+        class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
       >
         Close
       </button>

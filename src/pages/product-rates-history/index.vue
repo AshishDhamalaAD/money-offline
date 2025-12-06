@@ -101,29 +101,29 @@ async function deleteRate() {
     <PageHeader :title="`${product?.name || 'Product'} Rate History`" />
 
     <main class="p-4 space-y-4">
-      <div v-if="rates.length === 0" class="text-center text-gray-500 py-8">No history found.</div>
+      <div v-if="rates.length === 0" class="text-center text-gray-500 py-8 dark:text-gray-400">No history found.</div>
 
       <div v-else class="space-y-3">
         <div
           v-for="rate in rates"
           :key="rate.id"
-          class="bg-white p-4 rounded-sm shadow-sm flex justify-between items-center"
+          class="bg-white p-4 rounded-sm shadow-sm flex justify-between items-center dark:bg-gray-900 dark:border dark:border-gray-800"
         >
           <div>
-            <p class="font-bold text-lg">Rs. {{ formatCurrency(rate.rate) }}</p>
-            <p class="text-xs text-gray-500">{{ formatDateTime(new Date(rate.created_at)) }}</p>
+            <p class="font-bold text-lg text-gray-900 dark:text-gray-100">Rs. {{ formatCurrency(rate.rate) }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">{{ formatDateTime(new Date(rate.created_at)) }}</p>
           </div>
 
           <div class="flex gap-2">
             <button
               @click="openEditModal(rate)"
-              class="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors"
+              class="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors dark:text-gray-300 dark:hover:bg-gray-800"
             >
               <IconEdit class="w-5 h-5" />
             </button>
             <button
               @click="openDeleteModal(rate)"
-              class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
+              class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors dark:text-gray-300 dark:hover:bg-red-900/30"
             >
               <IconTrash class="w-5 h-5" />
             </button>
@@ -147,7 +147,7 @@ async function deleteRate() {
 
     <!-- Delete Modal -->
     <BaseModal :show="showDeleteModal" title="Delete History" @close="showDeleteModal = false">
-      <p class="text-gray-600">Are you sure you want to delete this history record?</p>
+      <p class="text-gray-600 dark:text-gray-300">Are you sure you want to delete this history record?</p>
       <div class="flex justify-end gap-3 mt-6">
         <BaseButton variant="ghost" @click="showDeleteModal = false">Cancel</BaseButton>
         <BaseButton variant="danger" @click="deleteRate">Delete</BaseButton>

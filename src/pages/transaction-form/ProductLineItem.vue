@@ -86,7 +86,10 @@ function onProductSelect(productId) {
 
 <template>
   <div :class="['relative py-4', productIndex === 0 ? '-mt-4' : '']">
-    <button @click="$emit('remove')" class="absolute top-5 -right-4 p-2 text-red-500 z-10">
+    <button
+      @click="$emit('remove')"
+      class="absolute top-5 -right-4 p-2 text-red-500 z-10 hover:bg-red-50 rounded-full dark:hover:bg-red-900/20"
+    >
       <IconX class="h-5 w-5" />
     </button>
 
@@ -105,7 +108,7 @@ function onProductSelect(productId) {
           v-model="item.name"
           @input="emitUpdate"
           placeholder="Product Name"
-          class="w-full rounded-sm border-gray-200 bg-gray-50 px-4 py-2.5 text-gray-900 placeholder-gray-400 transition-colors focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          class="w-full rounded-sm border-gray-200 bg-gray-50 px-4 py-2.5 text-gray-900 placeholder-gray-400 transition-colors focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:placeholder-gray-500"
         />
       </div>
 
@@ -121,13 +124,13 @@ function onProductSelect(productId) {
           <template #after-input>
             <div class="flex flex-col justify-end gap-0.5 h-full">
               <button
-                class="border rounded-sm border-gray-200 p-1 w-8 flex items-center justify-center"
+                class="border rounded-sm border-gray-200 p-1 w-8 flex items-center justify-center dark:border-gray-700 dark:hover:bg-gray-800"
                 @click.prevent="incrementQuantity"
               >
                 <IconPlus class="h-3 w-3" />
               </button>
               <button
-                class="border rounded-sm border-gray-200 p-1 w-8 flex items-center justify-center"
+                class="border rounded-sm border-gray-200 p-1 w-8 flex items-center justify-center dark:border-gray-700 dark:hover:bg-gray-800"
                 @click.prevent="decrementQuantity"
               >
                 <IconMinus class="h-3 w-3" />

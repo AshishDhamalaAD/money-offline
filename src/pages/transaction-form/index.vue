@@ -373,7 +373,7 @@ function openCategoryModalForProduct() {
         <button
           v-if="isEdit"
           @click="confirmDelete"
-          class="rounded-sm px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+          class="rounded-sm px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors dark:hover:bg-red-900/20"
         >
           Delete
         </button>
@@ -382,12 +382,14 @@ function openCategoryModalForProduct() {
 
     <main class="p-4 space-y-6">
       <!-- Type Selection -->
-      <div class="flex rounded-sm bg-gray-200 p-1">
+      <div class="flex rounded-sm bg-gray-200 p-1 dark:bg-gray-800">
         <button
           @click="form.type = 'in'"
           :class="[
             'flex-1 rounded-sm py-2 text-sm font-medium transition-all',
-            form.type === 'in' ? 'bg-white text-green-600 shadow-sm' : 'text-gray-600',
+            form.type === 'in'
+              ? 'bg-white text-green-600 shadow-sm dark:bg-gray-900 dark:text-green-400'
+              : 'text-gray-600 dark:text-gray-300',
           ]"
         >
           Cash In (+)
@@ -396,7 +398,9 @@ function openCategoryModalForProduct() {
           @click="form.type = 'out'"
           :class="[
             'flex-1 rounded-sm py-2 text-sm font-medium transition-all',
-            form.type === 'out' ? 'bg-white text-red-600 shadow-sm' : 'text-gray-600',
+            form.type === 'out'
+              ? 'bg-white text-red-600 shadow-sm dark:bg-gray-900 dark:text-red-400'
+              : 'text-gray-600 dark:text-gray-300',
           ]"
         >
           Cash Out (-)
@@ -404,14 +408,14 @@ function openCategoryModalForProduct() {
       </div>
 
       <!-- Basic Fields -->
-      <div class="space-y-4 rounded-sm bg-white p-4 shadow-sm">
+      <div class="space-y-4 rounded-sm bg-white p-4 shadow-sm dark:bg-gray-900 dark:border dark:border-gray-800">
         <BaseInput v-model="form.date" type="datetime-local" label="Date" required />
         <BaseInput v-model="form.description" type="textarea" label="Description" placeholder="What is this for?" />
       </div>
 
       <!-- Details -->
-      <div class="space-y-4 rounded-sm bg-white p-4 shadow-sm">
-        <h3 class="font-medium text-gray-900">Details</h3>
+      <div class="space-y-4 rounded-sm bg-white p-4 shadow-sm dark:bg-gray-900 dark:border dark:border-gray-800">
+        <h3 class="font-medium text-gray-900 dark:text-gray-100">Details</h3>
 
         <div class="flex items-end gap-2">
           <div class="flex-1">
@@ -428,7 +432,7 @@ function openCategoryModalForProduct() {
           </div>
           <button
             @click="openCategoryModalForTransaction"
-            class="mb-0.5 flex h-[42px] w-[42px] items-center justify-center rounded-sm bg-indigo-50 text-indigo-600 hover:bg-indigo-100 active:scale-95 transition-all"
+            class="mb-0.5 flex h-[42px] w-[42px] items-center justify-center rounded-sm bg-indigo-50 text-indigo-600 hover:bg-indigo-100 active:scale-95 transition-all dark:bg-indigo-900/40 dark:text-indigo-100 dark:hover:bg-indigo-900/60"
           >
             <IconPlus />
           </button>
@@ -449,7 +453,7 @@ function openCategoryModalForProduct() {
           </div>
           <button
             @click="showPaymentModeModal = true"
-            class="mb-0.5 flex h-[42px] w-[42px] items-center justify-center rounded-sm bg-indigo-50 text-indigo-600 hover:bg-indigo-100 active:scale-95 transition-all"
+            class="mb-0.5 flex h-[42px] w-[42px] items-center justify-center rounded-sm bg-indigo-50 text-indigo-600 hover:bg-indigo-100 active:scale-95 transition-all dark:bg-indigo-900/40 dark:text-indigo-100 dark:hover:bg-indigo-900/60"
           >
             <IconPlus />
           </button>
@@ -464,20 +468,20 @@ function openCategoryModalForProduct() {
       </div>
 
       <!-- Products -->
-      <div class="space-y-4 rounded-sm bg-white p-4 shadow-sm">
+      <div class="space-y-4 rounded-sm bg-white p-4 shadow-sm dark:bg-gray-900 dark:border dark:border-gray-800">
         <div class="flex items-center justify-between">
-          <h3 class="font-medium text-gray-900">Products</h3>
+          <h3 class="font-medium text-gray-900 dark:text-gray-100">Products</h3>
           <div class="flex gap-2">
             <button
               @click="showProductModal = true"
-              class="mb-0.5 flex h-[42px] w-[42px] items-center justify-center rounded-sm bg-indigo-50 text-indigo-600 hover:bg-indigo-100 active:scale-95 transition-all"
+              class="mb-0.5 flex h-[42px] w-[42px] items-center justify-center rounded-sm bg-indigo-50 text-indigo-600 hover:bg-indigo-100 active:scale-95 transition-all dark:bg-indigo-900/40 dark:text-indigo-100 dark:hover:bg-indigo-900/60"
             >
               <IconPlus />
             </button>
           </div>
         </div>
 
-        <div class="divide-y divide-gray-100">
+        <div class="divide-y divide-gray-100 dark:divide-gray-800">
           <ProductLineItem
             v-for="(p, index) in form.products"
             :key="p.id"
@@ -487,9 +491,14 @@ function openCategoryModalForProduct() {
             @update:model-value="updateProduct(index, $event)"
             @remove="removeProduct(index)"
           />
-          <div v-if="form.products.length === 0" class="text-center text-gray-500 py-4 text-sm">No items added.</div>
+          <div v-if="form.products.length === 0" class="text-center text-gray-500 py-4 text-sm dark:text-gray-400">
+            No items added.
+          </div>
           <div class="pt-2 text-center">
-            <button @click="addProduct" class="w-full text-sm font-medium text-indigo-600 hover:text-indigo-700">
+            <button
+              @click="addProduct"
+              class="w-full text-sm font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-300"
+            >
               + Add Item
             </button>
           </div>
@@ -497,7 +506,10 @@ function openCategoryModalForProduct() {
       </div>
 
       <!-- Discount & Charge (Cash Out Only, and only if products exist) -->
-      <div v-if="form.type === 'out' && form.products.length > 0" class="space-y-4 rounded-sm bg-white p-4 shadow-sm">
+      <div
+        v-if="form.type === 'out' && form.products.length > 0"
+        class="space-y-4 rounded-sm bg-white p-4 shadow-sm dark:bg-gray-900 dark:border dark:border-gray-800"
+      >
         <div class="grid grid-cols-2 gap-4">
           <BaseInput
             v-model="form.discount"
@@ -523,7 +535,7 @@ function openCategoryModalForProduct() {
               type="number"
               step="0.01"
               label="Total Amount"
-              class="font-bold text-indigo-600"
+              class="font-bold text-indigo-600 dark:text-indigo-300"
               :readonly="form.products.length > 0"
               required
             />
@@ -532,14 +544,14 @@ function openCategoryModalForProduct() {
       </div>
 
       <!-- Image Upload -->
-      <div class="space-y-4 rounded-sm bg-white p-4 shadow-sm">
+      <div class="space-y-4 rounded-sm bg-white p-4 shadow-sm dark:bg-gray-900 dark:border dark:border-gray-800">
         <div v-if="productImages.length > 0">
-          <h3 class="font-medium text-gray-900 mb-2">Product Images</h3>
+          <h3 class="font-medium text-gray-900 mb-2 dark:text-gray-100">Product Images</h3>
           <LightGallery :images="productImages" />
         </div>
 
         <div v-if="transactionAttachments.length > 0">
-          <h3 class="font-medium text-gray-900 mb-2">Transaction Images</h3>
+          <h3 class="font-medium text-gray-900 mb-2 dark:text-gray-100">Transaction Images</h3>
           <LightGallery :images="transactionAttachments" editable @delete="removeAttachment" />
         </div>
 
@@ -627,10 +639,14 @@ function openCategoryModalForProduct() {
     <!-- Delete Confirmation Modal -->
     <BaseModal :show="showDeleteModal" title="Delete Transaction" @close="showDeleteModal = false">
       <div class="space-y-4">
-        <p class="text-gray-600">Are you sure you want to delete this transaction? This action cannot be undone.</p>
+        <p class="text-gray-600 dark:text-gray-300">
+          Are you sure you want to delete this transaction? This action cannot be undone.
+        </p>
 
-        <div class="bg-red-50 border border-red-200 rounded-lg p-3">
-          <p class="text-sm text-red-800"><strong>Warning:</strong> This will permanently delete the transaction.</p>
+        <div class="bg-red-50 border border-red-200 rounded-lg p-3 dark:bg-red-900/30 dark:border-red-800">
+          <p class="text-sm text-red-800 dark:text-red-200">
+            <strong>Warning:</strong> This will permanently delete the transaction.
+          </p>
         </div>
 
         <div class="flex justify-end gap-3 mt-6">

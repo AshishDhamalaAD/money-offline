@@ -30,7 +30,7 @@ function navigateToHistory() {
 <template>
   <button
     @click.stop="navigateToHistory()"
-    class="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors"
+    class="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors dark:text-gray-300 dark:hover:bg-gray-800"
     title="View Rate History"
   >
     <IconHistory class="w-5 h-5" />

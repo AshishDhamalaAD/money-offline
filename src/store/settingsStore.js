@@ -8,19 +8,27 @@ export const useSettingsStore = defineStore('settings', () => {
     const biometricEnabled = ref(false)
     const biometricCredentialId = ref(null)
     const initialized = ref(false)
+    const themePreference = ref("system")
+    let systemMediaQuery = null
 
     async function init() {
         if (initialized.value) return
         try {
-            const endpoint = await db.settings.get("apiEndpoint")
-            const token = await db.settings.get("apiToken")
-            const bioEnabled = await db.settings.get("biometricEnabled")
-            const bioCredId = await db.settings.get("biometricCredentialId")
+            const [endpoint, token, bioEnabled, bioCredId, theme] = await Promise.all([
+                db.settings.get("apiEndpoint"),
+                db.settings.get("apiToken"),
+                db.settings.get("biometricEnabled"),
+                db.settings.get("biometricCredentialId"),
+                db.settings.get("themePreference")
+            ])
 
             if (endpoint) apiEndpoint.value = endpoint.value
             if (token) apiToken.value = token.value
             if (bioEnabled) biometricEnabled.value = bioEnabled.value
             if (bioCredId) biometricCredentialId.value = bioCredId.value
+            if (theme?.value) themePreference.value = theme.value
+
+            applyTheme(themePreference.value)
         } catch (e) {
             console.error("Failed to load settings", e)
         } finally {
@@ -40,12 +48,10 @@ export const useSettingsStore = defineStore('settings', () => {
         }
     }
 
-    // Helper to convert ArrayBuffer to Base64
     function bufferToBase64(buffer) {
         return btoa(String.fromCharCode(...new Uint8Array(buffer)))
     }
 
-    // Helper to convert Base64 to Uint8Array
     function base64ToBuffer(base64) {
         const binaryString = atob(base64)
         const bytes = new Uint8Array(binaryString.length)
@@ -62,16 +68,16 @@ export const useSettingsStore = defineStore('settings', () => {
             }
 
             const publicKey = {
-                challenge: new Uint8Array(32), // Random challenge
+                challenge: new Uint8Array(32),
                 rp: { name: "Money App" },
                 user: {
                     id: new Uint8Array(16),
                     name: "user@local",
                     displayName: "User"
                 },
-                pubKeyCredParams: [{ type: "public-key", alg: -7 }], // ES256
+                pubKeyCredParams: [{ type: "public-key", alg: -7 }],
                 authenticatorSelection: {
-                    authenticatorAttachment: "platform", // Use platform authenticator (TouchID, FaceID, Windows Hello)
+                    authenticatorAttachment: "platform",
                     userVerification: "required"
                 },
                 timeout: 60000
@@ -129,16 +135,56 @@ export const useSettingsStore = defineStore('settings', () => {
         }
     }
 
+    function resolveTheme(preference = themePreference.value) {
+        if (preference === "dark" || preference === "light") return preference
+
+        if (!systemMediaQuery && typeof window !== "undefined") {
+            systemMediaQuery = window.matchMedia("(prefers-color-scheme: dark)")
+            systemMediaQuery.addEventListener("change", () => {
+                if (themePreference.value === "system") {
+                    applyTheme("system")
+                }
+            })
+        }
+
+        return systemMediaQuery?.matches ? "dark" : "light"
+    }
+
+    function applyTheme(preference = themePreference.value) {
+        if (typeof document === "undefined") return
+        const resolvedTheme = resolveTheme(preference)
+        const root = document.documentElement
+
+        root.classList.toggle("dark", resolvedTheme === "dark")
+        root.dataset.theme = preference
+    }
+
+    async function setThemePreference(preference) {
+        try {
+            themePreference.value = preference
+            await db.settings.put({ key: "themePreference", value: preference })
+            applyTheme(preference)
+            return { success: true }
+        } catch (error) {
+            console.error("Failed to save theme preference", error)
+            return { success: false, message: error.message }
+        }
+    }
+
     return {
         apiEndpoint,
         apiToken,
         biometricEnabled,
         biometricCredentialId,
         initialized,
+        themePreference,
         init,
         saveSettings,
         registerBiometric,
         verifyBiometric,
-        disableBiometric
+        disableBiometric,
+        setThemePreference,
+        applyTheme,
+        resolveTheme
     }
 })

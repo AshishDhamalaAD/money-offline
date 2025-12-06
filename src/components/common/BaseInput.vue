@@ -34,7 +34,7 @@ const inputType = computed(() => {
 
 <template>
   <div class="flex flex-col gap-1.5">
-    <label v-if="label" :for="id" class="text-sm font-medium text-gray-700 ml-1">
+    <label v-if="label" :for="id" class="text-sm font-medium text-gray-700 dark:text-gray-200 ml-1">
       {{ label }} <span v-if="required" class="text-red-500">*</span>
     </label>
     <textarea
@@ -46,8 +46,8 @@ const inputType = computed(() => {
       rows="3"
       :readonly="readonly"
       :class="[
-        'w-full max-w-full rounded-sm border-gray-200 bg-gray-50 px-4 py-2.5 text-gray-900 placeholder-gray-400 transition-colors focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 resize-y',
-        { 'border-red-500 focus:border-red-500 focus:ring-red-500': error },
+        'w-full max-w-full rounded-sm border-gray-200 bg-gray-50 px-4 py-2.5 text-gray-900 placeholder-gray-400 transition-colors focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 resize-y dark:border-gray-500 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500 dark:focus:bg-gray-900',
+        { 'border-red-500 focus:border-red-500 focus:ring-red-500 dark:border-red-500 dark:focus:bg-gray-900': error },
       ]"
     ></textarea>
     <div v-else :class="['relative', { 'flex items-center gap-1': $slots['after-input'] }]">
@@ -59,8 +59,10 @@ const inputType = computed(() => {
         :placeholder="placeholder"
         :readonly="readonly"
         :class="[
-          'w-full max-w-full rounded-sm border-gray-200 bg-gray-50 px-4 py-2.5 text-gray-900 placeholder-gray-400 transition-colors focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500',
-          { 'border-red-500 focus:border-red-500 focus:ring-red-500': error },
+          'w-full max-w-full rounded-sm border-gray-200 bg-gray-50 px-4 py-2.5 text-gray-900 placeholder-gray-400 transition-colors focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500 dark:focus:bg-gray-900',
+          {
+            'border-red-500 focus:border-red-500 focus:ring-red-500 dark:border-red-500 dark:focus:bg-gray-900': error,
+          },
           { 'pr-10': type === 'password' },
           { 'flex-1': $slots['after-input'] },
         ]"
@@ -70,7 +72,7 @@ const inputType = computed(() => {
         v-if="type === 'password'"
         type="button"
         @click="showPassword = !showPassword"
-        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none dark:text-gray-300 dark:hover:text-gray-100"
       >
         <IconEyeSlash v-if="showPassword" />
         <IconEye v-else />

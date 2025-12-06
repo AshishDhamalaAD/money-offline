@@ -38,7 +38,7 @@ async function handleCreateBook() {
       <template #actions>
         <button
           @click="$router.push({ name: 'settings' })"
-          class="rounded-full bg-gray-100 p-2 text-gray-600 hover:bg-gray-200"
+          class="rounded-full bg-gray-100 p-2 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
         >
           <IconSettings />
         </button>
@@ -48,11 +48,11 @@ async function handleCreateBook() {
     <!-- Content -->
     <main class="p-4">
       <div v-if="bookStore.books.length === 0" class="mt-10 flex flex-col items-center justify-center text-center">
-        <div class="mb-4 rounded-full bg-indigo-50 p-4 text-indigo-600">
+        <div class="mb-4 rounded-full bg-indigo-50 p-4 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-100">
           <IconBook class="h-10 w-10" />
         </div>
-        <h3 class="text-lg font-medium text-gray-900">No books yet</h3>
-        <p class="mt-1 text-gray-500">Create your first book to start tracking expenses.</p>
+        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">No books yet</h3>
+        <p class="mt-1 text-gray-500 dark:text-gray-400">Create your first book to start tracking expenses.</p>
         <div class="mt-6">
           <BaseButton @click="showCreateModal = true">Create Book</BaseButton>
         </div>

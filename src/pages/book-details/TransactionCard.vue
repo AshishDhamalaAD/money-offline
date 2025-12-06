@@ -59,12 +59,15 @@ const allImages = computed(() => {
 </script>
 
 <template>
-  <div class="rounded-sm bg-white p-4 shadow-sm ring-1 ring-gray-100">
+  <div class="rounded-sm bg-white p-4 shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800">
     <!-- Row 1: Type + Category + Calculation -->
     <div class="flex items-center justify-between mb-3">
       <div class="flex items-center gap-2">
         <!-- Type Label -->
-        <span v-if="paymentMode" :class="['px-3 py-1 rounded-md text-xs font-medium', 'bg-orange-100 text-orange-700']">
+        <span
+          v-if="paymentMode"
+          :class="['px-3 py-1 rounded-md text-xs font-medium', 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-100']"
+        >
           {{ paymentMode.name }}
         </span>
 
@@ -72,7 +75,7 @@ const allImages = computed(() => {
         <span
           v-for="category in categories"
           :key="category.id"
-          class="px-3 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-700"
+          class="px-3 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-100"
         >
           {{ category.name }}
         </span>
@@ -80,7 +83,7 @@ const allImages = computed(() => {
 
       <!-- Calculation / Final Amount -->
       <div class="text-right">
-        <div class="text-sm text-gray-600">
+        <div class="text-sm text-gray-600 dark:text-gray-300">
           <span v-if="productsTotal > 0" :class="transaction.type === 'in' ? 'text-green-600' : 'text-red-600'">{{
             formatCurrency(productsTotal)
           }}</span>
@@ -103,13 +106,13 @@ const allImages = computed(() => {
         :key="index"
         class="flex items-center justify-between text-xs gap-2"
       >
-        <div class="flex-1 flex items-center justify-between gap-2 text-gray-700">
+        <div class="flex-1 flex items-center justify-between gap-2 text-gray-700 dark:text-gray-200">
           <span class="font-medium">{{ product.name }}</span>
-          <span v-if="product.quantity > 1" class="text-gray-500"
+          <span v-if="product.quantity > 1" class="text-gray-500 dark:text-gray-400"
             >{{ product.quantity }} × {{ formatCurrency(product.rate) }}</span
           >
         </div>
-        <span class="text-gray-900 font-medium inline-block min-w-[50px] text-right">{{
+        <span class="text-gray-900 font-medium inline-block min-w-[50px] text-right dark:text-gray-100">{{
           formatCurrency(product.amount)
         }}</span>
       </div>
@@ -117,8 +120,8 @@ const allImages = computed(() => {
 
     <!-- Row 3: Description + Time -->
     <div class="flex justify-between items-start gap-2">
-      <span class="text-xs text-gray-600 flex-1 whitespace-pre-wrap" v-html="transaction.description"></span>
-      <span class="text-xs text-gray-500 shrink-0">{{ formattedTime }}</span>
+      <span class="text-xs text-gray-600 flex-1 whitespace-pre-wrap dark:text-gray-300" v-html="transaction.description"></span>
+      <span class="text-xs text-gray-500 shrink-0 dark:text-gray-400">{{ formattedTime }}</span>
     </div>
 
     <div

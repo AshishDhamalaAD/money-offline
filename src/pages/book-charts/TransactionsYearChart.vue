@@ -81,9 +81,9 @@ const chartOptions = {
 </script>
 
 <template>
-  <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+  <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100 dark:bg-gray-900 dark:border-gray-800">
     <div class="mb-4">
-      <h3 class="font-medium text-gray-900 mb-2">Yearly Trends</h3>
+      <h3 class="font-medium text-gray-900 mb-2 dark:text-gray-100">Yearly Trends</h3>
       <DateRangeTabs v-model="localFilter" v-model:start-date="localStartDate" v-model:end-date="localEndDate" />
     </div>
     <div class="h-64">

@@ -32,7 +32,7 @@ function navigateToEdit(contact) {
   <div class="space-y-4">
     <div class="flex flex-col gap-4">
       <div class="flex justify-between items-center">
-        <h2 class="text-lg font-semibold text-gray-800">Manage Contacts</h2>
+        <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100">Manage Contacts</h2>
         <BaseButton size="sm" @click="navigateToAdd">Add New</BaseButton>
       </div>
 
@@ -45,17 +45,19 @@ function navigateToEdit(contact) {
         v-for="item in filteredContacts"
         :key="item.id"
         @click="navigateToEdit(item)"
-        class="flex justify-between items-center bg-white p-4 rounded-sm shadow-sm cursor-pointer hover:bg-gray-50 transition-colors"
+        class="flex justify-between items-center bg-white p-4 rounded-sm shadow-sm cursor-pointer hover:bg-gray-50 transition-colors dark:bg-gray-900 dark:hover:bg-gray-800 dark:border dark:border-gray-800"
       >
         <div>
-          <p class="font-medium">{{ item.name }}</p>
-          <p class="text-xs text-gray-500">{{ item.phone }}</p>
+          <p class="font-medium text-gray-900 dark:text-gray-100">{{ item.name }}</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">{{ item.phone }}</p>
         </div>
-        <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg class="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
         </svg>
       </div>
-      <div v-if="filteredContacts.length === 0" class="text-center text-gray-500 py-4">No contacts found.</div>
+      <div v-if="filteredContacts.length === 0" class="text-center text-gray-500 py-4 dark:text-gray-400">
+        No contacts found.
+      </div>
     </div>
   </div>
 </template>

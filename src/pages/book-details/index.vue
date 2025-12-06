@@ -339,17 +339,20 @@ async function saveBookName() {
       <template #actions>
         <button
           @click="router.push({ name: 'book-charts', params: { bookId } })"
-          class="rounded-full bg-gray-100 p-2 text-gray-600 hover:bg-gray-200"
+          class="rounded-full bg-gray-100 p-2 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
         >
           <IconChartBar class="h-5 w-5" />
         </button>
         <button
           @click="router.push({ name: 'book-settings-products', params: { bookId } })"
-          class="rounded-full bg-gray-100 p-2 text-gray-600 hover:bg-gray-200"
+          class="rounded-full bg-gray-100 p-2 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
         >
           <IconSettings />
         </button>
-        <button @click="openEditBook" class="rounded-full bg-gray-100 p-2 text-gray-600 hover:bg-gray-200">
+        <button
+          @click="openEditBook"
+          class="rounded-full bg-gray-100 p-2 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+        >
           <IconEdit />
         </button>
       </template>
@@ -382,12 +385,12 @@ async function saveBookName() {
         <BaseSearchInput v-model="searchQuery" placeholder="Search transactions..." class="flex-1" />
         <button
           @click="openFilterModal()"
-          class="flex items-center justify-center w-11 rounded-sm bg-white shadow-sm ring-1 ring-gray-200 text-gray-600 hover:bg-gray-50 active:bg-gray-100 relative"
+          class="flex items-center justify-center w-11 rounded-sm bg-white shadow-sm ring-1 ring-gray-200 text-gray-600 hover:bg-gray-50 active:bg-gray-100 relative dark:bg-gray-900 dark:ring-gray-800 dark:text-gray-200 dark:hover:bg-gray-800 dark:active:bg-gray-800"
         >
           <IconFilter />
           <div
             v-if="activeFiltersCount > 0"
-            class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-[#F2F2F7]"
+            class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-[#F2F2F7] dark:border-gray-900"
           >
             {{ activeFiltersCount }}
           </div>
@@ -408,15 +411,15 @@ async function saveBookName() {
 
       <!-- Transactions -->
       <div class="space-y-6">
-        <div v-if="groupedTransactions.length === 0" class="py-10 text-center text-gray-500">
+        <div v-if="groupedTransactions.length === 0" class="py-10 text-center text-gray-500 dark:text-gray-400">
           No transactions found.
         </div>
 
         <div v-for="group in groupedTransactions" :key="group.date" class="space-y-3">
           <!-- Date Header -->
-          <div class="bg-gray-100 px-4 py-2 rounded-lg text-sm flex justify-between items-center">
-            <h3 class="font-bold text-gray-900">{{ group.date }}</h3>
-            <span class="text-gray-600">{{ formatCurrency(group.amount) }}</span>
+          <div class="bg-gray-100 px-4 py-2 rounded-lg text-sm flex justify-between items-center dark:bg-gray-800">
+            <h3 class="font-bold text-gray-900 dark:text-gray-100">{{ group.date }}</h3>
+            <span class="text-gray-600 dark:text-gray-300">{{ formatCurrency(group.amount) }}</span>
           </div>
 
           <!-- Transactions for this date -->

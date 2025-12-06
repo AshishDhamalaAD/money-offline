@@ -108,19 +108,23 @@ function prevPage() {
 </script>
 
 <template>
-  <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+  <div
+    class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden dark:bg-gray-900 dark:border-gray-800"
+  >
     <!-- Header / Controls -->
-    <div class="p-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4">
-      <h3 v-if="$slots.title" class="font-medium text-gray-900"><slot name="title"></slot></h3>
+    <div
+      class="p-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4 dark:border-gray-800"
+    >
+      <h3 v-if="$slots.title" class="font-medium text-gray-900 dark:text-gray-100"><slot name="title"></slot></h3>
       <div class="w-full sm:w-64">
         <div class="relative">
           <input
             v-model="searchQuery"
             type="text"
             placeholder="Search..."
-            class="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+            class="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
           />
-          <IconSearch class="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+          <IconSearch class="absolute left-3 top-3 w-4 h-4 text-gray-400 dark:text-gray-500" />
         </div>
       </div>
     </div>
@@ -132,7 +136,9 @@ function prevPage() {
     <!-- Table -->
     <div class="overflow-x-auto">
       <table class="w-full text-sm text-left">
-        <thead class="bg-gray-50 text-gray-600 font-medium border-b border-gray-100">
+        <thead
+          class="bg-gray-50 text-gray-600 font-medium border-b border-gray-100 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700"
+        >
           <tr>
             <th
               v-for="col in columns"
@@ -141,30 +147,33 @@ function prevPage() {
               :class="[
                 'px-4 py-3 select-none',
                 col.align === 'right' ? 'text-right' : 'text-left',
-                col.sortable ? 'cursor-pointer hover:bg-gray-100' : '',
+                col.sortable ? 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50' : '',
               ]"
             >
               <div class="flex items-center gap-1" :class="{ 'justify-end': col.align === 'right' }">
                 {{ col.label }}
-                <span v-if="sortKey === col.key" class="text-xs text-indigo-500">
+                <span v-if="sortKey === col.key" class="text-xs text-indigo-500 dark:text-indigo-300">
                   {{ sortDirection === "asc" ? "↑" : "↓" }}
                 </span>
               </div>
             </th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-gray-100">
+        <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
           <tr
             v-for="(row, index) in paginatedData"
             :key="index"
-            class="hover:bg-gray-50 transition-colors"
+            class="hover:bg-gray-50 transition-colors dark:hover:bg-gray-800"
             :class="{ 'cursor-pointer': $attrs.onRowClick }"
             @click="$emit('row-click', row)"
           >
             <td
               v-for="col in columns"
               :key="col.key"
-              :class="['px-4 py-3 text-gray-900', col.align === 'right' ? 'text-right' : 'text-left']"
+              :class="[
+                'px-4 py-3 text-gray-900 dark:text-gray-100',
+                col.align === 'right' ? 'text-right' : 'text-left',
+              ]"
             >
               <slot :name="`cell-${col.key}`" :row="row" :value="row[col.key]">
                 {{ col.format ? col.format(row[col.key]) : row[col.key] }}
@@ -172,29 +181,34 @@ function prevPage() {
             </td>
           </tr>
           <tr v-if="paginatedData.length === 0">
-            <td :colspan="columns.length" class="px-4 py-8 text-center text-gray-500">No data found.</td>
+            <td :colspan="columns.length" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+              No data found.
+            </td>
           </tr>
         </tbody>
       </table>
     </div>
 
     <!-- Pagination -->
-    <div v-if="totalPages > 1" class="p-4 border-t border-gray-100 flex items-center justify-between">
-      <span class="text-xs text-gray-500"> Page {{ currentPage }} of {{ totalPages }} </span>
+    <div
+      v-if="totalPages > 1"
+      class="p-4 border-t border-gray-100 flex items-center justify-between dark:border-gray-800"
+    >
+      <span class="text-xs text-gray-500 dark:text-gray-400"> Page {{ currentPage }} of {{ totalPages }} </span>
       <div class="flex gap-2">
         <button
           @click="prevPage"
           :disabled="currentPage === 1"
-          class="p-1 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="p-1 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed dark:hover:bg-gray-800 dark:text-gray-100"
         >
-          <IconChevronLeft class="w-5 h-5 text-gray-600" />
+          <IconChevronLeft class="w-5 h-5 text-gray-600 dark:text-gray-200" />
         </button>
         <button
           @click="nextPage"
           :disabled="currentPage === totalPages"
-          class="p-1 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="p-1 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed dark:hover:bg-gray-800 dark:text-gray-100"
         >
-          <IconChevronRight class="w-5 h-5 text-gray-600" />
+          <IconChevronRight class="w-5 h-5 text-gray-600 dark:text-gray-200" />
         </button>
       </div>
     </div>

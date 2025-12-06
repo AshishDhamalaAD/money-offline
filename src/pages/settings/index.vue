@@ -9,18 +9,20 @@ import ServerSync from "@/pages/settings/ServerSync.vue"
 import ContactsManager from "@/pages/settings/ContactsManager.vue"
 import ResetDatabase from "@/pages/settings/ResetDatabase.vue"
 import SecuritySettings from "@/pages/settings/SecuritySettings.vue"
+import ThemeSettings from "@/pages/settings/ThemeSettings.vue"
 
 const router = useRouter()
 const route = useRoute()
 
-const activeTab = ref(route.query.tab || "contacts")
-
 const tabs = [
   { id: "contacts", label: "Manage Contacts" },
+  { id: "appearance", label: "Appearance" },
   { id: "security", label: "Security" },
   { id: "data", label: "Import / Export" },
   { id: "reset", label: "Reset Database" },
 ]
+const tabIds = tabs.map((tab) => tab.id)
+const activeTab = ref(tabIds.includes(route.query.tab) ? route.query.tab : "contacts")
 
 // Watch for tab changes to update URL
 watch(activeTab, (newTab) => {
@@ -31,7 +33,7 @@ watch(activeTab, (newTab) => {
 watch(
   () => route.query.tab,
   (newTab) => {
-    if (newTab && ["contacts", "data", "security", "reset"].includes(newTab)) {
+    if (newTab && tabIds.includes(newTab)) {
       activeTab.value = newTab
     }
   }
@@ -52,8 +54,8 @@ watch(
           :class="[
             'rounded-full px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors',
             activeTab === tab.id
-              ? 'bg-indigo-600 text-white shadow-md'
-              : 'bg-white text-gray-600 ring-1 ring-gray-200 shadow-sm',
+              ? 'bg-indigo-600 text-white shadow-md dark:bg-indigo-500'
+              : 'bg-white text-gray-600 ring-1 ring-gray-200 shadow-sm dark:bg-gray-800 dark:text-gray-200 dark:ring-gray-700',
           ]"
         >
           {{ tab.label }}
@@ -63,6 +65,11 @@ watch(
       <!-- Contacts Section -->
       <div v-if="activeTab === 'contacts'">
         <ContactsManager />
+      </div>
+
+      <!-- Appearance -->
+      <div v-if="activeTab === 'appearance'">
+        <ThemeSettings />
       </div>
 
       <!-- Database Backup & Restore -->

@@ -93,7 +93,7 @@ function goBack() {
         <button
           v-if="!isNew"
           @click="showDeleteModal = true"
-          class="rounded-lg px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+          class="rounded-lg px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors dark:hover:bg-red-900/20"
         >
           Delete
         </button>
@@ -101,7 +101,7 @@ function goBack() {
     </PageHeader>
 
     <main class="p-4 space-y-6">
-      <div class="bg-white p-4 rounded-xl shadow-sm space-y-4">
+      <div class="bg-white p-4 rounded-xl shadow-sm space-y-4 dark:bg-gray-900 dark:border dark:border-gray-800">
         <BaseInput v-model="form.name" label="Name" autoFocus required />
         <BaseInput v-model="form.phone" label="Phone (Optional)" />
       </div>
@@ -111,7 +111,9 @@ function goBack() {
 
     <!-- Delete Confirmation Modal -->
     <BaseModal :show="showDeleteModal" title="Confirm Delete" @close="showDeleteModal = false">
-      <p class="text-gray-600">Are you sure you want to delete this contact? This action cannot be undone.</p>
+      <p class="text-gray-600 dark:text-gray-300">
+        Are you sure you want to delete this contact? This action cannot be undone.
+      </p>
       <div class="flex justify-end gap-3 mt-6">
         <BaseButton variant="ghost" @click="showDeleteModal = false">Cancel</BaseButton>
         <BaseButton variant="danger" @click="handleDelete">Delete</BaseButton>
