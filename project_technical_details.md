@@ -60,7 +60,7 @@ The application uses a versioned schema in `src/db/dexie.js`. The current versio
 - **payment_modes**: `++id, name, description, book_id, sync_status, created_at, updated_at`
 - **products**: `++id, name, rate, description, quantity_type, book_id, category_id, sync_status, created_at, updated_at, attachments`
 - **product_rates**: `++id, product_id, rate, created_at, updated_at` (History of rate changes)
-- **settings**: `key, value` (Key-value store for app settings like API endpoint)
+- **settings**: `key, value` (Key-value store for app settings like API endpoint, themePreference, biometric flags)
 
 > **Note**: `*category_ids` indicates a multi-entry index, allowing efficient querying of transactions by multiple categories.
 
@@ -144,10 +144,25 @@ Routes are defined in `src/router/index.js` and use **Lazy Loading** for all pag
 - **Vite**: Configured with `@vitejs/plugin-vue` and `VitePWA`. Alias `@` maps to `./src`.
 - **Tailwind**: Scans all source files for class usage.
 
-## 11. Date Handling & Filtering
+## 11. Date Handling, Filtering & Drill-down
 
 To ensure consistency across the application, date logic is centralized:
 
 - **DateRangeTabs Component**: Encapsulates the logic for calculating date ranges (e.g., "This Month", "Last Year"). It emits standardized `startDate` and `endDate` strings (YYYY-MM-DD) to consumer components.
 - **Filtering Utility**: `filterByDateRange` (in `src/utils/dateUtils.js`) is used by charts and tables to filter data arrays based on the provided date range.
+- **Chart Filters**: Advanced filters support include/exclude category and product IDs with separate temp/applied states; chips in the charts header remove filters instantly while keeping the filter form in sync.
+- **Drill-down Interaction**:
+  - **TransactionListModal**: Reusable modal (`src/pages/book-charts/TransactionListModal.vue`) that flattens transactions (including multi-product entries) into display rows with per-line amounts and category labels.
+  - **Integration**: Triggered from category/product summary rows; reuses `BaseTable` for consistent rendering, sorting, and pagination.
 - **Lazy Rendering**: Heavy chart components are wrapped in `LazyRender.vue` with `IntersectionObserver` to improve initial page load performance.
+
+## 12. Theming & Appearance
+
+- **Theme Preference**: Stored in Dexie `settings` table (`themePreference`) with options `light`, `dark`, or `system` (default).
+- **Resolution**: `settingsStore.resolveTheme` listens to `prefers-color-scheme` when set to `system`; `applyTheme` toggles the root `dark` class and `data-theme` attribute for Tailwind and component styling.
+- **UI Surface**: Appearance tab in `Settings` hosts `ThemeSettings.vue`, allowing users to switch themes with immediate persistence and feedback.
+
+## 13. UI Components
+
+- **BaseSearchableSelect**: Supports multi-select, hides already selected options by default to prevent duplicates, provides search + limit handling, and exposes a clear-all button for quick resets (used in filters and forms).
+- **BaseTable**: Provides search, sorting, pagination, and an exposed `resetPage()` helper so parents can reset pagination after filter changes (e.g., transaction drill-down modal).

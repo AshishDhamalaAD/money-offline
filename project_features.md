@@ -40,6 +40,7 @@ Extensive configuration options to tailor the application to user needs.
 - **Contact Management**: Create, edit, and manage a list of contacts (`/settings/contacts`).
 - **Category Management**: Customize transaction categories (`/book/:bookId/settings/categories`).
 - **Payment Modes**: Define and manage available payment methods (`/book/:bookId/settings/payment-modes`).
+- **Theme Settings**: Appearance tab with Light / Dark / System options that persist per device.
 - **Database Reset**: Option to completely wipe the local database and start fresh.
 
 ## 5. Security
@@ -59,10 +60,11 @@ Visual tools to understand spending habits and financial trends.
   - **Yearly View**: Line chart showing outgoing transactions by year.
   - **Comparison View**: Bar chart comparing monthly expenses year-over-year.
   - **Summary Tables**: Detailed product and category-wise summaries for the selected period.
+  - **Interactive Drill-down**: Click on any category or product in the summary tables to open a detailed modal with per-transaction and per-line-item breakdowns (supports multi-product transactions).
   - **Enhanced Filtering**:
     - **Global Date Filter**: Quickly switch between common ranges (This Month, Last Year, etc.) or set custom dates.
-    - **Advanced Filters**: Filter by Transaction Type, Categories, and Products.
-    - **Active Filter Chips**: Visual indicators of applied filters with one-click removal.
+    - **Advanced Filters**: Include/Exclude Categories and Products with multi-select pickers, plus transaction type toggles.
+    - **Active Filter Chips**: Visual indicators for every include/exclude filter with instant tap-to-remove behavior.
 
 ## 7. Technical & Infrastructure
 
@@ -77,15 +79,16 @@ Built with modern web technologies for performance and reliability.
   - **Sync Status**: Visual indicators for data synchronization state.
 - **Backup & Restore**:
   - **Manual Import/Export**: Export data to a file for backup and import it back when needed.
-  - **Auto-Backup**: Automated database backup functionality.
+  - **Manual Import/Export**: Export data to a file for backup and import it back when needed.
 
 ## 8. User Interface & Experience (UI/UX)
 
 Polished interface for a premium user experience.
 
 - **Dark Mode**: Full system-wide dark mode support for low-light environments.
+- **Theme Preference**: Appearance settings let users force Light/Dark or follow the system theme with instant UI updates.
 - **Image Gallery**: Integrated **LightGallery** for viewing transaction attachments with zoom and swipe gestures.
 - **Image Upload**: Seamless image uploading using **FilePond** with drag-and-drop support, image previews, and validation.
 - **Toast Notifications**: Non-intrusive feedback messages for user actions (success, error).
-- **Searchable Selects**: Enhanced dropdown menus with search functionality for quickly finding contacts, categories, or products.
+- **Searchable Selects**: Multi-select capable dropdowns with search, hidden selected options to prevent duplicates, and clear-all buttons for fast adjustments in forms and filters.
 - **Responsive Design**: Optimized for both desktop and mobile devices.
