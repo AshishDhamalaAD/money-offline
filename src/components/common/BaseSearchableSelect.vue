@@ -18,6 +18,10 @@ const props = defineProps({
     default: 20,
   },
   multiple: Boolean,
+  hideSelected: {
+    type: Boolean,
+    default: true,
+  },
 })
 
 const emit = defineEmits(["update:modelValue"])
@@ -39,9 +43,27 @@ const selectedOptions = computed(() => {
   return props.modelValue.map((val) => props.options.find((o) => o.value === val)).filter(Boolean)
 })
 
+const hasSelection = computed(() => {
+  if (props.multiple) {
+    return Array.isArray(props.modelValue) && props.modelValue.length > 0
+  }
+  return props.modelValue !== null && props.modelValue !== undefined && props.modelValue !== ""
+})
+
 // Filter options
 const filteredOptions = computed(() => {
   let options = props.options
+
+  // 1. Hide selected options if configured (default: true)
+  if (props.hideSelected) {
+    if (props.multiple && Array.isArray(props.modelValue)) {
+      options = options.filter((o) => !props.modelValue.includes(o.value))
+    } else if (!props.multiple && props.modelValue) {
+      options = options.filter((o) => o.value !== props.modelValue)
+    }
+  }
+
+  // 2. Search filtering
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
     options = options.filter(
@@ -52,7 +74,8 @@ const filteredOptions = computed(() => {
     // When searching, show all matching results (no limit)
     return options
   }
-  // No search query: limit displayed options for performance
+
+  // 3. Limit (only if no search)
   return options.slice(0, props.limit)
 })
 
@@ -92,6 +115,18 @@ function removeOption(value) {
     const current = props.modelValue.filter((v) => v !== value)
     emit("update:modelValue", current)
   }
+}
+
+function clearSelection() {
+  if (props.multiple) {
+    emit("update:modelValue", [])
+  } else {
+    emit("update:modelValue", null)
+  }
+  // Keep open to allow re-selection if desired, or focus input
+  nextTick(() => {
+    inputRef.value?.focus()
+  })
 }
 
 function isSelected(value) {
@@ -146,9 +181,24 @@ onClickOutside(containerRef, close, {
           </template>
           <span v-else class="truncate">{{ selectedLabel || placeholder || "Select..." }}</span>
         </div>
-        <svg class="h-5 w-5 text-gray-400 shrink-0 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-        </svg>
+
+        <!-- Icons: Clear vs Chevron -->
+        <div class="flex items-center ml-2 shrink-0">
+          <!-- Clear Button (Visible when Open + Has Selection) -->
+          <button
+            v-if="hasSelection"
+            @click.stop="clearSelection"
+            class="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-200 transition-colors"
+            title="Clear All"
+          >
+            <IconX class="h-4 w-4" />
+          </button>
+
+          <!-- Dropdown Chevron -->
+          <svg v-else class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
       </div>
 
       <!-- Dropdown -->
