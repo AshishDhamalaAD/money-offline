@@ -41,7 +41,7 @@ src/
 ├── pages/              # Application views (mapped to routes)
 ├── router/             # Vue Router configuration
 ├── store/              # Pinia stores (state management)
-│   └── modules/        # Individual store modules
+│   └── bookStore.js    # Book store
 ├── utils/              # Helper functions
 ├── App.vue             # Root component
 └── main.js             # Application entry point

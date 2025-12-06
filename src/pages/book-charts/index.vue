@@ -213,16 +213,14 @@ function removeProduct(id) {
 
           <!-- Categories -->
           <BaseSearchableSelect
-            :model-value="''"
-            @update:model-value="(val) => tempFilters.includeCategoryIds.push(val)"
+            v-model="tempFilters.includeCategoryIds"
             label="Include Categories"
             multiple
             :options="categoryStore.categories.map((c) => ({ label: c.name, value: c.id }))"
             placeholder="Select categories to include"
           />
           <BaseSearchableSelect
-            :model-value="''"
-            @update:model-value="(val) => tempFilters.excludeCategoryIds.push(val)"
+            v-model="tempFilters.excludeCategoryIds"
             label="Exclude Categories"
             multiple
             :options="categoryStore.categories.map((c) => ({ label: c.name, value: c.id }))"
@@ -231,16 +229,14 @@ function removeProduct(id) {
 
           <!-- Products -->
           <BaseSearchableSelect
-            :model-value="''"
-            @update:model-value="(val) => tempFilters.includeProductIds.push(val)"
+            v-model="tempFilters.includeProductIds"
             label="Include Products"
             multiple
             :options="productStore.products.map((p) => ({ label: p.name, value: p.id }))"
             placeholder="Select products to include"
           />
           <BaseSearchableSelect
-            :model-value="''"
-            @update:model-value="(val) => tempFilters.excludeProductIds.push(val)"
+            v-model="tempFilters.excludeProductIds"
             label="Exclude Products"
             multiple
             :options="productStore.products.map((p) => ({ label: p.name, value: p.id }))"
@@ -271,7 +267,6 @@ function removeProduct(id) {
             class="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full flex items-center gap-1"
           >
             + Cat: {{ categoryStore.categories.find((c) => c.id === id)?.name }}
-            <button @click="removeCategory(id)" class="hover:text-gray-900"><IconX class="w-3 h-3" /></button>
           </span>
 
           <span
@@ -280,7 +275,6 @@ function removeProduct(id) {
             class="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full flex items-center gap-1"
           >
             + Prod: {{ productStore.products.find((p) => p.id === id)?.name }}
-            <button @click="removeProduct(id)" class="hover:text-gray-900"><IconX class="w-3 h-3" /></button>
           </span>
         </div>
       </div>

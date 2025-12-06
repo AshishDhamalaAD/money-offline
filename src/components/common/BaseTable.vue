@@ -37,6 +37,12 @@ watch(searchQuery, () => {
   currentPage.value = 1
 })
 
+function resetPage() {
+  currentPage.value = 1
+}
+
+defineExpose({ resetPage })
+
 // Sorting Logic
 function toggleSort(key) {
   if (sortKey.value === key) {
@@ -105,16 +111,16 @@ function prevPage() {
   <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
     <!-- Header / Controls -->
     <div class="p-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4">
-      <h3 class="font-medium text-gray-900"><slot name="title">Table</slot></h3>
+      <h3 v-if="$slots.title" class="font-medium text-gray-900"><slot name="title"></slot></h3>
       <div class="w-full sm:w-64">
         <div class="relative">
           <input
             v-model="searchQuery"
             type="text"
             placeholder="Search..."
-            class="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+            class="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
           />
-          <IconSearch class="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+          <IconSearch class="absolute left-3 top-3 w-4 h-4 text-gray-400" />
         </div>
       </div>
     </div>
@@ -148,7 +154,13 @@ function prevPage() {
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
-          <tr v-for="(row, index) in paginatedData" :key="index" class="hover:bg-gray-50">
+          <tr
+            v-for="(row, index) in paginatedData"
+            :key="index"
+            class="hover:bg-gray-50 transition-colors"
+            :class="{ 'cursor-pointer': $attrs.onRowClick }"
+            @click="$emit('row-click', row)"
+          >
             <td
               v-for="col in columns"
               :key="col.key"

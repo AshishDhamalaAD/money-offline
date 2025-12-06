@@ -6,6 +6,7 @@ import BaseTable from "@/components/common/BaseTable.vue"
 import { formatCurrency } from "@/utils/moneyUtils"
 import DateRangeTabs from "@/components/common/DateRangeTabs.vue"
 import { filterByDateRange } from "@/utils/dateUtils"
+import TransactionListModal from "@/pages/book-charts/TransactionListModal.vue"
 
 const props = defineProps({
   transactions: {
@@ -34,6 +35,12 @@ watch(
   },
   { deep: true }
 )
+
+const tableRef = ref(null)
+
+watch([localFilter, localStartDate, localEndDate], () => {
+  tableRef.value?.resetPage()
+})
 
 const filteredTransactions = computed(() => {
   return filterByDateRange(props.transactions, "date", localStartDate.value, localEndDate.value)
@@ -65,6 +72,7 @@ const summary = computed(() => {
           }
 
           map.set(catId, {
+            id: catId,
             name: catName,
             quantity: 0,
             amount: 0,
@@ -80,6 +88,7 @@ const summary = computed(() => {
       const catId = "uncategorized"
       if (!map.has(catId)) {
         map.set(catId, {
+          id: catId,
           name: "Uncategorized",
           quantity: 0,
           amount: 0,
@@ -104,16 +113,58 @@ const columns = [
   },
   { key: "amount", label: "Amount", sortable: true, align: "right", format: (val) => formatCurrency(val) },
 ]
+
+// Modal Logic
+const showModal = ref(false)
+const selectedCategory = ref(null)
+const selectedTransactions = ref([])
+
+function handleRowClick(row) {
+  selectedCategory.value = row
+  // Filter transactions that contain this category and match the current date range
+  selectedTransactions.value = filteredTransactions.value
+    .filter((t) => {
+      if (row.id === "uncategorized") {
+        return !t.category_ids || t.category_ids.length === 0
+      }
+      // Check if transaction has this category directly or via products
+      const hasDirectCategory = t.category_ids && t.category_ids.includes(row.id)
+      const hasProductCategory =
+        t.products &&
+        t.products.some((p) => {
+          const product = productStore.products.find((prod) => prod.id === p.product_id)
+          return product && product.category_id === row.id
+        })
+
+      return hasDirectCategory || hasProductCategory
+    })
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+
+  showModal.value = true
+}
 </script>
 
 <template>
   <div class="space-y-4">
-    <BaseTable :columns="columns" :data="summary" :default-sort="{ key: 'amount', direction: 'desc' }">
+    <BaseTable
+      ref="tableRef"
+      :columns="columns"
+      :data="summary"
+      :default-sort="{ key: 'amount', direction: 'desc' }"
+      @row-click="handleRowClick"
+    >
       <template #title> Category Wise Summary </template>
 
       <template #filters>
         <DateRangeTabs v-model="localFilter" v-model:start-date="localStartDate" v-model:end-date="localEndDate" />
       </template>
     </BaseTable>
+
+    <TransactionListModal
+      :show="showModal"
+      :title="selectedCategory?.name"
+      :transactions="selectedTransactions"
+      @close="showModal = false"
+    />
   </div>
 </template>

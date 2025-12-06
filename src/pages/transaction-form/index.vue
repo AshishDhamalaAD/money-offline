@@ -415,25 +415,15 @@ function openCategoryModalForProduct() {
 
         <div class="flex items-end gap-2">
           <div class="flex-1">
-            <div class="flex flex-wrap gap-2 mb-2" v-if="selectedCategories.length > 0">
-              <div
-                v-for="category in selectedCategories"
-                :key="category.id"
-                class="flex items-center gap-1 bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full text-sm"
-              >
-                <span>{{ category.name }}</span>
-                <button @click="removeCategory(category.id)" class="hover:text-indigo-900 focus:outline-none">
-                  <IconX class="h-4 w-4" />
-                </button>
-              </div>
-            </div>
             <BaseSearchableSelect
-              :model-value="''"
-              @update:model-value="addCategory"
+              v-model="form.category_ids"
               label="Category"
-              :options="availableCategories.map((c) => ({ label: c.name, value: c.id, description: c.description }))"
-              placeholder="Select Category"
+              :options="
+                categoryStore.categories.map((c) => ({ label: c.name, value: c.id, description: c.description }))
+              "
+              placeholder="Select Categories"
               :required="form.category_ids.length === 0"
+              multiple
             />
           </div>
           <button
