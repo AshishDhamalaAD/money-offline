@@ -25,8 +25,8 @@ function getCategoryName(id) {
 }
 
 const columns = [
-  { key: "date", label: "Date" },
-  { key: "description", label: "Description" },
+  { key: "date", label: "Date", colspan: (row) => (row.rowType === "product" ? 2 : 1) },
+  { key: "description", label: "Description", hidden: (row) => row.rowType === "product" },
   { key: "rate", label: "Rate", align: "right", format: (val) => (val ? formatCurrency(val) : "-") },
   { key: "amount", label: "Amount", align: "right", format: (val) => formatCurrency(val) },
 ]
@@ -56,6 +56,7 @@ const flatData = computed(() => {
           rate: p.rate,
           amount: p.amount,
           type: t.type, // Inherit type for color
+          classes: "bg-gray-100/50 dark:bg-gray-700/50",
         })
       })
     } else {
@@ -81,26 +82,32 @@ const flatData = computed(() => {
       <BaseTable :columns="columns" :data="flatData" :page-size="50">
         <template #cell-date="{ row }">
           <span v-if="row.rowType !== 'product'" class="whitespace-nowrap text-gray-500 dark:text-gray-400">
-            {{ formatDate(row.displayDate) }}
+            {{ formatDate(row.displayDate, { weekday: undefined }) }}
           </span>
+
+          <!-- Product Row -->
+          <div
+            v-else-if="row.rowType === 'product'"
+            class="pl-4 text-gray-600 flex items-center gap-2 dark:text-gray-300"
+          >
+            <span class="w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-gray-600"></span>
+            <div v-html="row.description"></div>
+          </div>
         </template>
 
         <template #cell-description="{ row }">
           <!-- Header Row -->
           <div v-if="row.rowType === 'header'" class="font-medium text-gray-900 dark:text-gray-100">
-            {{ row.displayDescription }}
+            <div v-html="row.displayDescription"></div>
             <span class="text-xs text-gray-500 font-normal ml-1 dark:text-gray-400">({{ row.itemCount }} items)</span>
-          </div>
-
-          <!-- Product Row -->
-          <div v-else-if="row.rowType === 'product'" class="pl-4 text-gray-600 flex items-center gap-2 dark:text-gray-300">
-            <span class="w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-gray-600"></span>
-            {{ row.description }}
           </div>
 
           <!-- Single Row -->
           <div v-else>
-            <div class="text-gray-900 dark:text-gray-100">{{ row.displayDescription }}</div>
+            <div class="text-gray-900 dark:text-gray-100">
+              <div>{{ row.products.map((p) => p.name).join(", ") }}</div>
+              <div v-html="row.displayDescription" class="min-w-32 overflow-y-auto whitespace-pre-line"></div>
+            </div>
             <div class="text-xs text-gray-500 dark:text-gray-400" v-if="row.category_ids && row.category_ids.length">
               {{ row.category_ids.map(getCategoryName).join(", ") }}
             </div>

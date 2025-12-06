@@ -167,18 +167,21 @@ function prevPage() {
             :class="{ 'cursor-pointer': $attrs.onRowClick }"
             @click="$emit('row-click', row)"
           >
-            <td
-              v-for="col in columns"
-              :key="col.key"
-              :class="[
-                'px-4 py-3 text-gray-900 dark:text-gray-100',
-                col.align === 'right' ? 'text-right' : 'text-left',
-              ]"
-            >
-              <slot :name="`cell-${col.key}`" :row="row" :value="row[col.key]">
-                {{ col.format ? col.format(row[col.key]) : row[col.key] }}
-              </slot>
-            </td>
+            <template v-for="col in columns" :key="col.key">
+              <td
+                v-if="!col.hidden || !col.hidden(row)"
+                :class="[
+                  'px-4 py-3 text-gray-900 dark:text-gray-100',
+                  row.classes || '',
+                  col.align === 'right' ? 'text-right' : 'text-left',
+                ]"
+                :colspan="col.colspan ? col.colspan(row) : 1"
+              >
+                <slot :name="`cell-${col.key}`" :row="row" :value="row[col.key]">
+                  {{ col.format ? col.format(row[col.key]) : row[col.key] }}
+                </slot>
+              </td>
+            </template>
           </tr>
           <tr v-if="paginatedData.length === 0">
             <td :colspan="columns.length" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">

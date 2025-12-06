@@ -6,12 +6,13 @@ export const formatTime = (date) => {
     })
 }
 
-export const formatDate = (date) => {
+export const formatDate = (date, options = {}) => {
     return new Date(date).toLocaleDateString('en-US', {
         weekday: 'short',
         year: 'numeric',
         month: 'short',
-        day: 'numeric'
+        day: 'numeric',
+        ...options
     })
 }
 

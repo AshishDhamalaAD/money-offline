@@ -82,7 +82,9 @@ const serverOptions = {
 </script>
 
 <template>
-  <div class="image-upload-container">
+  <div
+    class="image-upload-container [&_.filepond--drip]:bg-gray-50! [&_.filepond--drip]:opacity-100! dark:[&_.filepond--drip]:bg-gray-800! dark:[&_.filepond--drop-label]:text-gray-200!"
+  >
     <div
       v-if="!isOnline"
       class="bg-yellow-50 border border-yellow-200 text-yellow-800 p-3 rounded-lg text-sm mb-2 dark:bg-yellow-900/30 dark:border-yellow-800 dark:text-yellow-100"
