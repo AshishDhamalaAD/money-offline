@@ -29,6 +29,7 @@ import StatsSummary from "@/pages/book-details/StatsSummary.vue"
 import DeleteBook from "@/pages/book-details/DeleteBook.vue"
 import DateRangeTabs from "@/components/common/DateRangeTabs.vue"
 import ActiveFilterChips from "@/components/common/ActiveFilterChips.vue"
+import BaseBottomSheet from "@/components/common/BaseBottomSheet.vue" // Import Bottom Sheet
 
 const route = useRoute()
 const router = useRouter()
@@ -46,6 +47,69 @@ const startDate = ref("")
 const endDate = ref("")
 const showDeleteModal = ref(false)
 const transactionToDelete = ref(null)
+
+// Action Sheet & Copy/Move
+const showActionSheet = ref(false)
+const selectedTransaction = ref(null)
+const showTargetBookModal = ref(false)
+const targetAction = ref("copy") // 'copy' | 'move'
+const selectedTargetBookId = ref("")
+const isProcessing = ref(false)
+
+const otherBooks = computed(() => {
+  return bookStore.books.filter((b) => b.id !== bookId.value)
+})
+
+function openTransactionActionSheet(transaction) {
+  selectedTransaction.value = transaction
+  showActionSheet.value = true
+}
+
+function initiateCopy() {
+  showActionSheet.value = false
+  targetAction.value = "copy"
+  selectedTargetBookId.value = ""
+  showTargetBookModal.value = true
+}
+
+function initiateMove() {
+  showActionSheet.value = false
+  targetAction.value = "move"
+  selectedTargetBookId.value = ""
+  showTargetBookModal.value = true
+}
+
+function closeTargetBookModal() {
+  showTargetBookModal.value = false
+  selectedTargetBookId.value = ""
+}
+
+async function executeCopyOrMove() {
+  if (!selectedTargetBookId.value || !selectedTransaction.value) return
+
+  isProcessing.value = true
+  try {
+    if (targetAction.value === "copy") {
+      await transactionStore.copyTransaction(selectedTransaction.value.id, selectedTargetBookId.value)
+      // Optional: Toast success
+    } else {
+      await transactionStore.moveTransaction(selectedTransaction.value.id, selectedTargetBookId.value)
+      // Optional: Toast success
+    }
+    closeTargetBookModal()
+  } catch (e) {
+    console.error("Failed to copy/move transaction:", e)
+    alert(e.message) // Simple error handling for now
+  } finally {
+    isProcessing.value = false
+  }
+}
+
+function confirmDelete(transaction) {
+  showActionSheet.value = false // Ensure sheet is closed
+  transactionToDelete.value = transaction
+  showDeleteModal.value = true
+}
 
 // Edit Book
 const showEditBookModal = ref(false)
@@ -307,11 +371,6 @@ function goToCreateTransaction() {
   router.push({ name: "create-transaction", params: { bookId: bookId.value } })
 }
 
-function confirmDelete(transaction) {
-  transactionToDelete.value = transaction
-  showDeleteModal.value = true
-}
-
 async function handleDelete() {
   if (transactionToDelete.value) {
     await transactionStore.deleteTransaction(transactionToDelete.value.id)
@@ -427,7 +486,7 @@ async function saveBookName() {
             v-for="t in group.transactions"
             :key="t.id"
             @click="router.push({ name: 'edit-transaction', params: { bookId: book.id, id: t.id } })"
-            @contextmenu.prevent="confirmDelete(t)"
+            @contextmenu.prevent="openTransactionActionSheet(t)"
             class="cursor-pointer transition-opacity active:opacity-70"
           >
             <TransactionCard :transaction="t" />
@@ -440,6 +499,77 @@ async function saveBookName() {
         </div>
       </div>
     </main>
+
+    <!-- Transaction Action Sheet -->
+    <BaseBottomSheet v-model="showActionSheet" :title="'Transaction Options'">
+      <div class="flex flex-col gap-2">
+        <button
+          @click="initiateCopy"
+          class="w-full text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg flex items-center gap-3 text-gray-700 dark:text-gray-200"
+        >
+          <span class="i-heroicons-document-duplicate w-5 h-5"></span>
+          Copy Transaction
+        </button>
+        <button
+          @click="initiateMove"
+          class="w-full text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg flex items-center gap-3 text-gray-700 dark:text-gray-200"
+        >
+          <span class="i-heroicons-arrow-right-on-rectangle w-5 h-5"></span>
+          Move Transaction
+        </button>
+        <button
+          @click="confirmDelete(selectedTransaction)"
+          class="w-full text-left px-4 py-3 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg flex items-center gap-3 text-red-600"
+        >
+          <span class="i-heroicons-trash w-5 h-5"></span>
+          Delete Transaction
+        </button>
+      </div>
+    </BaseBottomSheet>
+
+    <!-- Copy/Move Target Book Modal -->
+    <BaseModal
+      :show="showTargetBookModal"
+      :title="targetAction === 'copy' ? 'Copy Transaction' : 'Move Transaction'"
+      @close="closeTargetBookModal"
+    >
+      <div class="space-y-4">
+        <p class="text-sm text-gray-600 dark:text-gray-400">
+          Select the book where you want to {{ targetAction }} this transaction.
+        </p>
+
+        <BaseSearchableSelect
+          v-model="selectedTargetBookId"
+          label="Target Book"
+          :options="otherBooks.map((b) => ({ label: b.name, value: b.id }))"
+          placeholder="Select a book"
+        />
+
+        <div
+          v-if="selectedTargetBookId"
+          class="text-xs bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 p-3 rounded-md space-y-1"
+        >
+          <p class="font-semibold">Note:</p>
+          <ul class="list-disc list-inside space-y-0.5 ml-1">
+            <li>Categories, Payment Modes, and Products will be created in the target book if they don't exist.</li>
+            <li v-if="targetAction === 'move'" class="text-red-600 dark:text-red-400 font-semibold">
+              This transaction will be DELETED from the current book after moving.
+            </li>
+          </ul>
+        </div>
+
+        <div class="flex justify-end gap-3 mt-6">
+          <BaseButton variant="ghost" @click="closeTargetBookModal">Cancel</BaseButton>
+          <BaseButton
+            :disabled="!selectedTargetBookId || isProcessing"
+            :loading="isProcessing"
+            @click="executeCopyOrMove"
+          >
+            {{ targetAction === "copy" ? "Copy" : "Move" }}
+          </BaseButton>
+        </div>
+      </div>
+    </BaseModal>
 
     <!-- Delete Confirmation Modal -->
     <BaseModal :show="showDeleteModal" title="Delete Transaction" @close="showDeleteModal = false">

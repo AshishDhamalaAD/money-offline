@@ -164,6 +164,117 @@ export const useTransactionStore = defineStore('transaction', () => {
         syncStore.triggerSync()
     }
 
+    async function copyTransaction(transactionId, targetBookId) {
+        // 1. Fetch full source transaction
+        const sourceTx = await db.transactions.get(transactionId);
+        if (!sourceTx) throw new Error("Transaction not found");
+
+        // 2. Resolve Payment Mode
+        let targetPaymentModeId = null;
+        if (sourceTx.payment_mode_id) {
+            const sourcePaymentMode = await db.payment_modes.get(sourceTx.payment_mode_id);
+            if (sourcePaymentMode) {
+                targetPaymentModeId = await _ensurePaymentMode(sourcePaymentMode.name, targetBookId, sourcePaymentMode);
+            }
+        }
+
+        // 3. Resolve Contact (Global or Book specific? Model says global but let's double check)
+        // Contacts are global so we keep the same contact_id
+        const targetContactId = sourceTx.contact_id;
+
+        // 4. Resolve Categories (Array)
+        const targetCategoryIds = [];
+        const categoryMap = new Map(); // Map<SourceCatId, TargetCatId> for product references
+
+        if (sourceTx.category_ids && sourceTx.category_ids.length > 0) {
+            for (const catId of sourceTx.category_ids) {
+                const sourceCat = await db.categories.get(catId);
+                if (sourceCat) {
+                    const targetCatId = await _ensureCategory(sourceCat.name, targetBookId, sourceCat);
+                    targetCategoryIds.push(targetCatId);
+                    categoryMap.set(catId, targetCatId);
+                }
+            }
+        }
+
+        // 5. Resolve Products
+        const targetProducts = [];
+        if (sourceTx.products && sourceTx.products.length > 0) {
+            for (const p of sourceTx.products) {
+                // p has product_id, name, rate, amount etc.
+                let targetProductId = null;
+
+                if (p.product_id) {
+                    const sourceProduct = await db.products.get(p.product_id);
+                    if (sourceProduct) {
+                        // Resolve category for this product
+                        let targetProductCategoryId = null;
+                        if (sourceProduct.category_id) {
+                            // Try to find mapped category first
+                            if (categoryMap.has(sourceProduct.category_id)) {
+                                targetProductCategoryId = categoryMap.get(sourceProduct.category_id);
+                            } else {
+                                // Fetch source category to get name
+                                const sourceProdCat = await db.categories.get(sourceProduct.category_id);
+                                if (sourceProdCat) {
+                                    targetProductCategoryId = await _ensureCategory(sourceProdCat.name, targetBookId, sourceProdCat);
+                                }
+                            }
+                        }
+
+                        targetProductId = await _ensureProduct(sourceProduct.name, targetBookId, sourceProduct, targetProductCategoryId);
+                    }
+                }
+
+                targetProducts.push({
+                    ...p,
+                    product_id: targetProductId,
+                    // Remove attachment references if they are specific to file system/local (keeping simple for now)
+                    attachments: []
+                });
+            }
+        }
+
+        // 6. Create new Transaction
+        const newTx = {
+            ...sourceTx,
+            book_id: targetBookId,
+            payment_mode_id: targetPaymentModeId,
+            contact_id: targetContactId,
+            category_ids: targetCategoryIds,
+            products: targetProducts,
+            // Reset IDs and Status
+            id: undefined,
+            sync_status: 'pending',
+            created_at: formatDateTimeForDB(),
+            updated_at: formatDateTimeForDB()
+        };
+
+        // Reuse createTransaction to handle proper adding and validation
+        // But createTransaction expects a simplified object usually coming from form, 
+        // passing fully formed object might need slight adjustment or we call db directly.
+        // Let's call db directly to avoid 'createTransaction' side effects like rounding that are already done, 
+        // though rounding again doesn't hurt. 
+        // However, 'createTransaction' expects 'setBookId' to be the current book. 
+        // Since we are copying TO another book, we can't rely on 'currentBookId' inside 'createTransaction'.
+
+        // Manual Add:
+        const id = await db.transactions.add(newTx);
+
+        // Trigger Sync
+        const syncStore = useSyncStore()
+        syncStore.triggerSync()
+
+        return id;
+    }
+
+    async function moveTransaction(transactionId, targetBookId) {
+        // Copy first
+        await copyTransaction(transactionId, targetBookId);
+        // Then delete
+        await deleteTransaction(transactionId);
+    }
+
     // Stats
     const stats = computed(() => {
         let totalIn = 0
@@ -272,6 +383,70 @@ export const useTransactionStore = defineStore('transaction', () => {
         updateTransaction,
         deleteTransaction,
         stats,
-        getFilteredTransactions
+        getFilteredTransactions,
+        copyTransaction,
+        moveTransaction
     }
 })
+
+// Configuration for checking dependencies
+async function _ensureCategory(name, targetBookId, sourceCategory) {
+    if (!name) return null;
+    const existing = await db.categories
+        .where('book_id').equals(targetBookId)
+        .and(c => c.name === name)
+        .first();
+
+    if (existing) return existing.id;
+
+    // Create new
+    const useCategoryStore = (await import('@/store/categoryStore')).useCategoryStore;
+    const categoryStore = useCategoryStore();
+    return await categoryStore.addCategory(name, sourceCategory?.description || '', targetBookId);
+}
+
+async function _ensurePaymentMode(name, targetBookId, sourcePaymentMode) {
+    if (!name) return null;
+    const existing = await db.payment_modes
+        .where('book_id').equals(targetBookId)
+        .and(p => p.name === name)
+        .first();
+
+    if (existing) return existing.id;
+
+    // Create new
+    const usePaymentModeStore = (await import('@/store/paymentModeStore')).usePaymentModeStore;
+    const paymentModeStore = usePaymentModeStore();
+    return await paymentModeStore.addPaymentMode(name, sourcePaymentMode?.description || '', targetBookId);
+}
+
+async function _ensureProduct(name, targetBookId, sourceProduct, targetCategoryId) {
+    if (!name) return null;
+
+    // Check if product exists in target book
+    const existing = await db.products
+        .where('book_id').equals(targetBookId)
+        .and(p => p.name === name)
+        .first();
+
+    if (existing) {
+        return existing.id;
+    }
+
+    // Create new product in target book
+    const useProductStore = (await import('@/store/productStore')).useProductStore;
+    const productStore = useProductStore();
+
+    // We need to resolve the category for the product as well if it has one
+    // But here we are passing the ALREADY resolved targetCategoryId from the caller
+
+    const newId = await productStore.addProduct(
+        sourceProduct.name,
+        sourceProduct.rate,
+        sourceProduct.description || '',
+        sourceProduct.quantity_type || 6,
+        targetBookId,
+        targetCategoryId
+    );
+    return newId;
+}

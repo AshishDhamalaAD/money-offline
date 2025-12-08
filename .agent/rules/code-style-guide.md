@@ -404,7 +404,7 @@ When generating code:
 7. Put persistence in repositories
 8. Put API calls in services
 9. Put routing in `/router`
-10. Generate clean Tailwind classes only
+10. Generate clean Tailwind classes only and include dark mode code as well
 11. No unnecessary libraries
 12. Code must be readable & modular
 13. Page related components must remain in the specific page directory
