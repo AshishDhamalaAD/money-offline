@@ -106,8 +106,8 @@ function select(option) {
     inputRef.value?.focus()
   } else {
     emit("update:modelValue", option.value)
-    close()
   }
+  close()
 }
 
 function removeOption(value) {

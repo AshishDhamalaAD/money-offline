@@ -66,7 +66,10 @@ const allImages = computed(() => {
         <!-- Type Label -->
         <span
           v-if="paymentMode"
-          :class="['px-3 py-1 rounded-md text-xs font-medium', 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-100']"
+          :class="[
+            'px-3 py-1 rounded-md text-xs font-medium',
+            'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-100',
+          ]"
         >
           {{ paymentMode.name }}
         </span>
@@ -120,7 +123,10 @@ const allImages = computed(() => {
 
     <!-- Row 3: Description + Time -->
     <div class="flex justify-between items-start gap-2">
-      <span class="text-xs text-gray-600 flex-1 whitespace-pre-wrap dark:text-gray-300" v-html="transaction.description"></span>
+      <span
+        class="text-xs text-gray-600 flex-1 whitespace-pre-wrap dark:text-gray-300"
+        v-html="transaction.description"
+      ></span>
       <span class="text-xs text-gray-500 shrink-0 dark:text-gray-400">{{ formattedTime }}</span>
     </div>
 
