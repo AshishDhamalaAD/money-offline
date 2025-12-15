@@ -59,7 +59,9 @@ async function syncToServer() {
 
 <template>
   <div>
-    <div class="bg-white rounded-sm p-4 shadow-sm space-y-4 border border-gray-100 dark:bg-gray-900 dark:border-gray-800">
+    <div
+      class="bg-white rounded-sm p-4 shadow-sm space-y-4 border border-gray-100 dark:bg-gray-900 dark:border-gray-800"
+    >
       <div class="space-y-4">
         <div>
           <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100">Server Sync</h2>
@@ -67,7 +69,7 @@ async function syncToServer() {
         </div>
 
         <div class="grid gap-4">
-          <BaseInput v-model="apiEndpoint" label="API Endpoint" placeholder="https://example.com/api/sync" />
+          <BaseInput v-model="apiEndpoint" label="API Endpoint" placeholder="https://example.com" />
           <BaseInput v-model="apiToken" label="API Token" type="password" placeholder="Enter your API token" />
         </div>
 
