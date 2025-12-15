@@ -66,7 +66,7 @@ const flatData = computed(() => {
         ...t,
         rowType: "single",
         displayDate: t.date,
-        displayDescription: t.description || (product ? product.name : "-"),
+        displayDescription: t.description,
         rate: product ? product.rate : null,
       })
     }
