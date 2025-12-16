@@ -152,11 +152,11 @@ onClickOutside(containerRef, close, {
       <div
         @click="isOpen ? close() : open()"
         :class="[
-          'w-full rounded-sm border-gray-200 bg-gray-50 px-4 py-2.5 text-left transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 flex justify-between items-center min-h-[42px] dark:border-gray-700 dark:bg-gray-800 dark:text-gray-500',
+          'w-full rounded-sm border-gray-200 bg-gray-50 px-4 py-2.5 text-left transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 flex justify-between items-center min-h-[42px] dark:border-gray-700 dark:bg-gray-800',
           {
             'border-red-500': error,
-            'text-gray-400 dark:text-gray-500': !modelValue && !selectedLabel && selectedOptions.length === 0,
-            'text-gray-900 dark:text-gray-100': modelValue || selectedLabel || selectedOptions.length > 0,
+            'text-gray-400 dark:text-gray-500': !hasSelection,
+            'text-gray-900 dark:text-gray-200': hasSelection,
           },
         ]"
       >
