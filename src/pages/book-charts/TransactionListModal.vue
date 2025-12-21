@@ -27,7 +27,7 @@ function getCategoryName(id) {
 const columns = [
   { key: "date", label: "Date", colspan: (row) => (row.rowType === "product" ? 2 : 1) },
   { key: "description", label: "Description", hidden: (row) => row.rowType === "product" },
-  { key: "rate", label: "Rate", align: "right", format: (val) => (val ? formatCurrency(val) : "-") },
+  //   { key: "rate", label: "Rate", align: "right", format: (val) => (val ? formatCurrency(val) : "-") },
   { key: "amount", label: "Amount", align: "right", format: (val) => formatCurrency(val) },
 ]
 
@@ -114,11 +114,11 @@ const flatData = computed(() => {
           </div>
         </template>
 
-        <template #cell-rate="{ row }">
+        <!-- <template #cell-rate="{ row }">
           <span v-if="row.rate" class="text-gray-500 text-xs dark:text-gray-400">
             {{ formatCurrency(row.rate) }}
           </span>
-        </template>
+        </template> -->
 
         <template #cell-amount="{ row }">
           <span
