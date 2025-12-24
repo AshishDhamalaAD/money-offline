@@ -141,6 +141,26 @@ function onPinVerifyCancel() {
       </button>
     </div>
 
+    <!-- Auto-Lock Timeout Section -->
+    <div
+      v-if="isPinEnabled || isBiometricEnabled"
+      class="flex items-center justify-between gap-4 py-4 border-t border-gray-100 dark:border-gray-800"
+    >
+      <div class="space-y-1">
+        <h3 class="text-base font-medium text-gray-900 dark:text-gray-100">Auto-Lock Timeout</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400">Lock the app after being unused for a period</p>
+      </div>
+
+      <select
+        :value="settingsStore.autoLockTimeout"
+        @change="(e) => settingsStore.setAutoLockTimeout(parseInt(e.target.value))"
+        class="bg-gray-50 dark:bg-gray-800 border-none rounded-md text-sm px-3 py-2 focus:ring-2 focus:ring-indigo-600 outline-none"
+      >
+        <option :value="0">Immediate</option>
+        <option v-for="m in [5, 10, 15, 20, 25, 30]" :key="m" :value="m">{{ m }} minutes</option>
+      </select>
+    </div>
+
     <div v-if="error" class="p-4 bg-red-50 text-red-700 rounded-md text-sm dark:bg-red-900/30 dark:text-red-200">
       {{ error }}
     </div>

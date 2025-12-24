@@ -114,6 +114,7 @@ The application implements a multi-layered security system consisting of Biometr
 - **Storage (Dexie settings table)**:
   - `pinEnabled`: (Boolean) Whether PIN lock is active.
   - `pinCode`: (String) The 6-digit PIN code.
+  - `autoLockTimeout`: (Number) Timeout in minutes for auto-locking (0 = startup only).
   - `biometricEnabled`: (Boolean) Whether biometric lock is active.
   - `biometricCredentialId`: (String) WebAuthn credential ID.
 - **Rules**:
@@ -128,6 +129,11 @@ The application implements a multi-layered security system consisting of Biometr
   - Supports dynamic light/dark modes and uses a custom iOS-style delete icon.
 - **Polished Experience**:
   - Both lock components include a 400ms scale/opacity transition upon successful authentication to provide visual feedback before entry.
+- **Auto-Lock Logic**:
+  - `App.vue` listens for user activity events (`mousemove`, `mousedown`, `keypress`, `scroll`, `touchstart`).
+  - It also listens for `visibilitychange` to detect background states.
+  - A periodic check (every 10s) compares the current time with the `lastActive` timestamp.
+  - If the elapsed time exceeds the `autoLockTimeout`, `lockApp()` is called.
 - **Integration Flow (`App.vue`)**:
   - On startup, the app checks for lock settings.
   - If `biometricEnabled` is true, it shows `BiometricLock.vue`.

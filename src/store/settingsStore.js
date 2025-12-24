@@ -9,6 +9,7 @@ export const useSettingsStore = defineStore('settings', () => {
     const biometricCredentialId = ref(null)
     const pinEnabled = ref(false)
     const pinCode = ref(null)
+    const autoLockTimeout = ref(0) // 0 means immediate/on-startup, others are minutes
     const initialized = ref(false)
     const themePreference = ref("system")
     let systemMediaQuery = null
@@ -16,13 +17,14 @@ export const useSettingsStore = defineStore('settings', () => {
     async function init() {
         if (initialized.value) return
         try {
-            const [endpoint, token, bioEnabled, bioCredId, pinEn, pin, theme] = await Promise.all([
+            const [endpoint, token, bioEnabled, bioCredId, pinEn, pin, timeout, theme] = await Promise.all([
                 db.settings.get("apiEndpoint"),
                 db.settings.get("apiToken"),
                 db.settings.get("biometricEnabled"),
                 db.settings.get("biometricCredentialId"),
                 db.settings.get("pinEnabled"),
                 db.settings.get("pinCode"),
+                db.settings.get("autoLockTimeout"),
                 db.settings.get("themePreference")
             ])
 
@@ -32,6 +34,7 @@ export const useSettingsStore = defineStore('settings', () => {
             if (bioCredId) biometricCredentialId.value = bioCredId.value
             if (pinEn) pinEnabled.value = pinEn.value
             if (pin) pinCode.value = pin.value
+            if (timeout) autoLockTimeout.value = timeout.value
             if (theme?.value) themePreference.value = theme.value
 
             applyTheme(themePreference.value)
@@ -206,6 +209,16 @@ export const useSettingsStore = defineStore('settings', () => {
         }
     }
 
+    async function setAutoLockTimeout(minutes) {
+        try {
+            await db.settings.put({ key: "autoLockTimeout", value: minutes })
+            autoLockTimeout.value = minutes
+            return { success: true }
+        } catch (error) {
+            return { success: false, message: error.message }
+        }
+    }
+
     return {
         apiEndpoint,
         apiToken,
@@ -213,6 +226,7 @@ export const useSettingsStore = defineStore('settings', () => {
         biometricCredentialId,
         pinEnabled,
         pinCode,
+        autoLockTimeout,
         initialized,
         themePreference,
         init,
@@ -223,6 +237,7 @@ export const useSettingsStore = defineStore('settings', () => {
         savePinCode,
         verifyPinCode,
         disablePin,
+        setAutoLockTimeout,
         setThemePreference,
         applyTheme,
         resolveTheme

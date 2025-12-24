@@ -56,6 +56,7 @@ Robust security features to protect your financial data.
   - **Polished Experience**: Smooth transition animations on successful authentication and refined UI elements (keys, icons) for a premium feel.
   - **Local Authentication**: Uses the Web Authentication API (WebAuthn) for secure, local-only verification without sending biometric data to any server.
   - **Auto-Lock**: Automatically locks the app on startup.
+  - **Auto-Lock Timeout**: Configurable inactivity/background timeout (5, 10, 15, 20, 25, or 30 minutes) to automatically re-lock the app.
 
 ## 6. Analytics & Visualization
 
