@@ -47,9 +47,15 @@ Extensive configuration options to tailor the application to user needs.
 
 Robust security features to protect your financial data.
 
-- **Biometric Lock**: Secure the application with your device's native biometric authentication (Fingerprint, FaceID, TouchID) or screen lock (PIN/Pattern).
-  - **Auto-Lock**: Automatically locks the app on startup.
+- **Security Locks**: Multiple layers of protection to secure your financial data.
+  - **6-Digit PIN Lock**: Set a mandatory 6-digit PIN to secure the app. Supports dynamic light and dark modes.
+  - **Biometric Lock**: Secure the application with your device's native biometric authentication (Fingerprint, FaceID, TouchID).
+  - **Biometric Fallback**: If biometric authentication fails, users can automatically fall back to their 6-digit PIN for entry.
+  - **Enforced Security**: Enabling Biometric lock automatically requires setting up a PIN to ensure constant access.
+  - **Verification Flow**: Disabling either PIN or Biometric lock requires entering your current 6-digit PIN for verification.
+  - **Polished Experience**: Smooth transition animations on successful authentication and refined UI elements (keys, icons) for a premium feel.
   - **Local Authentication**: Uses the Web Authentication API (WebAuthn) for secure, local-only verification without sending biometric data to any server.
+  - **Auto-Lock**: Automatically locks the app on startup.
 
 ## 6. Analytics & Visualization
 

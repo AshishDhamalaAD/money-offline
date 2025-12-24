@@ -107,20 +107,32 @@ Image uploads are handled separately from the main database sync to ensure effic
 
 ## 8. Security & Authentication
 
-### Biometric Lock (WebAuthn)
+### Security Locks
 
-The application implements a local-only biometric lock using the **Web Authentication API (WebAuthn)**.
+The application implements a multi-layered security system consisting of Biometric (WebAuthn) and 6-digit PIN authentication.
 
-- **Mechanism**: Uses `navigator.credentials.create()` for registration and `navigator.credentials.get()` for verification.
-- **Storage**:
-  - **Credential ID**: Stored in `settings` table (`biometricCredentialId`).
-  - **State**: Enabled/Disabled state stored in `settings` table (`biometricEnabled`).
-- **Flow**:
-  1.  **Startup**: `App.vue` checks `settingsStore.biometricEnabled`.
-  2.  **Lock**: If enabled, `BiometricLock.vue` overlay is shown immediately.
-  3.  **Unlock**: User authenticates via platform authenticator (TouchID, FaceID, Windows Hello).
-  4.  **Access**: On success, the overlay is removed.
-- **Privacy**: Biometric data never leaves the device. The app only receives a cryptographic proof of authentication.
+- **Storage (Dexie settings table)**:
+  - `pinEnabled`: (Boolean) Whether PIN lock is active.
+  - `pinCode`: (String) The 6-digit PIN code.
+  - `biometricEnabled`: (Boolean) Whether biometric lock is active.
+  - `biometricCredentialId`: (String) WebAuthn credential ID.
+- **Rules**:
+  - PIN is the primary fallback for biometrics.
+  - Enabling Biometric lock **requires** the PIN lock to be enabled first.
+  - Disabling PIN or Biometric lock requires verification of the current PIN.
+- **Biometric Flow (WebAuthn)**:
+  - Uses `navigator.credentials.create()` for registration and `navigator.credentials.get()` for verification.
+  - Biometric data never leaves the device; only cryptographic proofs are used.
+- **PIN Flow**:
+  - `PinLock.vue` handles the numeric keyboard input and validation.
+  - Supports dynamic light/dark modes and uses a custom iOS-style delete icon.
+- **Polished Experience**:
+  - Both lock components include a 400ms scale/opacity transition upon successful authentication to provide visual feedback before entry.
+- **Integration Flow (`App.vue`)**:
+  - On startup, the app checks for lock settings.
+  - If `biometricEnabled` is true, it shows `BiometricLock.vue`.
+  - If `biometricEnabled` is false but `pinEnabled` is true, it shows `PinLock.vue`.
+  - `BiometricLock.vue` includes a "Unlock with PIN" fallback option.
 
 ## 9. Routing
 

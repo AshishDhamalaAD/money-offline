@@ -7,6 +7,8 @@ export const useSettingsStore = defineStore('settings', () => {
     const apiToken = ref("")
     const biometricEnabled = ref(false)
     const biometricCredentialId = ref(null)
+    const pinEnabled = ref(false)
+    const pinCode = ref(null)
     const initialized = ref(false)
     const themePreference = ref("system")
     let systemMediaQuery = null
@@ -14,11 +16,13 @@ export const useSettingsStore = defineStore('settings', () => {
     async function init() {
         if (initialized.value) return
         try {
-            const [endpoint, token, bioEnabled, bioCredId, theme] = await Promise.all([
+            const [endpoint, token, bioEnabled, bioCredId, pinEn, pin, theme] = await Promise.all([
                 db.settings.get("apiEndpoint"),
                 db.settings.get("apiToken"),
                 db.settings.get("biometricEnabled"),
                 db.settings.get("biometricCredentialId"),
+                db.settings.get("pinEnabled"),
+                db.settings.get("pinCode"),
                 db.settings.get("themePreference")
             ])
 
@@ -26,6 +30,8 @@ export const useSettingsStore = defineStore('settings', () => {
             if (token) apiToken.value = token.value
             if (bioEnabled) biometricEnabled.value = bioEnabled.value
             if (bioCredId) biometricCredentialId.value = bioCredId.value
+            if (pinEn) pinEnabled.value = pinEn.value
+            if (pin) pinCode.value = pin.value
             if (theme?.value) themePreference.value = theme.value
 
             applyTheme(themePreference.value)
@@ -135,6 +141,35 @@ export const useSettingsStore = defineStore('settings', () => {
         }
     }
 
+    async function savePinCode(pin) {
+        try {
+            await db.settings.put({ key: "pinEnabled", value: true })
+            await db.settings.put({ key: "pinCode", value: pin })
+            pinEnabled.value = true
+            pinCode.value = pin
+            return { success: true }
+        } catch (error) {
+            return { success: false, message: error.message }
+        }
+    }
+
+    async function verifyPinCode(pin) {
+        return pinCode.value === pin
+    }
+
+    async function disablePin() {
+        try {
+            await db.settings.put({ key: "pinEnabled", value: false })
+            await db.settings.put({ key: "pinCode", value: null })
+            await disableBiometric() // PIN is required for biometric
+            pinEnabled.value = false
+            pinCode.value = null
+            return { success: true }
+        } catch (error) {
+            return { success: false, message: error.message }
+        }
+    }
+
     function resolveTheme(preference = themePreference.value) {
         if (preference === "dark" || preference === "light") return preference
 
@@ -176,6 +211,8 @@ export const useSettingsStore = defineStore('settings', () => {
         apiToken,
         biometricEnabled,
         biometricCredentialId,
+        pinEnabled,
+        pinCode,
         initialized,
         themePreference,
         init,
@@ -183,6 +220,9 @@ export const useSettingsStore = defineStore('settings', () => {
         registerBiometric,
         verifyBiometric,
         disableBiometric,
+        savePinCode,
+        verifyPinCode,
+        disablePin,
         setThemePreference,
         applyTheme,
         resolveTheme

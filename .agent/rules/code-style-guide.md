@@ -57,6 +57,7 @@ src/
 - Use Tailwind utilities for **all UI**.
 - Avoid custom CSS except for global resets.
 - Use `<style scoped>` only when necessary.
+- Application must have both light and dark mode classes.
 
 ### ✔ Structure
 
