@@ -275,6 +275,39 @@ export const useTransactionStore = defineStore('transaction', () => {
         await deleteTransaction(transactionId);
     }
 
+    async function duplicateTransaction(transactionId) {
+        const sourceTx = await db.transactions.get(transactionId)
+        if (!sourceTx) throw new Error('Transaction not found')
+
+        // Strip fields not relevant for the new record; set date to now, clear description
+        const now = new Date()
+        const year = now.getFullYear()
+        const month = String(now.getMonth() + 1).padStart(2, '0')
+        const day = String(now.getDate()).padStart(2, '0')
+        const hours = String(now.getHours()).padStart(2, '0')
+        const minutes = String(now.getMinutes()).padStart(2, '0')
+        const dateLocal = `${year}-${month}-${day}T${hours}:${minutes}`
+
+        // Strip enriched runtime fields (name, attachments) from product copies
+        const products = (sourceTx.products || []).map(p => {
+            const { name, attachments, ...rest } = p
+            return rest
+        })
+
+        await createTransaction({
+            type: sourceTx.type,
+            date: dateLocal,
+            amount: sourceTx.amount,
+            category_ids: sourceTx.category_ids || [],
+            payment_mode_id: sourceTx.payment_mode_id || '',
+            contact_id: sourceTx.contact_id || '',
+            description: '',
+            products,
+            discount: sourceTx.discount || 0,
+            charge: sourceTx.charge || 0,
+        })
+    }
+
     // Stats
     const stats = computed(() => {
         let totalIn = 0
@@ -385,7 +418,8 @@ export const useTransactionStore = defineStore('transaction', () => {
         stats,
         getFilteredTransactions,
         copyTransaction,
-        moveTransaction
+        moveTransaction,
+        duplicateTransaction
     }
 })
 

@@ -146,19 +146,35 @@ onMounted(async () => {
       }
     }
   } else {
-    // Auto-add one product item for new transactions
-    addProduct()
+    // Check if we arrived here from a Duplicate action (prefill via router state)
+    const prefillRaw = history.state?.prefill
+    if (prefillRaw) {
+      try {
+        const prefill = JSON.parse(prefillRaw)
+        form.value = { ...form.value, ...prefill }
+        // Ensure products are present; if none, add an empty row
+        if (!form.value.products || form.value.products.length === 0) {
+          addProduct()
+        }
+      } catch (e) {
+        console.error("Failed to parse prefill state", e)
+        addProduct()
+      }
+    } else {
+      // Normal new transaction: auto-add one product row
+      addProduct()
 
-    // Auto-select 'Food' category and 'Cash' payment mode for new transactions
-    // We wait a tick for the watchers to populate the stores
-    await new Promise((resolve) => setTimeout(resolve, 100))
-    const foodCategory = categoryStore.categories.find((c) => c.name.toLowerCase() === "food")
-    if (foodCategory) {
-      form.value.category_ids = [foodCategory.id]
-    }
-    const cashMode = paymentModeStore.paymentModes.find((p) => p.name.toLowerCase() === "cash")
-    if (cashMode) {
-      form.value.payment_mode_id = cashMode.id
+      // Auto-select 'Food' category and 'Cash' payment mode for new transactions
+      // We wait a tick for the watchers to populate the stores
+      await new Promise((resolve) => setTimeout(resolve, 100))
+      const foodCategory = categoryStore.categories.find((c) => c.name.toLowerCase() === "food")
+      if (foodCategory) {
+        form.value.category_ids = [foodCategory.id]
+      }
+      const cashMode = paymentModeStore.paymentModes.find((p) => p.name.toLowerCase() === "cash")
+      if (cashMode) {
+        form.value.payment_mode_id = cashMode.id
+      }
     }
   }
 })

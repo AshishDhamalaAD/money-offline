@@ -105,6 +105,40 @@ async function executeCopyOrMove() {
   }
 }
 
+async function initiateDuplicate() {
+  showActionSheet.value = false
+  if (!selectedTransaction.value) return
+
+  const t = selectedTransaction.value
+
+  // Build a current local timestamp for the new transaction
+  const now = new Date()
+  const pad = (n) => String(n).padStart(2, "0")
+  const dateLocal = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`
+
+  // Strip enriched runtime fields from products before passing through state
+  const products = (t.products || []).map(({ name, attachments, ...rest }) => rest)
+
+  router.push({
+    name: "create-transaction",
+    params: { bookId: bookId.value },
+    state: {
+      prefill: JSON.stringify({
+        type: t.type,
+        date: dateLocal,
+        amount: t.amount,
+        category_ids: t.category_ids || [],
+        payment_mode_id: t.payment_mode_id || "",
+        contact_id: t.contact_id || "",
+        description: "",
+        products,
+        discount: t.discount || 0,
+        charge: t.charge || 0,
+      }),
+    },
+  })
+}
+
 function confirmDelete(transaction) {
   showActionSheet.value = false // Ensure sheet is closed
   transactionToDelete.value = transaction
@@ -535,6 +569,13 @@ function cancelLongPress() {
         >
           <span class="i-heroicons-arrow-right-on-rectangle w-5 h-5"></span>
           Move Transaction
+        </button>
+        <button
+          @click="initiateDuplicate"
+          class="w-full text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg flex items-center gap-3 text-gray-700 dark:text-gray-200"
+        >
+          <span class="i-heroicons-clipboard-document w-5 h-5"></span>
+          Duplicate Here
         </button>
         <button
           @click="confirmDelete(selectedTransaction)"
