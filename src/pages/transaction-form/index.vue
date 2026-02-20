@@ -148,6 +148,18 @@ onMounted(async () => {
   } else {
     // Auto-add one product item for new transactions
     addProduct()
+
+    // Auto-select 'Food' category and 'Cash' payment mode for new transactions
+    // We wait a tick for the watchers to populate the stores
+    await new Promise((resolve) => setTimeout(resolve, 100))
+    const foodCategory = categoryStore.categories.find((c) => c.name.toLowerCase() === "food")
+    if (foodCategory) {
+      form.value.category_ids = [foodCategory.id]
+    }
+    const cashMode = paymentModeStore.paymentModes.find((p) => p.name.toLowerCase() === "cash")
+    if (cashMode) {
+      form.value.payment_mode_id = cashMode.id
+    }
   }
 })
 
@@ -195,7 +207,7 @@ watch(
       form.value.charge = 0
     }
     calculateTotal()
-  }
+  },
 )
 
 async function save() {
@@ -326,7 +338,7 @@ async function saveNewProduct() {
       newProductDescription.value,
       newProductQuantityType.value,
       bookId,
-      newProductCategoryId.value
+      newProductCategoryId.value,
     )
 
     // Auto-add the newly created product to the items list
@@ -409,7 +421,6 @@ function openCategoryModalForProduct() {
       <!-- Basic Fields -->
       <div class="space-y-4 rounded-sm bg-white p-4 shadow-sm dark:bg-gray-900 dark:border dark:border-gray-800">
         <BaseInput v-model="form.date" type="datetime-local" label="Date" required />
-        <BaseInput v-model="form.description" type="textarea" label="Description" placeholder="What is this for?" />
       </div>
 
       <!-- Details -->
@@ -540,6 +551,11 @@ function openCategoryModalForProduct() {
             />
           </div>
         </div>
+      </div>
+
+      <!-- Description -->
+      <div class="rounded-sm bg-white p-4 shadow-sm dark:bg-gray-900 dark:border dark:border-gray-800">
+        <BaseInput v-model="form.description" type="textarea" label="Description" placeholder="What is this for?" />
       </div>
 
       <!-- Image Upload -->
