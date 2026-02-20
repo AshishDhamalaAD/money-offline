@@ -174,7 +174,7 @@ watch(
 
     // Use replace to avoid adding to browser history
     router.replace({ query })
-  }
+  },
 )
 
 const activeFiltersCount = computed(() => {
@@ -390,6 +390,21 @@ async function saveBookName() {
   book.value.name = editBookName.value
   showEditBookModal.value = false
 }
+// Long-press detection (iOS Safari doesn't reliably fire contextmenu on long-press)
+const longPressTimer = ref(null)
+
+function onTouchStart(event, transaction) {
+  longPressTimer.value = setTimeout(() => {
+    openTransactionActionSheet(transaction)
+  }, 500)
+}
+
+function cancelLongPress() {
+  if (longPressTimer.value) {
+    clearTimeout(longPressTimer.value)
+    longPressTimer.value = null
+  }
+}
 </script>
 
 <template>
@@ -487,6 +502,10 @@ async function saveBookName() {
             :key="t.id"
             @click="router.push({ name: 'edit-transaction', params: { bookId: book.id, id: t.id } })"
             @contextmenu.prevent="openTransactionActionSheet(t)"
+            @touchstart.passive="onTouchStart($event, t)"
+            @touchend="cancelLongPress"
+            @touchmove="cancelLongPress"
+            style="-webkit-user-select: none; user-select: none; touch-action: pan-y"
             class="cursor-pointer transition-opacity active:opacity-70"
           >
             <TransactionCard :transaction="t" />
