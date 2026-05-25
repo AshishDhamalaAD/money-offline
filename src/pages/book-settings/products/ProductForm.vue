@@ -2,7 +2,7 @@
 import { ref, onMounted, computed, toRaw } from "vue"
 import { useRoute, useRouter } from "vue-router"
 
-import { QUANTITY_TYPES } from "@/constants"
+import { QUANTITY_TYPES, DEFAULT_QUANTITY_TYPE } from "@/constants"
 import { useProductStore } from "@/store/productStore"
 import { useCategoryStore } from "@/store/categoryStore"
 import IconPlus from "@/assets/icons/IconPlus.vue"
@@ -34,7 +34,7 @@ const form = ref({
   name: "",
   description: "",
   rate: 0,
-  quantity_type: "",
+  quantity_type: DEFAULT_QUANTITY_TYPE,
   category_id: "",
 })
 
@@ -91,7 +91,7 @@ function fillForm(item) {
   form.value.name = item.name
   form.value.description = item.description || ""
   form.value.rate = item.rate || 0
-  form.value.quantity_type = item.quantity_type || ""
+  form.value.quantity_type = item.quantity_type || DEFAULT_QUANTITY_TYPE
   form.value.category_id = item.category_id || ""
 
   if (item.attachments && item.attachments.length > 0) {

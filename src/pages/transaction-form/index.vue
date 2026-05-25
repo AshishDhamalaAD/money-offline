@@ -1,8 +1,8 @@
 <script setup>
-import { ref, onMounted, computed, watch } from "vue"
+import { ref, onMounted, computed, watch, toRaw } from "vue"
 import { useRoute, useRouter } from "vue-router"
 
-import { QUANTITY_TYPES } from "@/constants"
+import { QUANTITY_TYPES, DEFAULT_QUANTITY_TYPE } from "@/constants"
 import { roundAmount } from "@/utils/dateUtils"
 import { db } from "@/db/dexie"
 import { useTransactionStore } from "@/store/transactionStore"
@@ -341,7 +341,8 @@ const showProductModal = ref(false)
 const newProductName = ref("")
 const newProductDescription = ref("")
 const newProductRate = ref(0)
-const newProductQuantityType = ref("")
+const newProductQuantityType = ref(DEFAULT_QUANTITY_TYPE)
+const newProductAttachments = ref([])
 const newProductCategoryId = ref("")
 
 async function saveNewProduct() {
@@ -355,6 +356,7 @@ async function saveNewProduct() {
       newProductQuantityType.value,
       bookId,
       newProductCategoryId.value,
+      toRaw(newProductAttachments.value),
     )
 
     // Auto-add the newly created product to the items list
@@ -368,15 +370,40 @@ async function saveNewProduct() {
     calculateTotal()
 
     showProductModal.value = false
-    newProductName.value = ""
-    newProductDescription.value = ""
-    newProductRate.value = 0
-    newProductQuantityType.value = ""
-    newProductCategoryId.value = ""
+    resetNewProductForm()
   } catch (e) {
     console.error(e)
     alert("Failed to add product")
   }
+}
+
+function handleNewProductUpload(url) {
+  newProductAttachments.value.push(url)
+}
+
+function removeNewProductAttachment(index) {
+  if (confirm("Are you sure you want to delete this image?")) {
+    newProductAttachments.value.splice(index, 1)
+  }
+}
+
+function resetNewProductForm() {
+  newProductName.value = ""
+  newProductDescription.value = ""
+  newProductRate.value = 0
+  newProductQuantityType.value = DEFAULT_QUANTITY_TYPE
+  newProductCategoryId.value = ""
+  newProductAttachments.value = []
+}
+
+function openProductModal() {
+  resetNewProductForm()
+  showProductModal.value = true
+}
+
+function closeProductModal() {
+  showProductModal.value = false
+  resetNewProductForm()
 }
 
 function openCategoryModalForTransaction() {
@@ -499,7 +526,7 @@ function openCategoryModalForProduct() {
           <h3 class="font-medium text-gray-900 dark:text-gray-100">Products</h3>
           <div class="flex gap-2">
             <button
-              @click="showProductModal = true"
+              @click="openProductModal"
               class="mb-0.5 flex h-[42px] w-[42px] items-center justify-center rounded-sm bg-indigo-50 text-indigo-600 hover:bg-indigo-100 active:scale-95 transition-all dark:bg-indigo-900/40 dark:text-indigo-100 dark:hover:bg-indigo-900/60"
             >
               <IconPlus />
@@ -607,8 +634,11 @@ function openCategoryModalForProduct() {
     </BaseModal>
 
     <!-- Add Product Modal -->
-    <BaseModal :show="showProductModal" title="Add New Product" @close="showProductModal = false">
+    <BaseModal :show="showProductModal" title="Add New Product" @close="closeProductModal">
       <div class="space-y-4 max-h-[70vh] overflow-y-auto">
+        <LightGallery :images="newProductAttachments" editable @delete="removeNewProductAttachment" />
+        <ImageUpload @upload="handleNewProductUpload" from="products" />
+
         <BaseInput v-model="newProductName" label="Product Name" placeholder="e.g. Milk" required autoFocus />
 
         <BaseInput v-model="newProductRate" type="number" label="Rate" required />
@@ -641,7 +671,7 @@ function openCategoryModalForProduct() {
         <BaseInput v-model="newProductDescription" label="Description" placeholder="Optional" />
 
         <div class="flex justify-end gap-3 mt-6">
-          <BaseButton variant="ghost" @click="showProductModal = false">Cancel</BaseButton>
+          <BaseButton variant="ghost" @click="closeProductModal">Cancel</BaseButton>
           <BaseButton @click="saveNewProduct">Add Product</BaseButton>
         </div>
       </div>

@@ -82,16 +82,13 @@ export const useTransactionStore = defineStore('transaction', () => {
             sync_status: 'pending'
         })
 
-        // Check for rate changes in products
+        // Check for rate changes in products — update product master rate too
         if (products.length > 0) {
             for (const p of products) {
                 if (p.product_id) {
                     const product = await db.products.get(p.product_id)
                     if (product && String(product.rate) !== String(p.rate)) {
-                        await productStore.addProductRate({
-                            product_id: p.product_id,
-                            rate: p.rate,
-                        });
+                        await productStore.updateProduct(p.product_id, { rate: p.rate });
                     }
                 }
             }

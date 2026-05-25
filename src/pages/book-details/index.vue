@@ -105,11 +105,35 @@ async function executeCopyOrMove() {
   }
 }
 
-async function initiateDuplicate() {
+const showDuplicateDescriptionModal = ref(false)
+
+function initiateDuplicate() {
   showActionSheet.value = false
   if (!selectedTransaction.value) return
 
   const t = selectedTransaction.value
+
+  // If the transaction has a description, ask via modal whether to include it
+  if (t.description && t.description.trim()) {
+    showDuplicateDescriptionModal.value = true
+  } else {
+    executeDuplicate(false)
+  }
+}
+
+function executeDuplicate(includeDescription) {
+  showDuplicateDescriptionModal.value = false
+  if (!selectedTransaction.value) return
+
+  const t = selectedTransaction.value
+
+  // Normalize description for form (strip HTML paragraph formatting)
+  let description = ""
+  if (includeDescription && t.description) {
+    description = t.description
+      .replace(/<\/p>\s*<p>/g, "\n")
+      .replace(/<\/?p>/g, "")
+  }
 
   // Build a current local timestamp for the new transaction
   const now = new Date()
@@ -130,7 +154,7 @@ async function initiateDuplicate() {
         category_ids: t.category_ids || [],
         payment_mode_id: t.payment_mode_id || "",
         contact_id: t.contact_id || "",
-        description: "",
+        description,
         products,
         discount: t.discount || 0,
         charge: t.charge || 0,
@@ -637,6 +661,22 @@ function cancelLongPress() {
       <div class="flex justify-end gap-3 mt-6">
         <BaseButton variant="ghost" @click="showDeleteModal = false">Cancel</BaseButton>
         <BaseButton variant="danger" @click="handleDelete">Delete</BaseButton>
+      </div>
+    </BaseModal>
+
+    <!-- Duplicate Description Confirmation Modal -->
+    <BaseModal
+      :show="showDuplicateDescriptionModal"
+      title="Duplicate Description"
+      @close="showDuplicateDescriptionModal = false"
+    >
+      <p class="text-gray-600 dark:text-gray-300">
+        Do you want to duplicate the description as well?
+      </p>
+
+      <div class="flex justify-end gap-3 mt-6">
+        <BaseButton variant="ghost" @click="executeDuplicate(false)">No</BaseButton>
+        <BaseButton @click="executeDuplicate(true)">Yes</BaseButton>
       </div>
     </BaseModal>
 
