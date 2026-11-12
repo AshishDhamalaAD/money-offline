@@ -1,8 +1,8 @@
 <script setup>
-import { computed } from "vue"
-import LightGallery from "lightgallery/vue"
-import lgThumbnail from "lightgallery/plugins/thumbnail"
-import lgZoom from "lightgallery/plugins/zoom"
+import { computed, ref } from "vue"
+import { LightGallery } from "@lightgallery/vue"
+import Thumbnail from "@lightgallery/vue/plugins/thumbnail"
+import Zoom from "@lightgallery/vue/plugins/zoom"
 
 // Import styles
 import "lightgallery/css/lightgallery.css"
@@ -25,7 +25,9 @@ const props = defineProps({
   },
 })
 
-const plugins = [lgThumbnail, lgZoom]
+const galleryRef = ref(null)
+
+const plugins = [Thumbnail, Zoom]
 
 const fullImageUrls = computed(() => {
   return props.images.map((url) => ({
@@ -33,23 +35,21 @@ const fullImageUrls = computed(() => {
     thumb: resizedImageUrls({ width: 200, imageUrls: [url] })[0],
   }))
 })
+
+function openGallery(index) {
+  galleryRef.value?.openGallery(index)
+}
 </script>
 
 <template>
   <div v-if="images.length > 0">
-    <LightGallery
-      :settings="{
-        speed: 500,
-        plugins: plugins,
-        mobileSettings: { closable: true },
-        selector: '.gallery-item',
-      }"
-      :onInit="() => {}"
-    >
+    <LightGallery ref="galleryRef" :slides="fullImageUrls" :plugins="plugins" :speed="500" />
+    <div>
       <div v-for="(image, index) in fullImageUrls" :key="index" class="relative inline-block mr-2 mb-2">
         <a
           :href="image.src"
           class="gallery-item block rounded-lg overflow-hidden border border-gray-200 hover:opacity-90 transition-opacity dark:border-gray-700"
+          @click.prevent="openGallery(index)"
         >
           <img :src="image.thumb" class="w-24 h-24 object-cover" />
         </a>
@@ -63,7 +63,7 @@ const fullImageUrls = computed(() => {
           </svg>
         </button>
       </div>
-    </LightGallery>
+    </div>
   </div>
 </template>
 

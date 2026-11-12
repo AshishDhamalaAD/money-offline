@@ -1,7 +1,7 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import { db } from '@/db/dexie'
-import pako from "pako";
+import { gzip } from "pako";
 import { useDatabaseExport } from '@/composables/useDatabaseExport'
 import { SYNC_APP_DATA_API_URL } from "@/constants/routes";
 
@@ -36,7 +36,7 @@ export const useSyncStore = defineStore('sync', () => {
 
             const jsonString = JSON.stringify(data);
 
-            const compressed = pako.gzip(jsonString);
+            const compressed = gzip(jsonString);
 
             const fileBlob = new Blob([compressed], { type: "application/gzip" });
 
