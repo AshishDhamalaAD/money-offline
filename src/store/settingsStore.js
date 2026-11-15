@@ -188,6 +188,18 @@ export const useSettingsStore = defineStore('settings', () => {
         return systemMediaQuery?.matches ? "dark" : "light"
     }
 
+    function updateThemeColor(resolvedTheme) {
+        const meta = document.querySelector('meta[name="theme-color"]')
+        if (!meta) return
+
+        // Read the resolved body background so the browser chrome always matches
+        // the theme actually applied, instead of duplicating colour values.
+        const background = getComputedStyle(document.body).backgroundColor
+        const hasBackground = background && background !== "transparent" && background !== "rgba(0, 0, 0, 0)"
+
+        meta.setAttribute("content", hasBackground ? background : resolvedTheme === "dark" ? "#030712" : "#ffffff")
+    }
+
     function applyTheme(preference = themePreference.value) {
         if (typeof document === "undefined") return
         const resolvedTheme = resolveTheme(preference)
@@ -195,6 +207,7 @@ export const useSettingsStore = defineStore('settings', () => {
 
         root.classList.toggle("dark", resolvedTheme === "dark")
         root.dataset.theme = preference
+        updateThemeColor(resolvedTheme)
     }
 
     async function setThemePreference(preference) {

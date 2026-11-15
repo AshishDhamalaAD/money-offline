@@ -7,3 +7,34 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/*
+ * Safe-area helpers for notched phones and gesture-bar devices.
+ * Used by the fixed save bar, the floating action button and page layouts so
+ * content is never hidden behind the iOS home indicator or Android nav bar.
+ * The fallback keeps them harmless on devices without insets.
+ */
+
+.pt-safe-4 {
+  padding-top: calc(1rem + env(safe-area-inset-top, 0px));
+}
+
+.pb-safe-4 {
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+}
+
+.pb-safe-8 {
+  padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
+}
+
+.pb-safe-20 {
+  padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+}
+
+.bottom-safe-6 {
+  bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+}
+
+.h-safe-24 {
+  height: calc(6rem + env(safe-area-inset-bottom, 0px));
+}

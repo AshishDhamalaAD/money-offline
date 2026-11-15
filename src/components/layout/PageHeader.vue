@@ -29,7 +29,7 @@ function handleBack() {
 
 <template>
   <header
-    class="bg-white px-4 py-4 shadow-sm sticky top-0 z-20 flex items-center justify-between dark:bg-gray-900 dark:shadow-gray-900/20 transition-colors"
+    class="bg-white px-4 pt-safe-4 pb-4 shadow-sm sticky top-0 z-20 flex items-center justify-between dark:bg-gray-900 dark:shadow-gray-900/20 transition-colors"
   >
     <div class="flex items-center gap-3">
       <button

@@ -5,6 +5,7 @@ import { RouterView } from "vue-router"
 import { useSettingsStore } from "@/store/settingsStore"
 import BiometricLock from "@/components/common/BiometricLock.vue"
 import PinLock from "@/components/common/PinLock.vue"
+import PwaUpdatePrompt from "@/components/common/PwaUpdatePrompt.vue"
 
 const settingsStore = useSettingsStore()
 const isLocked = ref(false)
@@ -98,5 +99,7 @@ function switchToPin() {
       <PinLock v-if="lockType === 'pin'" @unlocked="onUnlocked" />
     </template>
     <RouterView />
+
+    <PwaUpdatePrompt />
   </div>
 </template>

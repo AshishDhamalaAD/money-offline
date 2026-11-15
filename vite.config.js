@@ -15,28 +15,53 @@ export default defineConfig({
         vue(),
         tailwindcss(),
         VitePWA({
+            // Registration is handled in app code (PwaUpdatePrompt.vue) so a
+            // "new version available" prompt can be shown instead of silently
+            // reloading the user's session.
             registerType: 'prompt',
+            injectRegister: null,
             workbox: {
                 cleanupOutdatedCaches: true,
-                clientsClaim: true,
-                skipWaiting: true
+                clientsClaim: true
             },
-            includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+            includeAssets: [
+                'favicon.ico',
+                'favicon-16x16.png',
+                'favicon-32x32.png',
+                'apple-touch-icon.png',
+                'android-chrome-192x192.png',
+                'android-chrome-512x512.png'
+            ],
             manifest: {
-                name: 'Expense Tracker',
-                short_name: 'Expenses',
-                description: 'Offline-first Expense Tracker',
+                id: '/',
+                name: 'Money Manager',
+                short_name: 'Money',
+                description: 'Offline-first personal finance manager',
+                lang: 'en',
+                dir: 'ltr',
+                start_url: '/',
+                scope: '/',
+                display: 'standalone',
+                background_color: '#ffffff',
                 theme_color: '#ffffff',
                 icons: [
                     {
-                        src: 'pwa-192x192.png',
+                        src: 'android-chrome-192x192.png',
                         sizes: '192x192',
-                        type: 'image/png'
+                        type: 'image/png',
+                        purpose: 'any'
                     },
                     {
-                        src: 'pwa-512x512.png',
+                        src: 'android-chrome-512x512.png',
                         sizes: '512x512',
-                        type: 'image/png'
+                        type: 'image/png',
+                        purpose: 'any'
+                    },
+                    {
+                        src: 'android-chrome-512x512.png',
+                        sizes: '512x512',
+                        type: 'image/png',
+                        purpose: 'maskable'
                     }
                 ]
             }
