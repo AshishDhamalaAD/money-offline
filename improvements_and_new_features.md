@@ -29,18 +29,24 @@ These are small fixes with outsized impact, because the app is consumed as an in
 
 ## 2. Mobile UX upgrades to existing features
 
-**Progress: 0 of 21 done.**
+**Progress: 6 of 21 done.**
 
 ### Entry flow — highest value, this is used daily
 
-- ⬜ `BaseInput.vue` has no `inputmode`, `autocomplete`, or `enterkeyhint`. Amount fields should open the
-  numeric keypad, phone fields the telephone keypad, and the last field should read "Done".
-- ⬜ Replace the blocking browser alert and confirm dialogs in `transaction-form/index.vue` with the
-  existing `BaseBottomSheet` / toast components.
-- ⬜ Add an **unsaved-changes guard** before leaving the form — a back-swipe currently loses the whole entry.
-- ⬜ **Quick-entry mode**: amount → category → save in three taps, with "same as last time" defaults.
-- ⬜ **Camera capture for receipts** feeding the existing ImageUpload component.
-- ⬜ Numeric keypad sheet for `ProductLineItem.vue` quantity/rate instead of the full keyboard.
+- ✅ `BaseInput.vue` now supports `inputmode`, `autocomplete` and `enterkeyhint`, and derives the right
+  keyboard automatically — numeric fields open the decimal keypad, phone fields the telephone keypad,
+  and the final field of a group reads "Done".
+- ✅ Replaced the blocking browser alert and confirm dialogs in `transaction-form/index.vue` with an
+  in-app toast and a reusable bottom-sheet confirmation.
+- ✅ Added an **unsaved-changes guard** before leaving the form — a back-swipe or header back now asks
+  before discarding, and a refresh triggers the browser's leave warning.
+- ✅ **Quick entry**: the amount is now the first field and stays editable when no items are added, so a
+  transaction can be recorded in three taps. New entries reuse the previous transaction's categories,
+  payment mode and contact, and the products section is collapsed by default.
+- ✅ **Camera capture for receipts** — a "Take photo" button opens the native camera and uploads straight
+  into the existing attachment flow.
+- ✅ Quantity, rate and amount fields now open the decimal keypad with Next / Done keys instead of the
+  full keyboard, which removes the need for a custom keypad sheet.
 
 ### Transaction list — `book-details/index.vue`
 
@@ -129,7 +135,7 @@ These are small fixes with outsized impact, because the app is consumed as an in
 ## Suggested order
 
 1. ✅ **PWA correctness** — manifest and icons, safe-area, theme-color, update prompt. *(Done 15 Nov 2026.)*
-2. ⬜ **Entry flow polish** — `inputmode`, unsaved guard, non-blocking dialogs, undo delete.
+2. ✅ **Entry flow polish** — inputmode, unsaved guard, non-blocking dialogs. *(Done 15 Nov 2026.)*
 3. ⬜ **Bottom navigation + dashboard balances.**
 4. ⬜ **Recurring transactions + budgets** — the features most likely to make the app open daily.
 5. ⬜ **Contact ledger + CSV export.**
@@ -159,3 +165,25 @@ prompt. All routes load without console errors.
 
 **Still open in Section 1:** offline indicator and upload queue, sanitising the transaction description,
 and hardening PIN / API-token storage.
+
+### 15 November 2026 — Entry flow polish (phase 2)
+
+Shipped the entry-flow items from Section 2:
+
+- The shared input component now understands mobile keyboard hints and picks a sensible keyboard from the
+  field type, so amounts, quantities and rates open the decimal keypad and the last field shows "Done".
+- Blocking browser alerts and confirmations were replaced with an in-app toast and a reusable
+  bottom-sheet confirmation, used for validation errors, failed saves and image removal.
+- Leaving the form with unsaved work now asks first, both for in-app navigation and for a page refresh.
+- Quick entry was reworked: the amount is the first and most prominent field, it stays editable when no
+  line items are added, new entries prefill the previous transaction's categories, payment mode and
+  contact, and the products section starts collapsed.
+- A "Take photo" button was added to the image uploader so a receipt can be captured with the camera and
+  uploaded in one step.
+
+Verified against a production build: the amount-only path saves correctly, the previous transaction's
+categories and payment mode are preselected, the discard prompt appears on back and cancelling it keeps
+you on the form, and validation errors surface as a toast without leaving the form.
+
+**Still open in Section 2:** the transaction-list items, including swipe actions, undo delete, bulk select,
+sticky month headers, pull-to-refresh and the attachment viewer.

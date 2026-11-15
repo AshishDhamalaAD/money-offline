@@ -18,6 +18,10 @@ const props = defineProps({
   },
   required: Boolean,
   readonly: Boolean,
+  inputmode: String,
+  autocomplete: String,
+  enterkeyhint: String,
+  autocapitalize: String,
 })
 
 defineEmits(["update:modelValue"])
@@ -29,6 +33,26 @@ const inputType = computed(() => {
     return "text"
   }
   return props.type
+})
+
+// Give mobile keyboards the right layout without every caller repeating it.
+const resolvedInputMode = computed(() => {
+  if (props.inputmode) return props.inputmode
+
+  switch (props.type) {
+    case "number":
+      return "decimal"
+    case "tel":
+      return "tel"
+    case "email":
+      return "email"
+    case "url":
+      return "url"
+    case "search":
+      return "search"
+    default:
+      return undefined
+  }
 })
 </script>
 
@@ -45,6 +69,7 @@ const inputType = computed(() => {
       :placeholder="placeholder"
       rows="3"
       :readonly="readonly"
+      :enterkeyhint="enterkeyhint"
       :class="[
         'w-full max-w-full rounded-sm border-gray-200 bg-gray-50 px-4 py-2.5 text-gray-900 placeholder-gray-400 transition-colors focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 resize-y dark:border-gray-500 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500 dark:focus:bg-gray-900',
         { 'border-red-500 focus:border-red-500 focus:ring-red-500 dark:border-red-500 dark:focus:bg-gray-900': error },
@@ -58,6 +83,10 @@ const inputType = computed(() => {
         @input="$emit('update:modelValue', $event.target.value)"
         :placeholder="placeholder"
         :readonly="readonly"
+        :inputmode="resolvedInputMode"
+        :autocomplete="autocomplete"
+        :enterkeyhint="enterkeyhint"
+        :autocapitalize="autocapitalize"
         :class="[
           'w-full max-w-full rounded-sm border-gray-200 bg-gray-50 px-4 py-2.5 text-gray-900 placeholder-gray-400 transition-colors focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500 dark:focus:bg-gray-900 overflow-x-hidden',
           {

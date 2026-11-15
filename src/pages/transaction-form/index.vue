@@ -1,6 +1,6 @@
 <script setup>
-import { ref, onMounted, computed, watch, toRaw } from "vue"
-import { useRoute, useRouter } from "vue-router"
+import { ref, onMounted, onUnmounted, computed, watch, toRaw, nextTick } from "vue"
+import { useRoute, useRouter, onBeforeRouteLeave } from "vue-router"
 
 import { QUANTITY_TYPES, DEFAULT_QUANTITY_TYPE } from "@/constants"
 import { roundAmount } from "@/utils/dateUtils"
@@ -12,10 +12,13 @@ import { usePaymentModeStore } from "@/store/paymentModeStore"
 import { useProductStore } from "@/store/productStore"
 import IconPlus from "@/assets/icons/IconPlus.vue"
 import IconX from "@/assets/icons/IconX.vue"
+import IconChevronDown from "@/assets/icons/IconChevronDown.vue"
 import BaseButton from "@/components/common/BaseButton.vue"
 import BaseInput from "@/components/common/BaseInput.vue"
 import BaseSearchableSelect from "@/components/common/BaseSearchableSelect.vue"
 import BaseModal from "@/components/common/BaseModal.vue"
+import BaseConfirm from "@/components/common/BaseConfirm.vue"
+import BaseToast from "@/components/common/BaseToast.vue"
 import LightGallery from "@/components/common/LightGallery.vue"
 import FixedSaveButton from "@/components/common/FixedSaveButton.vue"
 import PageLayout from "@/components/layout/PageLayout.vue"
@@ -75,14 +78,49 @@ const productImages = computed(() => {
   return images
 })
 
+// Lightweight feedback instead of blocking browser dialogs
+const showToast = ref(false)
+const toastMessage = ref("")
+const toastType = ref("error")
+
+function notify(message, type = "error") {
+  toastMessage.value = message
+  toastType.value = type
+  showToast.value = true
+}
+
+// Reusable confirmation sheet
+const confirmState = ref({
+  show: false,
+  title: "",
+  message: "",
+  confirmLabel: "Confirm",
+  variant: "primary",
+  action: null,
+})
+
+function askConfirm({ title, message, confirmLabel = "Confirm", variant = "primary", action }) {
+  confirmState.value = { show: true, title, message, confirmLabel, variant, action }
+}
+
+function runConfirmedAction() {
+  const action = confirmState.value.action
+  confirmState.value.show = false
+  if (typeof action === "function") action()
+}
+
 function handleUpload(url) {
   transactionAttachments.value.push(url)
 }
 
 function removeAttachment(index) {
-  if (confirm("Are you sure you want to delete this image?")) {
-    transactionAttachments.value.splice(index, 1)
-  }
+  askConfirm({
+    title: "Delete image?",
+    message: "This image will be removed from the transaction.",
+    confirmLabel: "Delete",
+    variant: "danger",
+    action: () => transactionAttachments.value.splice(index, 1),
+  })
 }
 
 const selectedCategories = computed(() => {
@@ -104,8 +142,50 @@ function removeCategory(id) {
 }
 
 const saving = ref(false)
+const saved = ref(false)
+const showProducts = ref(isEdit)
+
+// Track unsaved work so a back gesture doesn't silently throw it away
+const snapshot = ref("")
+const allowLeave = ref(false)
+const pendingNavigation = ref(null)
+
+function serializeForm() {
+  return JSON.stringify({
+    form: form.value,
+    attachments: transactionAttachments.value,
+  })
+}
+
+const isDirty = computed(() => Boolean(snapshot.value) && serializeForm() !== snapshot.value)
+
+onBeforeRouteLeave((to) => {
+  if (allowLeave.value || saved.value || !isDirty.value) return true
+
+  pendingNavigation.value = to.fullPath
+  askConfirm({
+    title: "Discard changes?",
+    message: "You have unsaved changes. Leaving now will discard them.",
+    confirmLabel: "Discard",
+    variant: "danger",
+    action: () => {
+      allowLeave.value = true
+      router.push(pendingNavigation.value)
+    },
+  })
+
+  return false
+})
+
+function handleBeforeUnload(event) {
+  if (saved.value || !isDirty.value) return
+  event.preventDefault()
+  event.returnValue = ""
+}
 
 onMounted(async () => {
+  window.addEventListener("beforeunload", handleBeforeUnload)
+
   // Load categories, products, payment modes for this book
   categoryStore.watchCategories(bookId)
   paymentModeStore.watchPaymentModes(bookId)
@@ -161,23 +241,61 @@ onMounted(async () => {
         addProduct()
       }
     } else {
-      // Normal new transaction: auto-add one product row
-      addProduct()
-
-      // Auto-select 'Food' category and 'Cash' payment mode for new transactions
-      // We wait a tick for the watchers to populate the stores
+      // Normal new transaction: start with just an amount so it can be entered
+      // in three taps, and reuse the previous entry's categories and accounts.
       await new Promise((resolve) => setTimeout(resolve, 100))
-      const foodCategory = categoryStore.categories.find((c) => c.name.toLowerCase() === "food")
-      if (foodCategory) {
-        form.value.category_ids = [foodCategory.id]
-      }
-      const cashMode = paymentModeStore.paymentModes.find((p) => p.name.toLowerCase() === "cash")
-      if (cashMode) {
-        form.value.payment_mode_id = cashMode.id
-      }
+      await applyLastTransactionDefaults()
     }
+
+    // Remember the starting state so we can warn before losing unsaved edits
+    await nextTick()
+    snapshot.value = serializeForm()
   }
 })
+
+onUnmounted(() => {
+  window.removeEventListener("beforeunload", handleBeforeUnload)
+})
+
+async function applyLastTransactionDefaults() {
+  let last = null
+
+  try {
+    const recent = await db.transactions.where("book_id").equals(bookId).reverse().sortBy("date")
+    last = recent[0] || null
+  } catch (e) {
+    console.error("Failed to load last transaction defaults", e)
+  }
+
+  if (last) {
+    const categoryIds = (last.category_ids || []).filter((id) => categoryStore.categories.some((c) => c.id === id))
+    if (categoryIds.length > 0) {
+      form.value.category_ids = categoryIds
+    }
+
+    if (last.payment_mode_id && paymentModeStore.paymentModes.some((p) => p.id === last.payment_mode_id)) {
+      form.value.payment_mode_id = last.payment_mode_id
+    }
+
+    if (last.contact_id && contactStore.contacts.some((c) => c.id === last.contact_id)) {
+      form.value.contact_id = last.contact_id
+    }
+  }
+
+  if (!form.value.category_ids.length) {
+    const foodCategory = categoryStore.categories.find((c) => c.name.toLowerCase() === "food")
+    if (foodCategory) {
+      form.value.category_ids = [foodCategory.id]
+    }
+  }
+
+  if (!form.value.payment_mode_id) {
+    const cashMode = paymentModeStore.paymentModes.find((p) => p.name.toLowerCase() === "cash")
+    if (cashMode) {
+      form.value.payment_mode_id = cashMode.id
+    }
+  }
+}
 
 function addProduct() {
   form.value.products.push({
@@ -234,12 +352,12 @@ async function save() {
       // If no products in master, require name
       if (productStore.products.length > 0) {
         if (!p.product_id) {
-          alert("Please select a product for all items.")
+          notify("Please select a product for all items.")
           return
         }
       } else {
         if (!p.name || !p.name.trim()) {
-          alert("Please enter a name for all items.")
+          notify("Please enter a name for all items.")
           return
         }
       }
@@ -260,10 +378,11 @@ async function save() {
         attachments: transactionAttachments.value,
       })
     }
+    saved.value = true
     router.back()
   } catch (e) {
     console.error(e)
-    alert("Failed to save transaction")
+    notify("Failed to save transaction")
   } finally {
     saving.value = false
   }
@@ -280,10 +399,11 @@ async function deleteTransaction() {
   try {
     await transactionStore.deleteTransaction(parseInt(route.params.id))
     showDeleteModal.value = false
+    saved.value = true
     router.back()
   } catch (e) {
     console.error(e)
-    alert("Failed to delete transaction")
+    notify("Failed to delete transaction")
   }
 }
 
@@ -312,7 +432,7 @@ async function saveNewCategory() {
     addingCategoryForProduct.value = false
   } catch (e) {
     console.error(e)
-    alert("Failed to add category")
+    notify("Failed to add category")
   }
 }
 
@@ -332,7 +452,7 @@ async function saveNewPaymentMode() {
     newPaymentModeDescription.value = ""
   } catch (e) {
     console.error(e)
-    alert("Failed to add payment mode")
+    notify("Failed to add payment mode")
   }
 }
 
@@ -373,7 +493,7 @@ async function saveNewProduct() {
     resetNewProductForm()
   } catch (e) {
     console.error(e)
-    alert("Failed to add product")
+    notify("Failed to add product")
   }
 }
 
@@ -382,9 +502,13 @@ function handleNewProductUpload(url) {
 }
 
 function removeNewProductAttachment(index) {
-  if (confirm("Are you sure you want to delete this image?")) {
-    newProductAttachments.value.splice(index, 1)
-  }
+  askConfirm({
+    title: "Delete image?",
+    message: "This image will be removed from the new product.",
+    confirmLabel: "Delete",
+    variant: "danger",
+    action: () => newProductAttachments.value.splice(index, 1),
+  })
 }
 
 function resetNewProductForm() {
@@ -463,6 +587,24 @@ function openCategoryModalForProduct() {
 
       <!-- Basic Fields -->
       <div class="space-y-4 rounded-sm bg-white p-4 shadow-sm dark:bg-gray-900 dark:border dark:border-gray-800">
+        <div>
+          <BaseInput
+            v-model.number="form.amount"
+            type="number"
+            step="0.01"
+            inputmode="decimal"
+            enterkeyhint="done"
+            label="Amount"
+            placeholder="0.00"
+            required
+            :readonly="form.products.length > 0"
+            class="text-2xl font-semibold"
+          />
+          <p v-if="form.products.length > 0" class="mt-1 ml-1 text-xs text-gray-500 dark:text-gray-400">
+            Calculated from the items below.
+          </p>
+        </div>
+
         <BaseInput v-model="form.date" type="datetime-local" label="Date" required />
       </div>
 
@@ -522,8 +664,24 @@ function openCategoryModalForProduct() {
 
       <!-- Products -->
       <div class="space-y-4 rounded-sm bg-white p-4 shadow-sm dark:bg-gray-900 dark:border dark:border-gray-800">
-        <div class="flex items-center justify-between">
-          <h3 class="font-medium text-gray-900 dark:text-gray-100">Products</h3>
+        <div class="flex items-center justify-between gap-2">
+          <button
+            type="button"
+            @click="showProducts = !showProducts"
+            class="flex flex-1 items-center gap-2 text-left"
+          >
+            <h3 class="font-medium text-gray-900 dark:text-gray-100">Products</h3>
+            <span
+              v-if="form.products.length > 0"
+              class="rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-200"
+            >
+              {{ form.products.length }}
+            </span>
+            <IconChevronDown
+              class="h-4 w-4 text-gray-400 transition-transform"
+              :class="{ 'rotate-180': showProducts }"
+            />
+          </button>
           <div class="flex gap-2">
             <button
               @click="openProductModal"
@@ -534,7 +692,11 @@ function openCategoryModalForProduct() {
           </div>
         </div>
 
-        <div class="divide-y divide-gray-100 dark:divide-gray-800">
+        <p v-if="!showProducts && form.products.length === 0" class="text-sm text-gray-500 dark:text-gray-400">
+          No items. The amount above will be saved as the total.
+        </p>
+
+        <div v-show="showProducts" class="divide-y divide-gray-100 dark:divide-gray-800">
           <ProductLineItem
             v-for="(p, index) in form.products"
             :key="p.id"
@@ -570,6 +732,7 @@ function openCategoryModalForProduct() {
             step="0.01"
             label="Discount"
             placeholder="0.00"
+            enterkeyhint="next"
             @input="calculateTotal"
           />
 
@@ -579,20 +742,9 @@ function openCategoryModalForProduct() {
             step="0.01"
             label="Charge"
             placeholder="0.00"
+            enterkeyhint="done"
             @input="calculateTotal"
           />
-
-          <div class="col-span-2">
-            <BaseInput
-              v-model="form.amount"
-              type="number"
-              step="0.01"
-              label="Total Amount"
-              class="font-bold text-indigo-600 dark:text-indigo-300"
-              :readonly="form.products.length > 0"
-              required
-            />
-          </div>
         </div>
       </div>
 
@@ -716,5 +868,17 @@ function openCategoryModalForProduct() {
         </div>
       </div>
     </BaseModal>
+
+    <!-- Confirmation sheet (discard changes, remove image, ...) -->
+    <BaseConfirm
+      v-model="confirmState.show"
+      :title="confirmState.title"
+      :message="confirmState.message"
+      :confirm-label="confirmState.confirmLabel"
+      :variant="confirmState.variant"
+      @confirm="runConfirmedAction"
+    />
+
+    <BaseToast :show="showToast" :message="toastMessage" :type="toastType" @close="showToast = false" />
   </PageLayout>
 </template>

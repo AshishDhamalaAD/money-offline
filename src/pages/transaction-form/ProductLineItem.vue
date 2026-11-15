@@ -119,6 +119,7 @@ function onProductSelect(productId) {
           step="0.01"
           label="Qty"
           placeholder="0"
+          enterkeyhint="next"
           @input="updateAmount"
         >
           <template #after-input>
@@ -144,6 +145,7 @@ function onProductSelect(productId) {
           step="0.01"
           label="Rate"
           placeholder="0.00"
+          enterkeyhint="next"
           @input="updateAmount"
         />
         <BaseInput
@@ -152,6 +154,7 @@ function onProductSelect(productId) {
           step="0.01"
           label="Amount"
           placeholder="0.00"
+          enterkeyhint="done"
           @input="updateQuantity"
         />
       </div>
