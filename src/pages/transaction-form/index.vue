@@ -6,6 +6,7 @@ import { QUANTITY_TYPES, DEFAULT_QUANTITY_TYPE } from "@/constants"
 import { roundAmount } from "@/utils/dateUtils"
 import { db } from "@/db/dexie"
 import { useTransactionStore } from "@/store/transactionStore"
+import { setLastBookId } from "@/utils/lastBook"
 import { useCategoryStore } from "@/store/categoryStore"
 import { useContactStore } from "@/store/contactStore"
 import { usePaymentModeStore } from "@/store/paymentModeStore"
@@ -36,6 +37,11 @@ const productStore = useProductStore()
 
 const bookId = parseInt(route.params.bookId)
 const isEdit = !!route.params.id
+
+// Any entry made for a book makes it the default for quick add and the nav.
+if (Number.isFinite(bookId)) {
+  setLastBookId(bookId)
+}
 
 const transactionAttachments = ref([])
 

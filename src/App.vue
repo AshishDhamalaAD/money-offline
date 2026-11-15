@@ -1,13 +1,15 @@
 <script setup>
 import { onMounted, ref, watch } from "vue"
-import { RouterView } from "vue-router"
+import { RouterView, useRoute } from "vue-router"
 
 import { useSettingsStore } from "@/store/settingsStore"
 import BiometricLock from "@/components/common/BiometricLock.vue"
 import PinLock from "@/components/common/PinLock.vue"
 import PwaUpdatePrompt from "@/components/common/PwaUpdatePrompt.vue"
+import BottomNav from "@/components/layout/BottomNav.vue"
 
 const settingsStore = useSettingsStore()
+const route = useRoute()
 const isLocked = ref(false)
 const lockType = ref(null) // 'biometric' | 'pin'
 const lastActive = ref(Date.now())
@@ -99,6 +101,8 @@ function switchToPin() {
       <PinLock v-if="lockType === 'pin'" @unlocked="onUnlocked" />
     </template>
     <RouterView />
+
+    <BottomNav v-if="route.meta.tab && !isLocked" />
 
     <PwaUpdatePrompt />
   </div>

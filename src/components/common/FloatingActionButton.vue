@@ -6,6 +6,10 @@ defineProps({
     type: Boolean,
     default: true,
   },
+  raised: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 defineEmits(["click"])
@@ -13,7 +17,7 @@ defineEmits(["click"])
 
 <template>
   <Teleport to="body">
-    <div v-if="show" class="fixed bottom-safe-6 right-6 z-40">
+    <div v-if="show" :class="['fixed right-6 z-40', raised ? 'bottom-safe-24' : 'bottom-safe-6']">
       <button
         @click="$emit('click')"
         class="flex h-14 w-14 items-center justify-center rounded-full bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 transition-transform hover:scale-105 active:scale-95"

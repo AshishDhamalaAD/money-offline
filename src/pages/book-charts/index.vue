@@ -8,6 +8,7 @@ import { useCategoryStore } from "@/store/categoryStore"
 import { useContactStore } from "@/store/contactStore"
 import { usePaymentModeStore } from "@/store/paymentModeStore"
 import { useProductStore } from "@/store/productStore"
+import { setLastBookId } from "@/utils/lastBook"
 import PageLayout from "@/components/layout/PageLayout.vue"
 import PageHeader from "@/components/layout/PageHeader.vue"
 import BaseButton from "@/components/common/BaseButton.vue"
@@ -64,6 +65,7 @@ onMounted(async () => {
   if (!bookIdParam) return
 
   bookId.value = bookIdParam
+  setLastBookId(bookIdParam)
   book.value = await bookStore.getBook(bookId.value)
   transactionStore.setBookId(bookId.value)
 

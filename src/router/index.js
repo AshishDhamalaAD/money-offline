@@ -7,12 +7,14 @@ const router = createRouter({
         {
             path: '/',
             name: 'dashboard',
-            component: Dashboard
+            component: Dashboard,
+            meta: { tab: true }
         },
         {
             path: '/book/:id',
             name: 'book-details',
-            component: () => import('@/pages/book-details/index.vue')
+            component: () => import('@/pages/book-details/index.vue'),
+            meta: { tab: true }
         },
         {
             path: '/book/:bookId/settings',
@@ -86,7 +88,8 @@ const router = createRouter({
         {
             path: '/settings',
             name: 'settings',
-            component: () => import('@/pages/settings/index.vue')
+            component: () => import('@/pages/settings/index.vue'),
+            meta: { tab: true }
         },
         {
             path: '/settings/contacts/new',
@@ -101,7 +104,8 @@ const router = createRouter({
         {
             path: '/book/:bookId/charts',
             name: 'book-charts',
-            component: () => import('@/pages/book-charts/index.vue')
+            component: () => import('@/pages/book-charts/index.vue'),
+            meta: { tab: true }
         }
     ]
 })

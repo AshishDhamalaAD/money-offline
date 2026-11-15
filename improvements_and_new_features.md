@@ -29,7 +29,7 @@ These are small fixes with outsized impact, because the app is consumed as an in
 
 ## 2. Mobile UX upgrades to existing features
 
-**Progress: 6 of 21 done.**
+**Progress: 10 of 21 done.**
 
 ### Entry flow — highest value, this is used daily
 
@@ -59,16 +59,18 @@ These are small fixes with outsized impact, because the app is consumed as an in
 
 ### Navigation and chrome
 
-- ⬜ **Bottom tab bar** (Dashboard / Transactions / Charts / Settings). The app is drill-down only today,
-  so reaching anything takes two or three taps.
+- ✅ **Bottom tab bar** — Home, Transactions, Charts and Settings are one tap away. Transactions and
+  Charts reopen the last-used book, the bar hides itself on drill-down screens and while the app is
+  locked, and tab pages reserve enough bottom space that the bar never covers content.
 - ⬜ Pull-to-refresh, haptic feedback on save/delete, and scroll-position restoration on back.
 - ⬜ **Global search** across transactions, contacts and products from the dashboard.
 
 ### Dashboard — `dashboard/index.vue`, `BookCard.vue`
 
-- ⬜ Book cards currently show only name and created date. Add **balance, this-month spend, and a mini sparkline**.
-- ⬜ Cross-book "This month" summary card.
-- ⬜ Quick-add FAB that remembers the last-used book.
+- ✅ Book cards now show the running **balance, this-month spend, and a seven-day spending sparkline**.
+- ✅ Cross-book **"This month" summary card** with the combined balance plus this month's in and out.
+- ✅ Quick-add FAB that **remembers the last-used book**, so a repeat entry never asks for a book again.
+  Book creation moved to a "+" action in the header.
 
 ### Formatting and locale
 
@@ -136,7 +138,7 @@ These are small fixes with outsized impact, because the app is consumed as an in
 
 1. ✅ **PWA correctness** — manifest and icons, safe-area, theme-color, update prompt. *(Done 15 Nov 2026.)*
 2. ✅ **Entry flow polish** — inputmode, unsaved guard, non-blocking dialogs. *(Done 15 Nov 2026.)*
-3. ⬜ **Bottom navigation + dashboard balances.**
+3. ✅ **Bottom navigation + dashboard balances.** *(Done 15 Nov 2026.)*
 4. ⬜ **Recurring transactions + budgets** — the features most likely to make the app open daily.
 5. ⬜ **Contact ledger + CSV export.**
 6. ⬜ **Sync rewrite + transaction pagination** — do this before the dataset grows.
@@ -186,4 +188,26 @@ categories and payment mode are preselected, the discard prompt appears on back 
 you on the form, and validation errors surface as a toast without leaving the form.
 
 **Still open in Section 2:** the transaction-list items, including swipe actions, undo delete, bulk select,
-sticky month headers, pull-to-refresh and the attachment viewer.
+sticky month headers, pull-to-refresh and the attachment viewer; pull-to-refresh / haptics / scroll
+restoration; global search; and locale-aware currency formatting.
+
+### 15 November 2026 — Bottom navigation and dashboard balances (phase 3)
+
+Shipped the navigation and dashboard items from Section 2:
+
+- Added a fixed **bottom tab bar** with Home, Transactions, Charts and Settings. It appears only on those
+  four screens, hides while the app is locked, marks the active tab, and every tab page now reserves
+  enough bottom space that the bar never covers the last row of content.
+- Transactions and Charts **remember the last book** that was opened, so those tabs reopen the right book
+  instead of dumping the user back on the dashboard. The shortcut is cleared when that book is deleted.
+- The dashboard now opens with a **combined balance card** showing the total across all books plus this
+  month's money in and out.
+- **Book cards** show the running balance, this month's spend, and a seven-day spending sparkline, so the
+  state of each book is visible without opening it.
+- The dashboard **quick-add button now records a transaction** in the last-used book (falling back to the
+  first book), and book creation moved to a "+" action in the header.
+
+Verified against a production build with seeded data: totals, per-book balances and sparkline shapes match
+the underlying transactions, the nav highlights the right tab on each screen, it disappears on the entry
+form, the quick-add button targets the remembered book after visiting a different book, the raised button
+clears the nav, and deleting the remembered book clears the stored shortcut.

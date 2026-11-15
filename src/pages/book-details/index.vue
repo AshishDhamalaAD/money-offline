@@ -4,6 +4,7 @@ import { useRoute, useRouter } from "vue-router"
 
 import { formatDate, getNepalDate } from "@/utils/dateUtils"
 import { formatCurrency } from "@/utils/moneyUtils"
+import { setLastBookId } from "@/utils/lastBook"
 import { useBookStore } from "@/store/bookStore"
 import { useTransactionStore } from "@/store/transactionStore"
 import { useCategoryStore } from "@/store/categoryStore"
@@ -194,6 +195,7 @@ onMounted(async () => {
   if (!bookIdParam) return
 
   bookId.value = bookIdParam
+  setLastBookId(bookIdParam)
   book.value = await bookStore.getBook(bookId.value)
   transactionStore.setBookId(bookId.value)
 
@@ -743,5 +745,5 @@ function cancelLongPress() {
   </PageLayout>
 
   <!-- FAB -->
-  <FloatingActionButton @click="goToCreateTransaction" />
+  <FloatingActionButton raised @click="goToCreateTransaction" />
 </template>
