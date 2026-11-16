@@ -8,14 +8,51 @@ import { useSyncStore } from '@/store/syncStore'
 import { useSettingsStore } from '@/store/settingsStore'
 import { useProductStore } from '@/store/productStore'
 
+// Full-range sentinels for the string dates stored as "YYYY-MM-DD HH:mm:ss".
+const MIN_DATE = ""
+const MAX_DATE = "\uffff"
+const LIST_PAGE_SIZE = 50
+const LIST_FILTER_KEYS = [
+    "bookId",
+    "startDate",
+    "endDate",
+    "type",
+    "categoryId",
+    "paymentModeId",
+    "contactId",
+    "productId",
+    "search",
+]
+
+function dateBounds(startDate, endDate) {
+    return [
+        startDate ? `${startDate} 00:00:00` : MIN_DATE,
+        endDate ? `${endDate} 23:59:59` : MAX_DATE,
+    ]
+}
+
+function sameListFilters(a, b) {
+    return LIST_FILTER_KEYS.every(key => (a[key] ?? "") === (b[key] ?? ""))
+}
+
 export const useTransactionStore = defineStore('transaction', () => {
+    // Full book load. Charts need every row in memory to aggregate; the list
+    // screen uses the paged query below instead.
     const transactions = ref([])
     const currentBookId = ref(null)
     const productStore = useProductStore()
 
-    // Subscribe to transactions for the current book
-    // We'll update this subscription when currentBookId changes
+    // Paged transaction list. Only the window the user has loaded is kept in
+    // memory; date ranges and filters are evaluated inside Dexie.
+    const listTransactions = ref([])
+    const listLoading = ref(false)
+    const listHasMore = ref(false)
+    const listVersion = ref(0)
+
     let subscription = null
+    let listSubscription = null
+    let listFilters = null
+    let listLimit = LIST_PAGE_SIZE
 
     function setBookId(bookId) {
         currentBookId.value = bookId
@@ -50,6 +87,186 @@ export const useTransactionStore = defineStore('transaction', () => {
         }).subscribe(data => {
             transactions.value = data;
         })
+    }
+
+    // --- Paged list -------------------------------------------------------
+
+    async function productMapFor(bookId) {
+        const products = await db.products.where('book_id').equals(bookId).toArray()
+        return new Map(products.map(product => [product.id, product]))
+    }
+
+    // The compound [book_id+date] index turns the book and date range into a
+    // single key range, so Dexie only reads the rows inside the filter window.
+    function listCollection(filters) {
+        const [start, end] = dateBounds(filters.startDate, filters.endDate)
+
+        return db.transactions
+            .where('[book_id+date]')
+            .between([filters.bookId, start], [filters.bookId, end], true, true)
+    }
+
+    function matchesListFilters(transaction, filters, productMap) {
+        if (filters.type && filters.type !== 'all' && transaction.type !== filters.type) return false
+
+        if (filters.categoryId) {
+            const productCategoryIds = (transaction.products || [])
+                .map(product => product.category_id)
+                .filter(Boolean)
+            const categoryIds = [...(transaction.category_ids || []), ...productCategoryIds]
+
+            if (!categoryIds.includes(filters.categoryId)) return false
+        }
+
+        if (filters.paymentModeId && transaction.payment_mode_id !== filters.paymentModeId) return false
+        if (filters.contactId && transaction.contact_id !== filters.contactId) return false
+        if (
+            filters.productId &&
+            !(transaction.products || []).some(product => product.product_id === filters.productId)
+        ) {
+            return false
+        }
+
+        if (filters.search) {
+            const query = filters.search.toLowerCase()
+            const descriptionMatch = transaction.description?.toLowerCase().includes(query)
+            const amountMatch = String(transaction.amount).includes(query)
+            const productMatch = (transaction.products || []).some(product => {
+                const name = product.name || productMap.get(product.product_id)?.name || ''
+                return name.toLowerCase().includes(query)
+            })
+
+            if (!descriptionMatch && !amountMatch && !productMatch) return false
+        }
+
+        return true
+    }
+
+    function enrichTransactions(rows, productMap) {
+        return rows.map(transaction => {
+            if (!Array.isArray(transaction.products)) return transaction
+
+            return {
+                ...transaction,
+                products: transaction.products.map(product => ({
+                    ...product,
+                    name: productMap.get(product.product_id)?.name || product.name || '',
+                    attachments: productMap.get(product.product_id)?.attachments || []
+                }))
+            }
+        })
+    }
+
+    async function fetchListWindow(filters, limit) {
+        const productMap = await productMapFor(filters.bookId)
+
+        // One extra row tells us whether another page exists without counting.
+        const rows = await listCollection(filters)
+            .filter(transaction => matchesListFilters(transaction, filters, productMap))
+            .reverse()
+            .limit(limit + 1)
+            .toArray()
+
+        return {
+            rows: enrichTransactions(rows.slice(0, limit), productMap),
+            hasMore: rows.length > limit
+        }
+    }
+
+    function startListQuery() {
+        listSubscription?.unsubscribe()
+
+        const filters = listFilters
+        const limit = listLimit
+
+        listLoading.value = true
+        listSubscription = liveQuery(() => fetchListWindow(filters, limit)).subscribe({
+            next: ({ rows, hasMore }) => {
+                listTransactions.value = rows
+                listHasMore.value = hasMore
+                listLoading.value = false
+                listVersion.value += 1
+            },
+            error: error => {
+                listLoading.value = false
+                console.error('Failed to load transactions', error)
+            }
+        })
+    }
+
+    function openTransactionList(filters) {
+        if (!filters?.bookId) return
+
+        currentBookId.value = filters.bookId
+        listFilters = { ...filters }
+        listLimit = LIST_PAGE_SIZE
+        startListQuery()
+    }
+
+    function setTransactionListFilters(filters) {
+        if (!filters?.bookId) return
+        if (listFilters && sameListFilters(listFilters, filters)) return
+
+        listFilters = { ...filters }
+        listLimit = LIST_PAGE_SIZE
+        startListQuery()
+    }
+
+    function loadMoreTransactions() {
+        if (!listFilters || !listHasMore.value) return
+
+        listLimit += LIST_PAGE_SIZE
+        startListQuery()
+    }
+
+    function closeTransactionList() {
+        listSubscription?.unsubscribe()
+        listSubscription = null
+        listFilters = null
+        listLimit = LIST_PAGE_SIZE
+        listTransactions.value = []
+        listHasMore.value = false
+        listLoading.value = false
+    }
+
+    // Totals for the whole filter window, streamed row by row so the list can
+    // show period stats without keeping every transaction in memory.
+    async function getTransactionTotals(filters) {
+        const productMap = filters.search ? await productMapFor(filters.bookId) : new Map()
+
+        let totalIn = 0
+        let totalOut = 0
+        let count = 0
+
+        await listCollection(filters)
+            .filter(transaction => matchesListFilters(transaction, filters, productMap))
+            .each(transaction => {
+                const amount = parseFloat(transaction.amount) || 0
+                if (transaction.type === 'in') totalIn += amount
+                else if (transaction.type === 'out') totalOut += amount
+                count += 1
+            })
+
+        return { totalIn, totalOut, netBalance: totalIn - totalOut, count }
+    }
+
+    // Net balance of everything before the filter start, used as the opening
+    // balance for the stats panel.
+    async function getBalanceBefore(bookId, date) {
+        if (!bookId || !date) return 0
+
+        let balance = 0
+
+        await db.transactions
+            .where('[book_id+date]')
+            .between([bookId, MIN_DATE], [bookId, `${date} 00:00:00`], true, false)
+            .each(transaction => {
+                const amount = parseFloat(transaction.amount) || 0
+                if (transaction.type === 'in') balance += amount
+                else if (transaction.type === 'out') balance -= amount
+            })
+
+        return balance
     }
 
     async function createTransaction(transaction) {
@@ -352,99 +569,26 @@ export const useTransactionStore = defineStore('transaction', () => {
         }
     })
 
-    // Filtering (Client-side for now as we load all transactions for a book)
-    function getFilteredTransactions(filters) {
-        // filters: { dateRange: 'today' | 'yesterday' | 'week' | 'this-week' | 'last-week' | 'month' | 'last-month' | 'this-year' | 'last-year' | 'custom', startDate, endDate, type, category }
-        return transactions.value.filter(t => {
-            let match = true
-            const tDate = new Date(t.date)
-            const now = new Date()
-
-            // Set to start of day for accurate comparison
-            now.setHours(0, 0, 0, 0)
-            tDate.setHours(0, 0, 0, 0)
-
-            if (filters.dateRange) {
-                if (filters.dateRange === 'today') {
-                    match = match && tDate.getTime() === now.getTime()
-                } else if (filters.dateRange === 'yesterday') {
-                    const yest = new Date(now)
-                    yest.setDate(yest.getDate() - 1)
-                    match = match && tDate.getTime() === yest.getTime()
-                } else if (filters.dateRange === 'week') {
-                    // Last 7 days including today
-                    const weekAgo = new Date(now)
-                    weekAgo.setDate(weekAgo.getDate() - 6) // 6 days ago + today = 7 days
-                    match = match && tDate >= weekAgo && tDate <= now
-                } else if (filters.dateRange === 'this-week') {
-                    // Current week (Monday to Sunday)
-                    const dayOfWeek = now.getDay()
-                    const monday = new Date(now)
-                    monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1))
-                    const sunday = new Date(monday)
-                    sunday.setDate(monday.getDate() + 6)
-                    match = match && tDate >= monday && tDate <= sunday
-                } else if (filters.dateRange === 'last-week') {
-                    // Previous week (Monday to Sunday)
-                    const dayOfWeek = now.getDay()
-                    const lastMonday = new Date(now)
-                    lastMonday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1) - 7)
-                    const lastSunday = new Date(lastMonday)
-                    lastSunday.setDate(lastMonday.getDate() + 6)
-                    match = match && tDate >= lastMonday && tDate <= lastSunday
-                } else if (filters.dateRange === 'month') {
-                    // Current month
-                    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
-                    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0)
-                    match = match && tDate >= monthStart && tDate <= monthEnd
-                } else if (filters.dateRange === 'last-month') {
-                    // Previous month
-                    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-                    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0)
-                    match = match && tDate >= lastMonthStart && tDate <= lastMonthEnd
-                } else if (filters.dateRange === 'this-year') {
-                    // Current year
-                    const yearStart = new Date(now.getFullYear(), 0, 1)
-                    const yearEnd = new Date(now.getFullYear(), 11, 31)
-                    match = match && tDate >= yearStart && tDate <= yearEnd
-                } else if (filters.dateRange === 'last-year') {
-                    // Previous year
-                    const lastYearStart = new Date(now.getFullYear() - 1, 0, 1)
-                    const lastYearEnd = new Date(now.getFullYear() - 1, 11, 31)
-                    match = match && tDate >= lastYearStart && tDate <= lastYearEnd
-                } else if (filters.dateRange === 'custom' && filters.startDate && filters.endDate) {
-                    // Custom date range
-                    const startDate = new Date(filters.startDate)
-                    const endDate = new Date(filters.endDate)
-                    startDate.setHours(0, 0, 0, 0)
-                    endDate.setHours(23, 59, 59, 999)
-                    match = match && tDate >= startDate && tDate <= endDate
-                }
-            }
-
-            if (filters.type && filters.type !== 'all') {
-                match = match && t.type === filters.type
-            }
-
-            if (filters.category) {
-                match = match && t.category_ids && t.category_ids.includes(filters.category)
-            }
-
-            return match
-        })
-    }
-
     return {
         transactions,
         currentBookId,
         setBookId,
+        listTransactions,
+        listLoading,
+        listHasMore,
+        listVersion,
+        openTransactionList,
+        setTransactionListFilters,
+        loadMoreTransactions,
+        closeTransactionList,
+        getTransactionTotals,
+        getBalanceBefore,
         createTransaction,
         updateTransaction,
         deleteTransaction,
         deleteTransactions,
         restoreTransactions,
         stats,
-        getFilteredTransactions,
         copyTransaction,
         moveTransaction,
         duplicateTransaction

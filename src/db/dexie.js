@@ -61,3 +61,9 @@ db.version(11).stores({
     recurring_transactions: '++id, book_id, active, next_due_date, sync_status',
     budgets: '++id, book_id, category_id, sync_status'
 });
+
+db.version(12).stores({
+    // Compound index so a book's transactions can be read by date range
+    // instead of loading the whole book into memory.
+    transactions: '++id, book_id, type, date, *category_ids, contact_id, payment_mode_id, discount, charge, amount, created_at, updated_at, sync_status, attachments, [book_id+date]'
+});

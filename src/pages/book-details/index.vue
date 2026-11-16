@@ -338,7 +338,6 @@ onMounted(async () => {
   bookId.value = bookIdParam
   setLastBookId(bookIdParam)
   book.value = await bookStore.getBook(bookId.value)
-  transactionStore.setBookId(bookId.value)
 
   categoryStore.watchCategories(bookId.value)
   paymentModeStore.watchPaymentModes(bookId.value)
@@ -356,6 +355,10 @@ onMounted(async () => {
   if (query.product) filterProduct.value = parseInt(query.product)
   if (query.search) searchQuery.value = query.search
 
+  // The list itself is paged: Dexie reads only the loaded window, so the page
+  // never holds the whole book in memory.
+  transactionStore.openTransactionList(pageFilters.value)
+
   await nextTick()
   measureHeader()
   updateActiveMonth()
@@ -365,6 +368,7 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  transactionStore.closeTransactionList()
   window.removeEventListener("scroll", onPageScroll)
   window.removeEventListener("resize", measureHeader)
   if (scrollFrame) cancelAnimationFrame(scrollFrame)
@@ -438,66 +442,26 @@ function clearFilter(type) {
   }
 }
 
-const filteredTransactions = computed(() => {
-  let transactions = []
+// The store reads this window straight from Dexie using the [book_id+date]
+// index, so date ranges, advanced filters and search never load the whole book.
+const pageFilters = computed(() => ({
+  bookId: bookId.value,
+  startDate: selectedFilter.value === "all" ? "" : startDate.value,
+  endDate: selectedFilter.value === "all" ? "" : endDate.value,
+  type: "all",
+  categoryId: filterCategory.value || null,
+  paymentModeId: filterPaymentMode.value || null,
+  contactId: filterContact.value || null,
+  productId: filterProduct.value || null,
+  search: searchQuery.value || "",
+}))
 
-  // 1. Date Filtering
-  if (selectedFilter.value === "all") {
-    transactions = transactionStore.transactions
-  } else if (startDate.value && endDate.value) {
-    // Use custom date range logic for all filters that have dates
-    transactions = transactionStore.getFilteredTransactions({
-      dateRange: "custom",
-      startDate: startDate.value,
-      endDate: endDate.value,
-    })
-  } else {
-    // Fallback (should not happen if DateRangeTabs works correctly for non-all filters)
-    transactions = transactionStore.transactions
-  }
-
-  // 2. Advanced Filters
-  if (filterCategory.value) {
-    transactions = transactions.filter((t) => {
-      const productCategoryIds = t.products?.filter((p) => p.category_id)?.map((p) => p.category_id) || []
-
-      return [...t.category_ids, ...productCategoryIds].includes(filterCategory.value)
-    })
-  }
-  if (filterPaymentMode.value) {
-    transactions = transactions.filter((t) => t.payment_mode_id === filterPaymentMode.value)
-  }
-  if (filterContact.value) {
-    transactions = transactions.filter((t) => t.contact_id === filterContact.value)
-  }
-  if (filterProduct.value) {
-    transactions = transactions.filter((t) => t.products?.some((p) => p.product_id === filterProduct.value))
-  }
-
-  // 3. Search Filtering
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase()
-    transactions = transactions.filter((t) => {
-      const descriptionMatch = t.description?.toLowerCase().includes(query)
-      const productMatch = t.products?.some((p) => p.name?.toLowerCase()?.includes(query))
-      const amountMatch = t.amount.toString().includes(query)
-      return descriptionMatch || productMatch || amountMatch
-    })
-  }
-
-  return transactions
-})
-
-const visibleLimit = ref(50)
-
-const paginatedTransactions = computed(() => {
-  return filteredTransactions.value.slice(0, visibleLimit.value)
-})
+const filteredTransactions = computed(() => transactionStore.listTransactions)
 
 const monthGroups = computed(() => {
   const months = new Map()
 
-  paginatedTransactions.value.forEach((transaction) => {
+  filteredTransactions.value.forEach((transaction) => {
     const date = new Date(transaction.date)
     const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`
     const amount = parseFloat(transaction.amount) || 0
@@ -541,17 +505,15 @@ const monthGroups = computed(() => {
 
 const hasScrubber = computed(() => monthGroups.value.length > 1)
 
-const hasMoreTransactions = computed(() => {
-  return visibleLimit.value < filteredTransactions.value.length
-})
+const hasMoreTransactions = computed(() => transactionStore.listHasMore)
 
 function loadMore() {
-  visibleLimit.value += 50
+  transactionStore.loadMoreTransactions()
 }
 
-// Reset pagination when filters change
-watch([selectedFilter, filterCategory, filterPaymentMode, filterContact, filterProduct, searchQuery], () => {
-  visibleLimit.value = 50
+// A filter change starts a fresh page from Dexie and clears any selection.
+watch(pageFilters, (filters) => {
+  transactionStore.setTransactionListFilters(filters)
   if (isSelecting.value) exitSelection()
 })
 
@@ -559,53 +521,47 @@ watch(monthGroups, () => {
   nextTick(updateActiveMonth)
 })
 
-const filteredStats = computed(() => {
-  let totalIn = 0
-  let totalOut = 0
-  let openingBalance = 0
-
-  // Calculate opening balance (net balance from transactions before the filter period)
-  if (selectedFilter.value !== "all") {
-    let filterStartDate = null
-
-    if (startDate.value) {
-      filterStartDate = new Date(startDate.value)
-      filterStartDate.setHours(0, 0, 0, 0)
-    }
-
-    // Calculate balance from all transactions before the filter start date
-    if (filterStartDate) {
-      transactionStore.transactions.forEach((t) => {
-        const tDate = new Date(t.date)
-        tDate.setHours(0, 0, 0, 0)
-
-        if (tDate < filterStartDate) {
-          const amount = parseFloat(t.amount) || 0
-          if (t.type === "in") openingBalance += amount
-          else if (t.type === "out") openingBalance -= amount
-        }
-      })
-    }
-  }
-
-  // Calculate current period stats
-  filteredTransactions.value.forEach((t) => {
-    const amount = parseFloat(t.amount) || 0
-    if (t.type === "in") totalIn += amount
-    else if (t.type === "out") totalOut += amount
-  })
-
-  const netBalance = totalIn - totalOut
-  const closingBalance = openingBalance + netBalance
-
-  return {
-    totalIn,
-    totalOut,
-    netBalance,
-    openingBalance,
-    closingBalance,
-  }
+// Period totals are streamed from Dexie rather than derived from the loaded
+// page, so "Show Stats" stays correct even when only one page is on screen.
+const filteredStats = ref({
+  totalIn: 0,
+  totalOut: 0,
+  netBalance: 0,
+  openingBalance: 0,
+  closingBalance: 0,
 })
+
+let statsRequest = 0
+
+async function refreshStats() {
+  const request = ++statsRequest
+  const filters = pageFilters.value
+  if (!filters.bookId) return
+
+  try {
+    const [totals, openingBalance] = await Promise.all([
+      transactionStore.getTransactionTotals(filters),
+      selectedFilter.value === "all" || !filters.startDate
+        ? 0
+        : transactionStore.getBalanceBefore(filters.bookId, filters.startDate),
+    ])
+
+    if (request !== statsRequest) return
+
+    filteredStats.value = {
+      totalIn: totals.totalIn,
+      totalOut: totals.totalOut,
+      netBalance: totals.netBalance,
+      openingBalance,
+      closingBalance: openingBalance + totals.netBalance,
+    }
+  } catch (e) {
+    console.error("Failed to calculate transaction stats:", e)
+  }
+}
+
+watch([pageFilters, () => transactionStore.listVersion], refreshStats, { immediate: true })
+
 
 function goToCreateTransaction() {
   router.push({ name: "create-transaction", params: { bookId: bookId.value } })
@@ -652,6 +608,8 @@ const allFilteredSelected = computed(() => {
 })
 
 function toggleSelectAll() {
+  // Selects the rows loaded so far; older pages stay out of memory until the
+  // user loads them.
   if (allFilteredSelected.value) {
     selectedIds.value = []
   } else {
@@ -790,6 +748,7 @@ async function handleRefresh() {
             </button>
             <button
               @click="openFilterModal()"
+              aria-label="Filter transactions"
               class="flex items-center justify-center w-11 rounded-sm bg-white shadow-sm ring-1 ring-gray-200 text-gray-600 hover:bg-gray-50 active:bg-gray-100 relative dark:bg-gray-900 dark:ring-gray-800 dark:text-gray-200 dark:hover:bg-gray-800 dark:active:bg-gray-800"
             >
               <IconFilter />
@@ -817,7 +776,7 @@ async function handleRefresh() {
           <!-- Transactions -->
           <div class="space-y-6">
             <div v-if="monthGroups.length === 0" class="py-10 text-center text-gray-500 dark:text-gray-400">
-              No transactions found.
+              {{ transactionStore.listLoading ? "Loading transactions..." : "No transactions found." }}
             </div>
 
             <section

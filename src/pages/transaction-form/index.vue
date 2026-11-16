@@ -210,10 +210,9 @@ onMounted(async () => {
 
   if (isEdit) {
     const id = parseInt(route.params.id)
-    const transaction = await transactionStore.transactions.find((t) => t.id === id) // Since we have them in store usually
-    // Or fetch from DB if not in store (store only has current book's transactions)
-    // Better to fetch from DB to be safe
-    const t = transaction ? transaction : await db.transactions.get(id)
+    // The list screen only keeps a page of transactions in memory, so read the
+    // row straight from Dexie.
+    const t = await db.transactions.get(id)
     if (t) {
       if (t.attachments && t.attachments.length > 0) {
         transactionAttachments.value = t.attachments

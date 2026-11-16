@@ -141,11 +141,13 @@ These are small fixes with outsized impact, because the app is consumed as an in
 
 ## 4. Performance and data layer
 
-**Progress: 0 of 4 done.**
+**Progress: 1 of 4 done.**
 
-- ⬜ `store/transactionStore.js` loads **every transaction for the book** into memory and filters client-side.
-  Move to Dexie range queries plus pagination — the load-more UI already exists. This matters most on
-  mid-range phones.
+- ✅ `store/transactionStore.js` no longer loads **every transaction for the book** into memory. The list
+  screen now reads a date-ranged window from Dexie through a new compound book-and-date index, applies
+  type, category, payment mode, contact, product and search filters inside the query, and grows by 50-row
+  pages with the existing Load More button. Period stats are streamed from the database rather than
+  computed from the loaded rows. *(Done 16 Nov 2026.)*
 - ⬜ `store/syncStore.js` is **push-only full-DB**, and `sync_status` is written but never cleared. Add
   pull/merge, per-record dirty flags, retry with backoff, and Background Sync.
 - ⬜ `composables/useDatabaseExport.js` import is full-replace with no preview or validation. Add a
@@ -162,7 +164,8 @@ These are small fixes with outsized impact, because the app is consumed as an in
 4. ✅ **Recurring transactions + budgets** — the features most likely to make the app open daily.
    *(Done 15–16 Nov 2026.)*
 5. ⬜ **Contact ledger + CSV export.**
-6. ⬜ **Sync rewrite + transaction pagination** — do this before the dataset grows.
+6. ⬜ **Sync rewrite** — do this before the dataset grows. The transaction pagination half of this item
+   shipped on 16 Nov 2026; pull/merge, dirty flags and retry are still open.
 
 ---
 
@@ -327,3 +330,34 @@ the Recurring and Budgets tabs stayed centred (scroll position 170) instead of r
 showed the install card and reminders switch, the test notification and the daily reminder both fired with
 "2 scheduled transactions are ready to review.", the reminder was marked as shown for the day, and there
 were no console errors.
+
+### 16 November 2026 — Paged transaction list (performance, part 1 of 4)
+
+Moved the book transaction list off "load the whole book, then filter in the browser":
+
+- Added a database version that indexes transactions by book and date together, so a book plus a date
+  range becomes one key range. Dates are stored as sortable timestamp strings, so range bounds are plain
+  string comparisons.
+- The transaction store gained a paged list: it subscribes to a live window of the query, starts at 50
+  rows and grows by 50 when Load More is pressed. Only that window is held in memory, and the live query
+  re-runs the whole window, so edits, deletes, undo and syncs still update the list instantly.
+- Type, category (including product categories), payment mode, contact, product and text search are all
+  evaluated inside the Dexie query instead of after a full load. One extra row per query tells the list
+  whether another page exists, without a count.
+- The stats panel streams totals from the database across the whole filter range, and the opening balance
+  is a second ranged query of everything before the start date. "Show Stats" is therefore correct even
+  when only the first page is on screen.
+- Bulk "Select all" now selects the loaded rows only, which is the trade-off of not keeping older pages in
+  memory. Selection is cleared when filters change.
+- The charts page keeps the old full-book load, because it needs every row to aggregate. The transaction
+  form now reads the row it is editing straight from the database instead of from the store array.
+
+Verified against a production build with 130 seeded transactions across three months: the new index was
+present after the upgrade, the month view showed 45 rows with no Load More, its stats matched the seed
+exactly (opening, closing, in, out and net), All showed 50 then 100 then 130 rows with Load More
+disappearing, All stats matched the whole dataset, searching "Coffee" returned the expected 39 rows,
+choosing the Food category returned 50 rows and 98 after Load More, deleting and undoing a row updated the
+list live, the edit form opened the correct row with its amount, and charts still rendered.
+
+**Still open in Section 4:** sync pull/merge with dirty flags and retry, import merge-versus-replace with a
+diff summary, and image compression plus lazy loading of the upload chunk.
