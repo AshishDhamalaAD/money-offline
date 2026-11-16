@@ -29,7 +29,7 @@ These are small fixes with outsized impact, because the app is consumed as an in
 
 ## 2. Mobile UX upgrades to existing features
 
-**Progress: 10 of 21 done.**
+**Progress: 16 of 21 done.**
 
 ### Entry flow — highest value, this is used daily
 
@@ -50,12 +50,23 @@ These are small fixes with outsized impact, because the app is consumed as an in
 
 ### Transaction list — `book-details/index.vue`
 
-- ⬜ Swipe left = delete, swipe right = edit / duplicate (additive to the existing long-press action sheet).
-- ⬜ **Undo snackbar** after delete instead of the current irreversible flow.
-- ⬜ Bulk-select mode for multi-delete / multi-move.
-- ⬜ Sticky month headers plus a jump-to-month scrubber.
-- ⬜ Pull-to-refresh that triggers a sync.
-- ⬜ Attachment viewer directly from the card (currently attachments aren't tappable).
+- ✅ **Swipe actions** — swipe left reveals Delete; swipe right reveals Edit and Duplicate. Only one row
+  stays open at a time, and the long-press action sheet still offers Copy, Move, Duplicate and Delete. A
+  short guard after a long press stops the releasing tap from immediately closing the sheet.
+- ✅ **Undo snackbar** after delete instead of the old irreversible flow. Deletes happen immediately and a
+  bottom snackbar offers Undo for five seconds; deletes made while it is visible are grouped, so one Undo
+  restores them all. The delete confirmation modal is gone.
+- ✅ **Bulk-select mode** for multi-delete / multi-move. A select button next to the filters turns rows into
+  checkboxes and shows a bar with the count, Select all / Clear, Move and Delete. The quick-add button
+  hides while selecting, multi-delete uses the same undo snackbar, and multi-move reuses the target-book
+  dialog.
+- ✅ **Sticky month headers** plus a jump-to-month scrubber. Transactions are grouped by month with a sticky
+  header showing the month total, day groups below it, and a right-edge month rail that highlights the
+  active month and scrolls to it on tap.
+- ✅ **Pull-to-refresh** that triggers a sync, with pull / release / refreshing states and a toast for the
+  result.
+- ✅ **Attachment viewer** directly from the card: thumbnails are tappable and open a full-screen viewer
+  with a counter, previous / next arrows, swipe navigation and a close button, without opening the entry.
 
 ### Navigation and chrome
 
@@ -190,9 +201,8 @@ Verified against a production build: the amount-only path saves correctly, the p
 categories and payment mode are preselected, the discard prompt appears on back and cancelling it keeps
 you on the form, and validation errors surface as a toast without leaving the form.
 
-**Still open in Section 2:** the transaction-list items, including swipe actions, undo delete, bulk select,
-sticky month headers, pull-to-refresh and the attachment viewer; pull-to-refresh / haptics / scroll
-restoration; global search; and locale-aware currency formatting.
+**Still open in Section 2:** haptic feedback on save/delete and scroll-position restoration on back
+(pull-to-refresh now exists on the transaction list); global search; and locale-aware currency formatting.
 
 ### 15 November 2026 — Bottom navigation and dashboard balances (phase 3)
 
@@ -243,3 +253,36 @@ category, payment mode and description already filled, saving that entry creates
 the rule to the next period, month-start and month-end rules land on the 1st and last day, a budget created
 through the UI appears with correct progress, the dashboard rings turn amber and red at the thresholds, and
 deleting a book clears its recurring and budget rows while leaving other books intact.
+
+### 16 November 2026 — Transaction list swipe, undo and bulk actions
+
+Shipped all six transaction-list items from Section 2:
+
+- **Swipe actions** on each row: left reveals Delete, right reveals Edit and Duplicate. Only one row stays
+  open at a time, tapping the card closes it, and the existing long-press sheet still offers Copy, Move,
+  Duplicate and Delete. The sheet now ignores backdrop taps for a moment after opening so the tap that
+  ends a long press cannot close it instantly.
+- **Undo after delete**: deleting is immediate and a bottom snackbar offers Undo for five seconds.
+  Consecutive deletes are grouped into one snackbar, and the delete confirmation dialog was removed.
+- **Bulk select**: a select button beside the filters turns rows into checkboxes and shows a bottom bar
+  with the count, Select all / Clear, Move and Delete. The quick-add button hides during selection,
+  multi-delete gets the same undo, and multi-move reuses the target-book dialog.
+- **Month grouping and navigation**: transactions are grouped by month with a sticky header carrying the
+  month total, day groups underneath, and a right-edge month rail that tracks the month in view and jumps
+  to a month on tap.
+- **Pull-to-refresh**: pulling down at the top of the list runs a sync with pull, release and refreshing
+  states, then reports the result in a toast.
+- **Attachment viewer**: card thumbnails are tappable and open a full-screen viewer with a counter,
+  previous / next arrows, swipe navigation and a close button, without opening the entry.
+
+The transaction store now returns the deleted rows and can restore them by id, which is what makes undo
+work for both single and bulk deletes.
+
+Verified against a production build with 30 seeded transactions across three months: swiping right opened
+the edit tray and Edit navigated to the entry, swiping left opened Delete and removing a row took the
+count from 30 to 29 with the snackbar, Undo restored it to 30 and showed a confirmation toast, long press
+opened the action sheet, bulk select showed the count and Select all, moving two rows changed their book
+and cleared the selection, bulk delete removed two rows and Undo restored both, the month rail jumped to
+September with the header sticking at the page-header edge while scrolling, pull-to-refresh showed the
+release and refreshing states and a result toast, and the attachment viewer opened, reported 1 / 1 and
+closed cleanly.

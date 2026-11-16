@@ -15,6 +15,8 @@
   }
   body {
     @apply bg-gray-50 text-gray-900;
+    /* The transaction list has its own pull-to-refresh gesture. */
+    overscroll-behavior-y: contain;
   }
   :root.dark body {
     @apply bg-gray-950 text-gray-50;

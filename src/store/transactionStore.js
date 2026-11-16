@@ -154,7 +154,36 @@ export const useTransactionStore = defineStore('transaction', () => {
     }
 
     async function deleteTransaction(id) {
+        const snapshot = await db.transactions.get(id)
         await db.transactions.delete(id)
+
+        // Trigger background sync
+        const syncStore = useSyncStore()
+        syncStore.triggerSync()
+
+        // The raw row is returned so the list can offer an undo.
+        return snapshot
+    }
+
+    async function deleteTransactions(ids) {
+        if (!ids || ids.length === 0) return []
+
+        const snapshots = await db.transactions.bulkGet(ids)
+        await db.transactions.bulkDelete(ids)
+
+        // Trigger background sync
+        const syncStore = useSyncStore()
+        syncStore.triggerSync()
+
+        return snapshots.filter(Boolean)
+    }
+
+    async function restoreTransactions(rows) {
+        if (!rows || rows.length === 0) return
+
+        // Bulk put keeps the original ids, so an undo restores the exact rows.
+        const plainRows = JSON.parse(JSON.stringify(rows))
+        await db.transactions.bulkPut(plainRows)
 
         // Trigger background sync
         const syncStore = useSyncStore()
@@ -412,6 +441,8 @@ export const useTransactionStore = defineStore('transaction', () => {
         createTransaction,
         updateTransaction,
         deleteTransaction,
+        deleteTransactions,
+        restoreTransactions,
         stats,
         getFilteredTransactions,
         copyTransaction,

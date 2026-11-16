@@ -14,6 +14,8 @@ const props = defineProps({
   },
 })
 
+const emit = defineEmits(["view-attachments"])
+
 const formattedTime = computed(() => {
   return formatTime(props.transaction.date)
 })
@@ -137,13 +139,16 @@ const allImages = computed(() => {
         'mt-2': transaction.description,
       }"
     >
-      <img
-        v-for="attachment in resizedImageUrls({ imageUrls: allImages })"
+      <button
+        v-for="(attachment, index) in resizedImageUrls({ imageUrls: allImages })"
         :key="`${transaction.id}-${attachment}`"
-        class="w-[30px] h-[30px] object-cover"
-        :src="attachment"
-        loading="lazy"
-      />
+        type="button"
+        class="shrink-0 overflow-hidden rounded-sm ring-1 ring-gray-200 active:opacity-70 dark:ring-gray-700"
+        aria-label="View attachment"
+        @click.stop="emit('view-attachments', { images: allImages, index })"
+      >
+        <img class="h-10 w-10 object-cover" :src="attachment" loading="lazy" />
+      </button>
     </div>
   </div>
 </template>

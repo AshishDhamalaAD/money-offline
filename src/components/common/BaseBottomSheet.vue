@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, onUnmounted, watch } from "vue"
+import { onMounted, onUnmounted, ref, watch } from "vue"
 
 const props = defineProps({
   modelValue: {
@@ -14,9 +14,25 @@ const props = defineProps({
 
 const emit = defineEmits(["update:modelValue", "close"])
 
+// A long-press that opens the sheet can end with a ghost click on the
+// backdrop. Ignore backdrop taps for a moment after opening.
+const openedAt = ref(0)
+
+watch(
+  () => props.modelValue,
+  (isOpen) => {
+    if (isOpen) openedAt.value = Date.now()
+  },
+)
+
 function close() {
   emit("update:modelValue", false)
   emit("close")
+}
+
+function onBackdropClick() {
+  if (Date.now() - openedAt.value < 350) return
+  close()
 }
 
 // Close on escape key
@@ -51,7 +67,7 @@ watch(
   <Teleport to="body">
     <div v-if="modelValue" class="relative z-50" role="dialog" aria-modal="true">
       <!-- Backdrop -->
-      <div class="fixed inset-0 bg-black/50 transition-opacity" @click="close"></div>
+      <div class="fixed inset-0 bg-black/50 transition-opacity" @click="onBackdropClick"></div>
 
       <!-- Sheet -->
       <div
