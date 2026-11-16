@@ -3,7 +3,7 @@ import { db } from '@/db/dexie'
 
 export function useDatabaseExport() {
     async function getDatabaseDump(onProgress) {
-        const tables = ["books", "transactions", "categories", "contacts", "payment_modes", "products", "product_rates"]
+        const tables = ["books", "transactions", "categories", "contacts", "payment_modes", "products", "product_rates", "recurring_transactions", "budgets"]
         const exportData = {
             version: 5,
             exportDate: formatDateTimeForDB(),

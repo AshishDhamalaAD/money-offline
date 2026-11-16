@@ -56,3 +56,8 @@ db.version(9).stores({
 db.version(10).stores({
     product_rates: '++id, product_id, rate, created_at, updated_at'
 });
+
+db.version(11).stores({
+    recurring_transactions: '++id, book_id, active, next_due_date, sync_status',
+    budgets: '++id, book_id, category_id, sync_status'
+});

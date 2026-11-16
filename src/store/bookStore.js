@@ -41,6 +41,8 @@ export const useBookStore = defineStore('book', () => {
         await db.categories.where('book_id').equals(id).delete()
         await db.products.where('book_id').equals(id).delete()
         await db.payment_modes.where('book_id').equals(id).delete()
+        await db.recurring_transactions.where('book_id').equals(id).delete()
+        await db.budgets.where('book_id').equals(id).delete()
 
         // Shortcuts must not point at a book that no longer exists
         if (getLastBookId() === id) {

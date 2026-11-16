@@ -16,12 +16,16 @@ const tabs = [
   { id: "products", label: "Products", routeName: "book-settings-products" },
   { id: "categories", label: "Categories", routeName: "book-settings-categories" },
   { id: "payment-modes", label: "Payment Modes", routeName: "book-settings-payment-modes" },
+  { id: "budgets", label: "Budgets", routeName: "book-settings-budgets" },
+  { id: "recurring", label: "Recurring", routeName: "book-settings-recurring" },
 ]
 
 const activeTab = computed(() => {
   if (route.name?.includes("products")) return "products"
   if (route.name?.includes("categories")) return "categories"
   if (route.name?.includes("payment-modes")) return "payment-modes"
+  if (route.name?.includes("budgets")) return "budgets"
+  if (route.name?.includes("recurring")) return "recurring"
   return "products"
 })
 

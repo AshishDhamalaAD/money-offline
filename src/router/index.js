@@ -70,6 +70,38 @@ const router = createRouter({
             name: 'book-settings-payment-modes-edit',
             component: () => import('@/pages/book-settings/payment-modes/PaymentModeForm.vue')
         },
+        // Budgets
+        {
+            path: '/book/:bookId/settings/budgets',
+            name: 'book-settings-budgets',
+            component: () => import('@/pages/book-settings/budgets/BudgetList.vue')
+        },
+        {
+            path: '/book/:bookId/settings/budgets/new',
+            name: 'book-settings-budgets-new',
+            component: () => import('@/pages/book-settings/budgets/BudgetForm.vue')
+        },
+        {
+            path: '/book/:bookId/settings/budgets/:id/edit',
+            name: 'book-settings-budgets-edit',
+            component: () => import('@/pages/book-settings/budgets/BudgetForm.vue')
+        },
+        // Recurring transactions
+        {
+            path: '/book/:bookId/settings/recurring',
+            name: 'book-settings-recurring',
+            component: () => import('@/pages/book-settings/recurring/RecurringList.vue')
+        },
+        {
+            path: '/book/:bookId/settings/recurring/new',
+            name: 'book-settings-recurring-new',
+            component: () => import('@/pages/book-settings/recurring/RecurringForm.vue')
+        },
+        {
+            path: '/book/:bookId/settings/recurring/:id/edit',
+            name: 'book-settings-recurring-edit',
+            component: () => import('@/pages/book-settings/recurring/RecurringForm.vue')
+        },
         {
             path: '/book/:bookId/products/:productId/history',
             name: 'product-rates-history',

@@ -6,6 +6,7 @@ import { useSettingsStore } from "@/store/settingsStore"
 import BiometricLock from "@/components/common/BiometricLock.vue"
 import PinLock from "@/components/common/PinLock.vue"
 import PwaUpdatePrompt from "@/components/common/PwaUpdatePrompt.vue"
+import RecurringDuePrompt from "@/components/common/RecurringDuePrompt.vue"
 import BottomNav from "@/components/layout/BottomNav.vue"
 
 const settingsStore = useSettingsStore()
@@ -103,6 +104,8 @@ function switchToPin() {
     <RouterView />
 
     <BottomNav v-if="route.meta.tab && !isLocked" />
+
+    <RecurringDuePrompt v-if="!isLocked" />
 
     <PwaUpdatePrompt />
   </div>

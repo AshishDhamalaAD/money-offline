@@ -83,12 +83,14 @@ These are small fixes with outsized impact, because the app is consumed as an in
 
 ## 3. New mobile-first features
 
-**Progress: 0 of 17 done.**
+**Progress: 2 of 17 done.**
 
 ### Habit-forming (drives daily use)
 
-- ⬜ **Recurring transactions** — rent, salary, subscriptions, with a "due today" prompt on app open.
-- ⬜ **Budgets per category** with a progress ring on the dashboard and warnings at 80% / 100%.
+- ✅ **Recurring transactions** — rent, salary, subscriptions, with a "due today" prompt on app open.
+  *(Done 15–16 Nov 2026.)*
+- ✅ **Budgets per category** with a progress ring on the dashboard and warnings at 80% / 100%.
+  *(Done 15–16 Nov 2026.)*
 - ⬜ **Savings goals** with contribution tracking.
 - ⬜ **Transaction templates / favourites** — one tap to re-add a regular expense.
 - ⬜ A "Today" summary card pinned to the top of the dashboard.
@@ -139,7 +141,8 @@ These are small fixes with outsized impact, because the app is consumed as an in
 1. ✅ **PWA correctness** — manifest and icons, safe-area, theme-color, update prompt. *(Done 15 Nov 2026.)*
 2. ✅ **Entry flow polish** — inputmode, unsaved guard, non-blocking dialogs. *(Done 15 Nov 2026.)*
 3. ✅ **Bottom navigation + dashboard balances.** *(Done 15 Nov 2026.)*
-4. ⬜ **Recurring transactions + budgets** — the features most likely to make the app open daily.
+4. ✅ **Recurring transactions + budgets** — the features most likely to make the app open daily.
+   *(Done 15–16 Nov 2026.)*
 5. ⬜ **Contact ledger + CSV export.**
 6. ⬜ **Sync rewrite + transaction pagination** — do this before the dataset grows.
 
@@ -211,3 +214,32 @@ Verified against a production build with seeded data: totals, per-book balances 
 the underlying transactions, the nav highlights the right tab on each screen, it disappears on the entry
 form, the quick-add button targets the remembered book after visiting a different book, the raised button
 clears the nav, and deleting the remembered book clears the stored shortcut.
+
+### 15–16 November 2026 — Recurring transactions and budgets (phase 4)
+
+Shipped the two habit-forming items from Section 3:
+
+- **Recurring transactions** reuse the transaction form itself: type, amount, category, payment mode,
+  contact, products, discount/charge and a multiline description, plus a repeat frequency (daily, weekly,
+  monthly, start of month, end of month, yearly) and a start date. They are managed from a new Recurring
+  tab in book settings, where each rule shows its next date, can be paused and resumed, edited or deleted.
+- On app open, an **app-level due sheet** lists every active rule whose next date has arrived, across all
+  books. Each row shows the book, amount, due date and how many periods are outstanding; "Review" opens
+  the transaction form prefilled with the rule, with any line items already expanded, so the entry can be
+  checked or changed before saving, and "Later" dismisses the sheet for the session.
+- Saving a reviewed entry **advances that rule by one period**. If several periods were missed, the rule
+  stays due and is offered again, so each missed entry is reviewed rather than bulk-created.
+- **Monthly budgets per category** live under a new Budgets tab. Each category can have one limit, and the
+  list shows a ring, amount spent versus limit and an amber warning at 80% or a red over-budget note at
+  100%.
+- The dashboard gained a **budget card** for the last-used book: up to four category rings with spend,
+  plus a single warning line when any budget is near or over its limit. "Manage" jumps to the budget list.
+- Recurring rules and budgets are included in the JSON backup, and deleting a book removes its rules and
+  budgets along with the rest of that book's data.
+
+Verified against a production build with seeded data: the due sheet appears on open with the right
+outstanding counts, "Later" closes it, "Review" opens the transaction form with the rule's amount, date,
+category, payment mode and description already filled, saving that entry creates the transaction and moves
+the rule to the next period, month-start and month-end rules land on the 1st and last day, a budget created
+through the UI appears with correct progress, the dashboard rings turn amber and red at the thresholds, and
+deleting a book clears its recurring and budget rows while leaving other books intact.
