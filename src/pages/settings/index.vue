@@ -10,6 +10,8 @@ import ContactsManager from "@/pages/settings/ContactsManager.vue"
 import ResetDatabase from "@/pages/settings/ResetDatabase.vue"
 import SecuritySettings from "@/pages/settings/SecuritySettings.vue"
 import ThemeSettings from "@/pages/settings/ThemeSettings.vue"
+import AppSettings from "@/pages/settings/AppSettings.vue"
+import { useCenteredTab } from "@/composables/useCenteredTab"
 
 const router = useRouter()
 const route = useRoute()
@@ -17,12 +19,15 @@ const route = useRoute()
 const tabs = [
   { id: "contacts", label: "Manage Contacts" },
   { id: "appearance", label: "Appearance" },
+  { id: "app", label: "App" },
   { id: "security", label: "Security" },
   { id: "data", label: "Import / Export" },
   { id: "reset", label: "Reset Database" },
 ]
 const tabIds = tabs.map((tab) => tab.id)
 const activeTab = ref(tabIds.includes(route.query.tab) ? route.query.tab : "contacts")
+
+const { scroller, registerButton } = useCenteredTab(activeTab)
 
 // Watch for tab changes to update URL
 watch(activeTab, (newTab) => {
@@ -46,10 +51,11 @@ watch(
 
     <main class="p-4 space-y-6">
       <!-- Tabs -->
-      <div class="flex overflow-x-auto pb-2 pt-1 px-1 gap-2 no-scrollbar -mx-1">
+      <div ref="scroller" class="flex overflow-x-auto pb-2 pt-1 px-1 gap-2 no-scrollbar -mx-1">
         <button
           v-for="tab in tabs"
           :key="tab.id"
+          :ref="registerButton(tab.id)"
           @click="activeTab = tab.id"
           :class="[
             'rounded-full px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors',
@@ -70,6 +76,11 @@ watch(
       <!-- Appearance -->
       <div v-if="activeTab === 'appearance'">
         <ThemeSettings />
+      </div>
+
+      <!-- Install & reminders -->
+      <div v-if="activeTab === 'app'">
+        <AppSettings />
       </div>
 
       <!-- Database Backup & Restore -->

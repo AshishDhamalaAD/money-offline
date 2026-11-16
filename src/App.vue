@@ -1,15 +1,20 @@
 <script setup>
-import { onMounted, ref, watch } from "vue"
+import { onMounted, onUnmounted, ref, watch } from "vue"
 import { RouterView, useRoute } from "vue-router"
 
 import { useSettingsStore } from "@/store/settingsStore"
+import { useAppBadge } from "@/composables/useAppBadge"
+import { useReminders } from "@/composables/useReminders"
 import BiometricLock from "@/components/common/BiometricLock.vue"
 import PinLock from "@/components/common/PinLock.vue"
 import PwaUpdatePrompt from "@/components/common/PwaUpdatePrompt.vue"
 import RecurringDuePrompt from "@/components/common/RecurringDuePrompt.vue"
+import InstallPrompt from "@/components/common/InstallPrompt.vue"
 import BottomNav from "@/components/layout/BottomNav.vue"
 
 const settingsStore = useSettingsStore()
+const appBadge = useAppBadge()
+const reminders = useReminders()
 const route = useRoute()
 const isLocked = ref(false)
 const lockType = ref(null) // 'biometric' | 'pin'
@@ -82,6 +87,17 @@ onMounted(async () => {
 
   // Periodic check for inactivity while in foreground
   checkInterval.value = setInterval(checkAutoLock, 10000) // Check every 10 seconds
+
+  // Home-screen badge and the optional daily reminder both track due recurring
+  // entries, so they start with the app and react to live data changes.
+  appBadge.start()
+  reminders.start()
+})
+
+onUnmounted(() => {
+  appBadge.stop()
+  reminders.stop()
+  if (checkInterval.value) clearInterval(checkInterval.value)
 })
 
 function onUnlocked() {
@@ -106,6 +122,8 @@ function switchToPin() {
     <BottomNav v-if="route.meta.tab && !isLocked" />
 
     <RecurringDuePrompt v-if="!isLocked" />
+
+    <InstallPrompt v-if="!isLocked" />
 
     <PwaUpdatePrompt />
   </div>

@@ -12,12 +12,15 @@ export const useSettingsStore = defineStore('settings', () => {
     const autoLockTimeout = ref(0) // 0 means immediate/on-startup, others are minutes
     const initialized = ref(false)
     const themePreference = ref("system")
+    const remindersEnabled = ref(false)
+    const reminderTime = ref("09:00")
+    const reminderLastShown = ref("")
     let systemMediaQuery = null
 
     async function init() {
         if (initialized.value) return
         try {
-            const [endpoint, token, bioEnabled, bioCredId, pinEn, pin, timeout, theme] = await Promise.all([
+            const [endpoint, token, bioEnabled, bioCredId, pinEn, pin, timeout, theme, reminders, reminderAt, reminderShown] = await Promise.all([
                 db.settings.get("apiEndpoint"),
                 db.settings.get("apiToken"),
                 db.settings.get("biometricEnabled"),
@@ -25,7 +28,10 @@ export const useSettingsStore = defineStore('settings', () => {
                 db.settings.get("pinEnabled"),
                 db.settings.get("pinCode"),
                 db.settings.get("autoLockTimeout"),
-                db.settings.get("themePreference")
+                db.settings.get("themePreference"),
+                db.settings.get("remindersEnabled"),
+                db.settings.get("reminderTime"),
+                db.settings.get("reminderLastShown")
             ])
 
             if (endpoint) apiEndpoint.value = endpoint.value
@@ -36,6 +42,9 @@ export const useSettingsStore = defineStore('settings', () => {
             if (pin) pinCode.value = pin.value
             if (timeout) autoLockTimeout.value = timeout.value
             if (theme?.value) themePreference.value = theme.value
+            if (reminders) remindersEnabled.value = Boolean(reminders.value)
+            if (reminderAt?.value) reminderTime.value = reminderAt.value
+            if (reminderShown?.value) reminderLastShown.value = reminderShown.value
 
             applyTheme(themePreference.value)
         } catch (e) {
@@ -232,6 +241,41 @@ export const useSettingsStore = defineStore('settings', () => {
         }
     }
 
+    async function setRemindersEnabled(enabled) {
+        try {
+            await db.settings.put({ key: "remindersEnabled", value: Boolean(enabled) })
+            remindersEnabled.value = Boolean(enabled)
+
+            // Turning reminders on should be able to notify later the same day.
+            if (enabled) await markReminderShown("")
+
+            return { success: true }
+        } catch (error) {
+            return { success: false, message: error.message }
+        }
+    }
+
+    async function setReminderTime(time) {
+        try {
+            const value = /^\d{2}:\d{2}$/.test(time) ? time : "09:00"
+            await db.settings.put({ key: "reminderTime", value })
+            reminderTime.value = value
+            return { success: true }
+        } catch (error) {
+            return { success: false, message: error.message }
+        }
+    }
+
+    async function markReminderShown(date) {
+        try {
+            await db.settings.put({ key: "reminderLastShown", value: date || "" })
+            reminderLastShown.value = date || ""
+            return { success: true }
+        } catch (error) {
+            return { success: false, message: error.message }
+        }
+    }
+
     return {
         apiEndpoint,
         apiToken,
@@ -242,6 +286,9 @@ export const useSettingsStore = defineStore('settings', () => {
         autoLockTimeout,
         initialized,
         themePreference,
+        remindersEnabled,
+        reminderTime,
+        reminderLastShown,
         init,
         saveSettings,
         registerBiometric,
@@ -252,6 +299,9 @@ export const useSettingsStore = defineStore('settings', () => {
         disablePin,
         setAutoLockTimeout,
         setThemePreference,
+        setRemindersEnabled,
+        setReminderTime,
+        markReminderShown,
         applyTheme,
         resolveTheme
     }

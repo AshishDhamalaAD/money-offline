@@ -94,7 +94,7 @@ These are small fixes with outsized impact, because the app is consumed as an in
 
 ## 3. New mobile-first features
 
-**Progress: 2 of 17 done.**
+**Progress: 5 of 17 done.**
 
 ### Habit-forming (drives daily use)
 
@@ -126,9 +126,16 @@ These are small fixes with outsized impact, because the app is consumed as an in
 
 - ⬜ Manifest `shortcuts` ("Add expense", "Add income"), `share_target` (share a receipt image into the app),
   and `screenshots` for a richer install prompt.
-- ⬜ Custom **install prompt** with iOS "Add to Home Screen" instructions.
-- ⬜ App badge with today's transaction count.
-- ⬜ Optional push/reminder notifications.
+- ✅ Custom **install prompt** with iOS "Add to Home Screen" instructions. A dismissible card offers Install
+  where the browser supports it, shows the Safari Share → Add to Home Screen steps on iOS, and stays quiet
+  for two weeks after "Not now". The Settings App tab keeps the install action and instructions available
+  afterwards.
+- ✅ App badge showing how many **scheduled recurring transactions are waiting to be created**. It follows
+  the same due rules as the in-app prompt, updates live when a rule is paused, resumed or completed, and
+  clears when nothing is due.
+- ✅ Optional **reminder notifications**. Turning them on asks for permission, sends one daily reminder at a
+  chosen time when something is due, and offers a test notification. The service worker focuses or opens
+  the app when a notification is tapped, and also handles push payloads for a future server sender.
 
 ---
 
@@ -286,3 +293,37 @@ and cleared the selection, bulk delete removed two rows and Undo restored both, 
 September with the header sticking at the page-header edge while scrolling, pull-to-refresh showed the
 release and refreshing states and a result toast, and the attachment viewer opened, reported 1 / 1 and
 closed cleanly.
+
+### 16 November 2026 — PWA-native extras and settings tab scrolling
+
+Shipped the three PWA extras from Section 3 (the manifest shortcuts / share target / screenshots item is
+still open):
+
+- **Custom install prompt**: a dismissible card appears shortly after load when the browser offers an
+  install event, with an Install button, and shows Safari's Share → Add to Home Screen steps on iOS.
+  "Not now" hides it for two weeks. A new **App** tab in Settings keeps the install action, iOS steps and
+  an "installed" state available after the card is gone.
+- **App badge**: the home-screen icon now shows how many scheduled recurring transactions are waiting to
+  be created, matching the rules the in-app due prompt uses. It updates live through Dexie, refreshes when
+  the app returns to the foreground, and clears when nothing is due.
+- **Reminders**: the App tab has a switch, a reminder time and a test button. Enabling it requests
+  notification permission; once a day, at or after the chosen time, the app sends one notification when
+  something is due, and remembers that it already fired that day. Reminders are local notifications rather
+  than a server push — the service worker now also handles push payloads and focuses or opens the app when
+  a notification is tapped.
+- The service worker moved from the generated worker to a small custom one so notification taps and push
+  payloads can be handled. Precaching, cleanup, the update prompt and the SPA navigation fallback behave
+  as before.
+- Fixed the horizontally scrolling tab strips in book settings (Products, Categories, Payment Modes,
+  Budgets, Recurring) and the main Settings tabs. Each route change mounted a fresh strip at its start, so
+  opening Recurring or Budgets showed the right page while the strip jumped back to Products and
+  Categories. The active tab is now centred in view on mount and whenever it changes.
+
+Verified against a production build with two due recurring rules, one future rule and one paused rule: the
+worker registered and controlled the page with a populated precache, the badge reported 2, paused and
+resumed a rule to move it to 1 and back to 2, a simulated install event showed the banner and "Not now"
+stored the two-week dismissal, an iPhone user agent showed the Share → Add to Home Screen instructions,
+the Recurring and Budgets tabs stayed centred (scroll position 170) instead of resetting, the App tab
+showed the install card and reminders switch, the test notification and the daily reminder both fired with
+"2 scheduled transactions are ready to review.", the reminder was marked as shown for the day, and there
+were no console errors.

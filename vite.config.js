@@ -15,14 +15,17 @@ export default defineConfig({
         vue(),
         tailwindcss(),
         VitePWA({
-            // Registration is handled in app code (PwaUpdatePrompt.vue) so a
-            // "new version available" prompt can be shown instead of silently
-            // reloading the user's session.
+            // A custom worker adds notification-click and push handlers on top
+            // of precaching. Registration is handled in app code
+            // (PwaUpdatePrompt.vue) so a "new version available" prompt can be
+            // shown instead of silently reloading the user's session.
+            strategies: 'injectManifest',
+            srcDir: 'src',
+            filename: 'sw.js',
             registerType: 'prompt',
             injectRegister: null,
-            workbox: {
-                cleanupOutdatedCaches: true,
-                clientsClaim: true
+            injectManifest: {
+                globPatterns: ['**/*.{js,css,html,png,ico,svg,webmanifest}']
             },
             includeAssets: [
                 'favicon.ico',

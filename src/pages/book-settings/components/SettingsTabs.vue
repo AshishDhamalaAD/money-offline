@@ -2,6 +2,8 @@
 import { computed } from "vue"
 import { useRoute, useRouter } from "vue-router"
 
+import { useCenteredTab } from "@/composables/useCenteredTab"
+
 const props = defineProps({
   bookId: {
     type: [Number, String],
@@ -29,6 +31,10 @@ const activeTab = computed(() => {
   return "products"
 })
 
+// Each tab is a separate route, so the strip remounts at its start. Centre the
+// active tab instead of leaving Budgets / Recurring hidden off-screen.
+const { scroller, registerButton } = useCenteredTab(activeTab)
+
 function navigateToTab(tab) {
   router.push({
     name: tab.routeName,
@@ -38,10 +44,11 @@ function navigateToTab(tab) {
 </script>
 
 <template>
-  <div class="flex overflow-x-auto pb-2 pt-1 px-1 gap-2 no-scrollbar -mx-1">
+  <div ref="scroller" class="flex overflow-x-auto pb-2 pt-1 px-1 gap-2 no-scrollbar -mx-1">
     <button
       v-for="tab in tabs"
       :key="tab.id"
+      :ref="registerButton(tab.id)"
       @click="navigateToTab(tab)"
       :class="[
         'rounded-full px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors',
