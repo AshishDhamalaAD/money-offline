@@ -163,14 +163,19 @@ async function testNotification() {
           :aria-checked="remindersOn ? 'true' : 'false'"
           aria-label="Recurring reminders"
           :disabled="saving"
-          class="relative mt-1 h-7 w-12 shrink-0 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 dark:focus:ring-offset-gray-900"
-          :class="remindersOn ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-gray-700'"
+          :class="[
+            remindersOn ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-gray-700',
+            'relative mt-1 inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 disabled:opacity-50 dark:focus:ring-offset-gray-900',
+          ]"
           @click="toggleReminders"
         >
           <span
-            class="absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform"
-            :class="remindersOn ? 'translate-x-5' : 'translate-x-0.5'"
-          ></span>
+            aria-hidden="true"
+            :class="[
+              remindersOn ? 'translate-x-5' : 'translate-x-0',
+              'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out dark:bg-gray-300',
+            ]"
+          />
         </button>
       </div>
 
