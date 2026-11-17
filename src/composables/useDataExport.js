@@ -47,18 +47,35 @@ export function canShareFiles() {
   }
 }
 
+// Dates are stored as "YYYY-MM-DD HH:mm:ss" strings, so the filter bounds are
+// plain strings and both ends of the chosen range are inclusive.
+function dateBounds(startDate, endDate) {
+  return [startDate ? `${startDate} 00:00:00` : null, endDate ? `${endDate} 23:59:59` : null]
+}
+
+function selectTransactions(bookId, startDate, endDate) {
+  const allBooks = bookId === "all"
+  const numericId = allBooks ? null : Number(bookId)
+  const [start, end] = dateBounds(startDate, endDate)
+
+  if (allBooks) {
+    return start || end
+      ? db.transactions.where("date").between(start ?? Dexie.minKey, end ?? Dexie.maxKey)
+      : db.transactions.orderBy("date")
+  }
+
+  return db.transactions
+    .where("[book_id+date]")
+    .between([numericId, start ?? Dexie.minKey], [numericId, end ?? Dexie.maxKey])
+}
+
 export function useDataExport() {
-  async function collect(bookId) {
+  async function collect({ bookId, startDate = "", endDate = "" }) {
     const allBooks = bookId === "all"
     const numericId = allBooks ? null : Number(bookId)
 
     const [transactions, books, categories, contacts, paymentModes, products] = await Promise.all([
-      allBooks
-        ? db.transactions.orderBy("date").toArray()
-        : db.transactions
-            .where("[book_id+date]")
-            .between([numericId, Dexie.minKey], [numericId, Dexie.maxKey])
-            .toArray(),
+      selectTransactions(bookId, startDate, endDate).toArray(),
       db.books.toArray(),
       db.categories.toArray(),
       db.contacts.toArray(),
@@ -115,8 +132,8 @@ export function useDataExport() {
     return { rows, includeBook: allBooks, bookName, rangeLabel }
   }
 
-  async function buildCsvFile(bookId) {
-    const { rows, includeBook, bookName } = await collect(bookId)
+  async function buildCsvFile(filters) {
+    const { rows, includeBook, bookName } = await collect(filters)
 
     const headers = [
       "Date",
@@ -153,8 +170,8 @@ export function useDataExport() {
     return new File([blob], fileName(bookName, "csv"), { type: "text/csv" })
   }
 
-  async function buildPdfFile(bookId) {
-    const { rows, includeBook, bookName, rangeLabel } = await collect(bookId)
+  async function buildPdfFile(filters) {
+    const { rows, includeBook, bookName, rangeLabel } = await collect(filters)
 
     const income = roundAmount(
       rows.filter((row) => row.isIncome).reduce((total, row) => total + row.amount, 0),
@@ -177,9 +194,8 @@ export function useDataExport() {
     return new File([blob], fileName(bookName, "pdf"), { type: "application/pdf" })
   }
 
-  async function countTransactions(bookId) {
-    if (bookId === "all") return db.transactions.count()
-    return db.transactions.where("book_id").equals(Number(bookId)).count()
+  async function countTransactions({ bookId, startDate = "", endDate = "" }) {
+    return selectTransactions(bookId, startDate, endDate).count()
   }
 
   async function shareOrDownload(file) {

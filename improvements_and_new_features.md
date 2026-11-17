@@ -112,8 +112,8 @@ These are small fixes with outsized impact, because the app is consumed as an in
   field already makes this data available.
 - ⬜ **Payment-mode reconciliation** — opening/closing balance per cash/wallet account.
 - ⬜ **Soft delete + Trash** so deletes are recoverable.
-- ✅ **CSV / PDF export** and share-sheet export — pick a book or all books, then share the file into
-  WhatsApp, Mail or Files, or download it. JSON backup stays in `DatabaseBackup.vue`.
+- ✅ **CSV / PDF export** and share-sheet export — pick a book or all books, narrow it to a period, then
+  share the file into WhatsApp, Mail or Files, or download it. JSON backup stays in `DatabaseBackup.vue`.
   *(Done 17 Nov 2026.)*
 - ⬜ **Receipt OCR** to prefill amount, date and merchant.
 - ⬜ **Multi-currency** for travel books.
@@ -444,8 +444,10 @@ The only way to get data out of the app was a full JSON dump, which is a backup,
 send to an accountant or open in a spreadsheet.
 
 - **Where**: a new Export card at the top of Settings → Import / Export, above the existing JSON backup.
-  It has a book selector ("All books" plus each book), a live count of the rows that will be exported, and
-  a row each for CSV and PDF with Share and Download buttons.
+  It has the same period chips as the transaction list (All, This Month, Last Month, Today, Yesterday,
+  This Year, Last Year, Custom Date Range), a book selector ("All books" plus each book), a live count of
+  the rows that will be exported, and a row each for CSV and PDF with Share and Download buttons. When the
+  book and period match nothing, the card says so and the buttons are disabled.
 - **CSV**: every transaction with date, type, book (all-books exports only), category, payment mode,
   contact, description, products, discount, charge and amount. The file is UTF-8 with a byte-order mark so
   Excel detects the encoding, uses CRLF line endings, and quotes any value containing a comma, a quote or a
@@ -465,3 +467,10 @@ PDF was a valid two-page document with two-decimal amounts, correct totals and p
 both pages correctly including the Nepali row; with a mocked share API the CSV and PDF arrived as files with
 the right name, type and size, and when the share was refused the file was downloaded and the toast said so;
 with file sharing unavailable only Download buttons appeared and downloads still worked. No console errors.
+
+The period filter was verified separately: the chips matched the transaction list, "This Year" kept all 45
+rows, "Last Year" dropped to zero, showed "No transactions match this book and period." and disabled both
+formats; a custom 1 Jan – 28 Feb 2026 range counted 15 rows, exported exactly those 15 in the CSV with every
+date inside the range, and produced a one-page PDF labelled 5 Jan 2026 – 25 Feb 2026 whose totals only
+covered that period; combining the same range with the Business book counted 5, and returning to "All" for
+that book restored 15. No console errors.

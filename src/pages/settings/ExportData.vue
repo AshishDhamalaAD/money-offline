@@ -7,12 +7,16 @@ import { useDataExport, canShareFiles } from "@/composables/useDataExport"
 import BaseButton from "@/components/common/BaseButton.vue"
 import BaseSelect from "@/components/common/BaseSelect.vue"
 import BaseToast from "@/components/common/BaseToast.vue"
+import DateRangeTabs from "@/components/common/DateRangeTabs.vue"
 
 const bookStore = useBookStore()
 const { books } = storeToRefs(bookStore)
 const { buildCsvFile, buildPdfFile, countTransactions, shareOrDownload, download } = useDataExport()
 
 const selectedBookId = ref("all")
+const dateFilter = ref("all")
+const startDate = ref("")
+const endDate = ref("")
 const busy = ref("")
 const transactionCount = ref(null)
 const shareSupported = ref(false)
@@ -31,12 +35,30 @@ const bookOptions = computed(() => [
   ...books.value.map((book) => ({ label: book.name, value: book.id })),
 ])
 
+const countLabel = computed(() => {
+  if (transactionCount.value === null) return ""
+  if (transactionCount.value === 0) return "No transactions match this book and period."
+
+  return `${transactionCount.value} transaction${transactionCount.value === 1 ? "" : "s"} in this export.`
+})
+
+const exportFilters = computed(() => ({
+  bookId: selectedBookId.value,
+  startDate: dateFilter.value === "all" ? "" : startDate.value,
+  endDate: dateFilter.value === "all" ? "" : endDate.value,
+}))
+
+let countRequest = 0
+
 async function refreshCount() {
+  const request = ++countRequest
+
   try {
-    transactionCount.value = await countTransactions(selectedBookId.value)
+    const value = await countTransactions(exportFilters.value)
+    if (request === countRequest) transactionCount.value = value
   } catch (error) {
     console.error("Could not count transactions:", error)
-    transactionCount.value = null
+    if (request === countRequest) transactionCount.value = null
   }
 }
 
@@ -45,7 +67,7 @@ onMounted(() => {
   refreshCount()
 })
 
-watch(selectedBookId, refreshCount)
+watch([selectedBookId, dateFilter, startDate, endDate], refreshCount)
 
 async function run(format, mode) {
   if (busy.value) return
@@ -53,7 +75,8 @@ async function run(format, mode) {
   busy.value = `${format}-${mode}`
 
   try {
-    const file = format === "csv" ? await buildCsvFile(selectedBookId.value) : await buildPdfFile(selectedBookId.value)
+    const file =
+      format === "csv" ? await buildCsvFile(exportFilters.value) : await buildPdfFile(exportFilters.value)
 
     if (mode === "share") {
       const result = await shareOrDownload(file)
@@ -82,11 +105,14 @@ async function run(format, mode) {
         Take your transactions with you as a spreadsheet or a printable statement.
       </p>
 
+      <div class="space-y-1.5">
+        <p class="text-sm font-medium text-gray-700 ml-1 dark:text-gray-200">Period</p>
+        <DateRangeTabs v-model="dateFilter" v-model:start-date="startDate" v-model:end-date="endDate" />
+      </div>
+
       <BaseSelect v-model="selectedBookId" label="Book" :options="bookOptions" />
 
-      <p v-if="transactionCount !== null" class="text-xs text-gray-500 dark:text-gray-400">
-        {{ transactionCount }} transaction{{ transactionCount === 1 ? "" : "s" }} in this export.
-      </p>
+      <p v-if="countLabel" class="text-xs text-gray-500 dark:text-gray-400">{{ countLabel }}</p>
 
       <!-- CSV -->
       <div class="flex flex-wrap items-center justify-between gap-4 border-t border-gray-100 pt-4 dark:border-gray-800">
@@ -100,7 +126,7 @@ async function run(format, mode) {
             v-if="shareSupported"
             size="sm"
             :loading="busy === 'csv-share'"
-            :disabled="!!busy"
+            :disabled="!!busy || transactionCount === 0"
             @click="run('csv', 'share')"
           >
             Share
@@ -109,7 +135,7 @@ async function run(format, mode) {
             size="sm"
             :variant="shareSupported ? 'secondary' : 'primary'"
             :loading="busy === 'csv-download'"
-            :disabled="!!busy"
+            :disabled="!!busy || transactionCount === 0"
             @click="run('csv', 'download')"
           >
             Download
@@ -129,7 +155,7 @@ async function run(format, mode) {
             v-if="shareSupported"
             size="sm"
             :loading="busy === 'pdf-share'"
-            :disabled="!!busy"
+            :disabled="!!busy || transactionCount === 0"
             @click="run('pdf', 'share')"
           >
             Share
@@ -138,7 +164,7 @@ async function run(format, mode) {
             size="sm"
             :variant="shareSupported ? 'secondary' : 'primary'"
             :loading="busy === 'pdf-download'"
-            :disabled="!!busy"
+            :disabled="!!busy || transactionCount === 0"
             @click="run('pdf', 'download')"
           >
             Download
