@@ -15,7 +15,7 @@ import BaseModal from "@/components/common/BaseModal.vue"
 import BaseSearchableSelect from "@/components/common/BaseSearchableSelect.vue"
 import BaseToast from "@/components/common/BaseToast.vue"
 import LightGallery from "@/components/common/LightGallery.vue"
-import ImageUpload from "@/components/common/ImageUpload.vue"
+import ImageUpload from "@/components/common/LazyImageUpload.vue"
 import ProductLineItem from "@/pages/transaction-form/ProductLineItem.vue"
 
 const props = defineProps({

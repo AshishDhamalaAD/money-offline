@@ -1,5 +1,6 @@
 import { db } from "@/db/dexie"
 import { UPLOAD_IMAGE_API_URL } from "@/constants/routes"
+import { compressImage } from "@/utils/imageCompression"
 
 export const uploadService = {
     async uploadImage(file, from) {
@@ -14,8 +15,12 @@ export const uploadService = {
             throw new Error("API Token not configured")
         }
 
+        // Both the camera button and FilePond come through here, so resizing
+        // once at this point covers every upload path.
+        const upload = await compressImage(file)
+
         const formData = new FormData()
-        formData.append("image", file)
+        formData.append("image", upload, upload.name || "image.jpg")
         formData.append("from", from)
 
         const response = await fetch(`${endpoint.value}${UPLOAD_IMAGE_API_URL}`, {

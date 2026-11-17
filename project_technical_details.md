@@ -104,13 +104,14 @@ The engine lives in `src/db/sync/` and is driven by `src/store/syncStore.js`.
 
 Image uploads are handled separately from the main database sync to ensure efficiency.
 
-- **Component**: `ImageUpload.vue` uses **FilePond** for handling file selection, validation (size, type), and previews.
+- **Component**: `ImageUpload.vue` uses **FilePond** for handling file selection, validation (size, type), and previews. FilePond and its preview plugin are the heaviest third-party chunk in the app, so every screen mounts the widget through `LazyImageUpload.vue`: the component is an async import and is only fetched when the uploader scrolls into view (or when the "Add New Product" modal opens). Pages that never show an uploader, and forms where the user never scrolls to it, do not load that chunk at all.
 - **Service**: `uploadService.js` handles the API communication.
 - **Process**:
-  1.  **Validation**: Checks for internet connection, file type (JPG/PNG), and size (<5MB).
-  2.  **Direct Upload**: Images are uploaded immediately to `${apiEndpoint}/upload-image` via POST.
-  3.  **Storage**: The server returns the image URL, which is then stored in the `attachments` array of the respective product or transaction in IndexedDB.
-  4.  **Deletion**: Deleting an image removes the URL from the local database. No delete request is sent to the server (preserves server-side history/backups).
+  1.  **Validation**: Checks for internet connection, file type (JPG/PNG), and size (<20MB). The limit is generous because the next step shrinks the image before it leaves the device.
+  2.  **Compression**: `utils/imageCompression.js` redraws the file on a canvas with its long edge capped at 1600 px and re-encodes it as JPEG at quality 0.8. PNGs keep their format only when they actually contain transparency. Files under 250 KB, animated/vector formats, and anything that fails to decode (for example HEIC) are uploaded untouched, and a result that is not smaller than the original is discarded. Both the camera button and FilePond go through this path, so a 6 MB phone photo typically uploads as a few hundred kilobytes.
+  3.  **Direct Upload**: Images are uploaded immediately to `${apiEndpoint}/upload-image` via POST.
+  4.  **Storage**: The server returns the image URL, which is then stored in the `attachments` array of the respective product or transaction in IndexedDB.
+  5.  **Deletion**: Deleting an image removes the URL from the local database. No delete request is sent to the server (preserves server-side history/backups).
 
 ## 8. Security & Authentication
 

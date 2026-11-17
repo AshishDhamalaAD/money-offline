@@ -159,7 +159,7 @@ const serverOptions = {
         label-idle="Drag & Drop your image or <span class='filepond--label-action'>Browse</span>"
         :allow-multiple="true"
         accepted-file-types="image/jpeg, image/png"
-        max-file-size="5MB"
+        max-file-size="20MB"
         :server="serverOptions"
         credits="false"
       />

@@ -15,7 +15,7 @@ import BaseToast from "@/components/common/BaseToast.vue"
 import LightGallery from "@/components/common/LightGallery.vue"
 import FixedSaveButton from "@/components/common/FixedSaveButton.vue"
 import ProductHistoryButton from "@/components/common/ProductHistoryButton.vue"
-import ImageUpload from "@/components/common/ImageUpload.vue"
+import ImageUpload from "@/components/common/LazyImageUpload.vue"
 import PageLayout from "@/components/layout/PageLayout.vue"
 import PageHeader from "@/components/layout/PageHeader.vue"
 

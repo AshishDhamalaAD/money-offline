@@ -4,7 +4,7 @@
 > prioritised around touch input, small screens, offline behaviour, and daily-use convenience.
 
 **Status legend:** ✅ Done · 🔄 In progress · ⬜ Not started
-**Last updated:** 15 November 2026
+**Last updated:** 17 November 2026
 
 ---
 
@@ -141,7 +141,7 @@ These are small fixes with outsized impact, because the app is consumed as an in
 
 ## 4. Performance and data layer
 
-**Progress: 2 of 4 done.**
+**Progress: 3 of 4 done.**
 
 - ✅ `store/transactionStore.js` no longer loads **every transaction for the book** into memory. The list
   screen now reads a date-ranged window from Dexie through a new compound book-and-date index, applies
@@ -155,7 +155,9 @@ These are small fixes with outsized impact, because the app is consumed as an in
   servers that only accept a full backup keep working unchanged. *(Done 17 Nov 2026.)*
 - ⬜ `composables/useDatabaseExport.js` import is full-replace with no preview or validation. Add a
   merge-vs-replace choice and a diff summary.
-- ⬜ The image upload component is a ~232 KB chunk. Compress before upload and lazy-load it only on the form.
+- ✅ The image upload component is a ~232 KB chunk. Photos are now resized and re-encoded on the device
+  before upload, and the widget is loaded only when it actually comes into view, so opening a form no
+  longer downloads FilePond. *(Done 17 Nov 2026.)*
 
 ---
 
@@ -405,5 +407,30 @@ scheduled a retry, showed the error and the countdown, then succeeded after the 
 service worker received the background sync event and messaged the page; and a server without the changes
 endpoint fell back to a single full-backup upload and marked everything synced. No console errors.
 
-**Still open in Section 4:** import merge-versus-replace with a diff summary, and image compression plus
-lazy loading of the upload chunk.
+**Still open in Section 4:** import merge-versus-replace with a diff summary.
+
+### 17 November 2026 — image compression and lazy upload chunk
+
+Phones were uploading camera photos untouched, and every form that could attach an image downloaded
+FilePond (and its preview plugin) even if the user never scrolled to the uploader.
+
+- **Compression**: a new `utils/imageCompression.js` redraws the file on a canvas with its long edge capped
+  at 1600 px and re-encodes it as JPEG at quality 0.8. PNGs stay PNG only when they really use
+  transparency. Files under 250 KB, animated/vector formats, and anything the browser cannot decode (HEIC,
+  for example) are uploaded as-is, and a result that is not smaller than the original is thrown away.
+  Both the "Take photo" button and FilePond go through `uploadService.uploadImage`, so every path is
+  covered. FilePond's own size limit was raised from 5 MB to 20 MB because the shrinking now happens on
+  the device.
+- **Lazy loading**: a small `LazyImageUpload.vue` wrapper async-imports the widget and mounts it only when
+  an IntersectionObserver says it is about to enter the viewport. The transaction form, the new-product
+  modal inside it (also used by the recurring form) and the product form all use the wrapper.
+- **Result**: the upload chunk is no longer part of the transaction form's initial load. It is fetched
+  when the uploader is scrolled into view, or when the product modal is opened, and never on screens that
+  have no uploader (such as the book list).
+
+Verified on a production build with a mock upload endpoint: opening a transaction did not request the
+upload chunk and rendered no FilePond markup; scrolling to the uploader fetched the chunk and rendered the
+camera button and drop zone; a 6.1 MB 3000×2000 JPEG arrived as a 730 KB 1600×1067 JPEG; a 10.1 MB
+2200×1400 PNG with transparency arrived as a 6.5 MB 1600×1018 PNG; the book list, the recurring form with
+its product modal closed and the un-scrolled transaction form requested no upload chunk; opening the
+product modal did fetch it. No console errors.

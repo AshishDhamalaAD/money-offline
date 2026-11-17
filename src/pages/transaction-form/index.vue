@@ -20,7 +20,7 @@ import FixedSaveButton from "@/components/common/FixedSaveButton.vue"
 import PageLayout from "@/components/layout/PageLayout.vue"
 import PageHeader from "@/components/layout/PageHeader.vue"
 import TransactionFields from "@/pages/transaction-form/TransactionFields.vue"
-import ImageUpload from "@/components/common/ImageUpload.vue"
+import ImageUpload from "@/components/common/LazyImageUpload.vue"
 
 const route = useRoute()
 const router = useRouter()
