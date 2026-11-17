@@ -188,7 +188,17 @@ To ensure consistency across the application, date logic is centralized:
 - **Resolution**: `settingsStore.resolveTheme` listens to `prefers-color-scheme` when set to `system`; `applyTheme` toggles the root `dark` class and `data-theme` attribute for Tailwind and component styling.
 - **UI Surface**: Appearance tab in `Settings` hosts `ThemeSettings.vue`, allowing users to switch themes with immediate persistence and feedback.
 
-## 13. UI Components
+## 13. Data Export
+
+The Settings → Import / Export tab offers CSV and PDF exports of transactions for one book or all books. JSON backup and restore remain in `DatabaseBackup.vue` and are unchanged.
+
+- **UI**: `pages/settings/ExportData.vue` renders a book selector ("All books" plus every book), a live row count, and a CSV and PDF row. Each format has a **Share** button (only when the browser can share files) and a **Download** button, plus a toast that reports the result.
+- **Data collection**: `composables/useDataExport.js` reads transactions from Dexie — a single book through the `[book_id+date]` index, all books ordered by `date` — and joins category, contact, payment-mode and product names from their tables so the files contain readable text instead of numeric ids.
+- **CSV** (`utils/csvExport.js`): UTF-8 with a BOM so Excel detects the encoding, CRLF line endings, and RFC-style quoting for any value containing a comma, quote or newline. Columns: Date, Type, Book (all-books exports only), Category, Payment Mode, Contact, Description, Products, Discount, Charge, Amount. Money columns always carry two decimals.
+- **PDF** (`utils/statementPdf.js`): no PDF library is bundled. Each A4 page is drawn on a canvas with the system font — so Devanagari and other scripts the phone can display render correctly — and embedded as a JPEG in a hand-written PDF. Page one carries the book name, period, generation time and income/expense/net totals; long exports continue on further pages with a repeated table header and "Statement (continued)". The trade-off is that the text is an image and therefore not selectable.
+- **Sharing**: when `navigator.canShare({ files })` accepts the generated `File`, the Share button calls `navigator.share` so the file goes straight into WhatsApp, Mail, Drive or Files. A cancelled share is treated as a no-op; any other failure (including a platform that refuses the gesture) falls back to a normal download so the export is never lost. Browsers without file sharing see only the Download button.
+
+## 14. UI Components
 
 - **BaseSearchableSelect**: Supports multi-select, hides already selected options by default to prevent duplicates, provides search + limit handling, and exposes a clear-all button for quick resets (used in filters and forms).
 - **BaseTable**: Provides search, sorting, pagination, and an exposed `resetPage()` helper so parents can reset pagination after filter changes (e.g., transaction drill-down modal).

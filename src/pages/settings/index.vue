@@ -5,6 +5,7 @@ import { useRouter, useRoute } from "vue-router"
 import PageLayout from "@/components/layout/PageLayout.vue"
 import PageHeader from "@/components/layout/PageHeader.vue"
 import DatabaseBackup from "@/pages/settings/DatabaseBackup.vue"
+import ExportData from "@/pages/settings/ExportData.vue"
 import ServerSync from "@/pages/settings/ServerSync.vue"
 import ContactsManager from "@/pages/settings/ContactsManager.vue"
 import ResetDatabase from "@/pages/settings/ResetDatabase.vue"
@@ -85,6 +86,8 @@ watch(
 
       <!-- Database Backup & Restore -->
       <div v-if="activeTab === 'data'" class="space-y-6">
+        <ExportData />
+
         <DatabaseBackup />
 
         <ServerSync />

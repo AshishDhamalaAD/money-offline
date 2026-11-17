@@ -94,7 +94,7 @@ These are small fixes with outsized impact, because the app is consumed as an in
 
 ## 3. New mobile-first features
 
-**Progress: 5 of 17 done.**
+**Progress: 6 of 17 done.**
 
 ### Habit-forming (drives daily use)
 
@@ -112,7 +112,9 @@ These are small fixes with outsized impact, because the app is consumed as an in
   field already makes this data available.
 - ⬜ **Payment-mode reconciliation** — opening/closing balance per cash/wallet account.
 - ⬜ **Soft delete + Trash** so deletes are recoverable.
-- ⬜ **CSV / PDF export** and share-sheet export (currently JSON-only via `DatabaseBackup.vue`).
+- ✅ **CSV / PDF export** and share-sheet export — pick a book or all books, then share the file into
+  WhatsApp, Mail or Files, or download it. JSON backup stays in `DatabaseBackup.vue`.
+  *(Done 17 Nov 2026.)*
 - ⬜ **Receipt OCR** to prefill amount, date and merchant.
 - ⬜ **Multi-currency** for travel books.
 
@@ -168,7 +170,8 @@ These are small fixes with outsized impact, because the app is consumed as an in
 3. ✅ **Bottom navigation + dashboard balances.** *(Done 15 Nov 2026.)*
 4. ✅ **Recurring transactions + budgets** — the features most likely to make the app open daily.
    *(Done 15–16 Nov 2026.)*
-5. ⬜ **Contact ledger + CSV export.**
+5. ⬜ **Contact ledger + CSV export.** CSV and PDF export shipped on 17 Nov 2026; the contact ledger is
+   still open.
 6. ✅ **Sync rewrite + transaction pagination** — done before the dataset grows. Pagination shipped on
    16 Nov 2026, incremental two-way sync on 17 Nov 2026.
 
@@ -434,3 +437,31 @@ camera button and drop zone; a 6.1 MB 3000×2000 JPEG arrived as a 730 KB 1600×
 2200×1400 PNG with transparency arrived as a 6.5 MB 1600×1018 PNG; the book list, the recurring form with
 its product modal closed and the un-scrolled transaction form requested no upload chunk; opening the
 product modal did fetch it. No console errors.
+
+### 17 November 2026 — CSV and PDF export with share-sheet support
+
+The only way to get data out of the app was a full JSON dump, which is a backup, not something you can
+send to an accountant or open in a spreadsheet.
+
+- **Where**: a new Export card at the top of Settings → Import / Export, above the existing JSON backup.
+  It has a book selector ("All books" plus each book), a live count of the rows that will be exported, and
+  a row each for CSV and PDF with Share and Download buttons.
+- **CSV**: every transaction with date, type, book (all-books exports only), category, payment mode,
+  contact, description, products, discount, charge and amount. The file is UTF-8 with a byte-order mark so
+  Excel detects the encoding, uses CRLF line endings, and quotes any value containing a comma, a quote or a
+  newline. Money columns always show two decimals.
+- **PDF**: a printable A4 statement drawn on a canvas and embedded in a hand-written PDF, so no PDF library
+  is added to the bundle and it works offline. Page one shows the book, period, generation time and
+  income/expense/net totals; long exports continue with a repeated header and "Statement (continued)".
+  Devanagari and other scripts render through the system font. Text is an image, so it is not selectable.
+- **Sharing**: when the browser can share files, Share hands the file to the system share sheet so it can
+  go straight into WhatsApp, Mail, Drive or Files. A cancelled share does nothing; any other failure falls
+  back to a download so the export is not lost. Browsers without file sharing only see Download.
+
+Verified on a production build with a seeded 45-row, two-book database: the card listed both books and
+"All books", the count changed from 45 to 15 when a single book was selected, the CSV carried the BOM, the
+expected header and all 45 rows, kept commas/quotes/newlines intact and preserved a Nepali description; the
+PDF was a valid two-page document with two-decimal amounts, correct totals and page numbers, and rendered
+both pages correctly including the Nepali row; with a mocked share API the CSV and PDF arrived as files with
+the right name, type and size, and when the share was refused the file was downloaded and the toast said so;
+with file sharing unavailable only Download buttons appeared and downloads still worked. No console errors.
