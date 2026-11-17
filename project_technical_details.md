@@ -49,7 +49,7 @@ src/
 
 ## 4. Database Schema (Dexie.js)
 
-The application uses a versioned schema in `src/db/dexie.js`. The current version is **10**.
+The application uses a versioned schema in `src/db/dexie.js`. The current version is **13**.
 
 ### Tables
 
@@ -59,8 +59,10 @@ The application uses a versioned schema in `src/db/dexie.js`. The current versio
 - **contacts**: `++id, name, phone, sync_status, sort, created_at, updated_at`
 - **payment_modes**: `++id, name, description, book_id, sync_status, created_at, updated_at`
 - **products**: `++id, name, rate, description, quantity_type, book_id, category_id, sync_status, created_at, updated_at, attachments`
-- **product_rates**: `++id, product_id, rate, created_at, updated_at` (History of rate changes)
+- **product_rates**: `++id, product_id, rate, created_at, updated_at, sync_status` (History of rate changes)
 - **settings**: `key, value` (Key-value store for app settings like API endpoint, themePreference, biometric flags)
+- **sync_tombstones**: `++id, table, record_id, deleted_at, [table+record_id]` (Local deletions waiting to be pushed)
+- **sync_state**: `key` (Pull cursor, client id, protocol choice and retry state)
 
 > **Note**: `*category_ids` indicates a multi-entry index, allowing efficient querying of transactions by multiple categories.
 
@@ -71,7 +73,7 @@ State is managed using Pinia stores with the Composition API pattern. Stores typ
 1.  **Action**: Component calls a store action (e.g., `createTransaction`).
 2.  **DB Update**: Store action updates Dexie.js.
 3.  **Reactivity**: Store subscribes to Dexie `liveQuery` to automatically update state (`transactions.value`) when the database changes.
-4.  **Sync Trigger**: Store action triggers the `syncStore` to push changes to the server.
+4.  **Sync Trigger**: Dexie change hooks notify the `syncStore`, which schedules a debounced sync.
 
 ### Key Stores
 
@@ -82,16 +84,21 @@ State is managed using Pinia stores with the Composition API pattern. Stores typ
 
 ## 6. Data Synchronization
 
-The synchronization logic is centralized in `src/store/modules/syncStore.js`.
+The engine lives in `src/db/sync/` and is driven by `src/store/syncStore.js`.
 
-- **Trigger**: Sync is triggered automatically after data modification (add/edit/delete) or manually via the Settings page.
-- **Protocol**:
-  1.  **Check Connectivity**: Verifies `navigator.onLine`.
-  2.  **Authentication**: Retrieves `apiEndpoint` and `apiToken` from `settings` table.
-  3.  **Data Dump**: Generates a full JSON dump of the database using `useDatabaseExport`.
-  4.  **Compression**: The JSON dump is compressed using **GZIP** (via `pako`) to minimize bandwidth usage.
-  5.  **Push**: Sends the compressed file (`data.json.gz`) as `FormData` to `${apiEndpoint}/sync-app-data` via POST request.
-- **Status**: Tracks `isSyncing`, `lastSyncTime`, and `error` state.
+- **Sync style**: Settings offers a switch between the original **full backup upload** and **incremental sync**. Full backup is the default, so a server that only implements `POST ${apiEndpoint}/sync-app-data` is never probed for the newer endpoints. Incremental is opt-in once the backend implements the changes endpoints described below. The choice is stored as `syncMode` in the `settings` table.
+- **Trigger**: Writes to any synced table are picked up by Dexie hooks, which schedule a debounced sync (2.5 s). A sync also runs on app start when something is pending or the last sync is older than 15 minutes, when connectivity returns, when the app becomes visible again, on pull-to-refresh, from the Settings button, and when the service worker asks for one.
+- **Dirty flags**: Every synced row carries `sync_status`. Stores write `pending` on create and update; the engine clears it to `synced` only after the server accepts the row.
+- **Deletions**: A deleted row leaves a `sync_tombstones` entry (`table`, `record_id`, `deleted_at`) so the removal can be pushed. Undo removes the matching tombstone.
+- **Protocol** (incremental, only when selected in Settings):
+  1.  **Pull**: `GET ${apiEndpoint}/sync-app-data/changes?since=<cursor>` with `X-TOKEN` and `X-SYNC-CLIENT`, returning `{ serverTime, hasMore, changes: { table: [rows] }, deletions: { table: [{ id, deleted_at }] } }`.
+  2.  **Merge**: Remote rows are applied when their `updated_at` is newer than the local copy; a local edit newer than a remote delete wins and is pushed again. Conflicts are last-writer-wins on the timestamp. Merged rows are stored as `synced`.
+  3.  **Push**: `POST ${apiEndpoint}/sync-app-data/changes` with `{ clientId, pushedAt, changes, deletions }`, in batches of 200 rows. A 2xx means the batch was stored; the client then clears those dirty flags and tombstones.
+  4.  **Cursor**: The server's `serverTime` is stored in `sync_state` and sent as `since` on the next pull.
+- **Fallback**: In incremental mode, a server that answers `404`, `405` or `501` on the changes endpoint — or answers `200` with something that is not a changes payload, such as an HTML app shell — is remembered as `dump`, and sync continues as a GZIP-compressed full database dump POSTed to `${apiEndpoint}/sync-app-data`. Switching incremental sync off and on again clears that memory and probes the changes endpoint once more.
+- **Retries**: Network errors, timeouts, `408`, `429` and `5xx` retry with backoff (2 s, 10 s, 30 s, 2 min, 5 min). `4xx` responses stop retrying until the next manual sync. Attempts and the next retry time persist in `sync_state`.
+- **Background Sync**: After a failure the app registers the `money-sync` tag. The service worker listens for that event and messages open windows to run the sync; browsers without the API retry when the app is next opened or comes online. iOS Safari does not support Background Sync.
+- **Status**: Tracks `isSyncing`, `lastSyncTime`, `error`, `pendingChanges`, `protocol`, `retryAt` and `online`.
 
 ## 7. Image Uploads
 

@@ -1,10 +1,14 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import { db } from '@/db/dexie'
+import { patchSyncState, resetSyncState } from '@/db/sync/state'
 
 export const useSettingsStore = defineStore('settings', () => {
     const apiEndpoint = ref("")
     const apiToken = ref("")
+    // 'dump' is the original full-backup upload. 'incremental' needs the newer
+    // server endpoints, so it stays opt-in until the backend supports them.
+    const syncMode = ref("dump")
     const biometricEnabled = ref(false)
     const biometricCredentialId = ref(null)
     const pinEnabled = ref(false)
@@ -20,7 +24,7 @@ export const useSettingsStore = defineStore('settings', () => {
     async function init() {
         if (initialized.value) return
         try {
-            const [endpoint, token, bioEnabled, bioCredId, pinEn, pin, timeout, theme, reminders, reminderAt, reminderShown] = await Promise.all([
+            const [endpoint, token, bioEnabled, bioCredId, pinEn, pin, timeout, theme, reminders, reminderAt, reminderShown, mode] = await Promise.all([
                 db.settings.get("apiEndpoint"),
                 db.settings.get("apiToken"),
                 db.settings.get("biometricEnabled"),
@@ -31,7 +35,8 @@ export const useSettingsStore = defineStore('settings', () => {
                 db.settings.get("themePreference"),
                 db.settings.get("remindersEnabled"),
                 db.settings.get("reminderTime"),
-                db.settings.get("reminderLastShown")
+                db.settings.get("reminderLastShown"),
+                db.settings.get("syncMode")
             ])
 
             if (endpoint) apiEndpoint.value = endpoint.value
@@ -45,6 +50,7 @@ export const useSettingsStore = defineStore('settings', () => {
             if (reminders) remindersEnabled.value = Boolean(reminders.value)
             if (reminderAt?.value) reminderTime.value = reminderAt.value
             if (reminderShown?.value) reminderLastShown.value = reminderShown.value
+            if (mode?.value === "incremental") syncMode.value = "incremental"
 
             applyTheme(themePreference.value)
         } catch (e) {
@@ -56,10 +62,34 @@ export const useSettingsStore = defineStore('settings', () => {
 
     async function saveSettings(endpoint, token) {
         try {
+            const changed = apiEndpoint.value !== endpoint || apiToken.value !== token
+
             await db.settings.put({ key: "apiEndpoint", value: endpoint })
             await db.settings.put({ key: "apiToken", value: token })
             apiEndpoint.value = endpoint
             apiToken.value = token
+
+            // A new server means the old pull cursor is meaningless.
+            if (changed) await resetSyncState()
+
+            return { success: true }
+        } catch (error) {
+            return { success: false, message: error.message }
+        }
+    }
+
+    async function setSyncMode(mode) {
+        try {
+            const value = mode === "incremental" ? "incremental" : "dump"
+
+            await db.settings.put({ key: "syncMode", value })
+            syncMode.value = value
+
+            // Choosing incremental is an explicit "my server supports this now",
+            // so forget a fallback detected during an earlier attempt and probe
+            // the changes endpoint again on the next sync.
+            if (value === "incremental") await patchSyncState({ protocol: "unknown" })
+
             return { success: true }
         } catch (error) {
             return { success: false, message: error.message }
@@ -279,6 +309,7 @@ export const useSettingsStore = defineStore('settings', () => {
     return {
         apiEndpoint,
         apiToken,
+        syncMode,
         biometricEnabled,
         biometricCredentialId,
         pinEnabled,
@@ -291,6 +322,7 @@ export const useSettingsStore = defineStore('settings', () => {
         reminderLastShown,
         init,
         saveSettings,
+        setSyncMode,
         registerBiometric,
         verifyBiometric,
         disableBiometric,

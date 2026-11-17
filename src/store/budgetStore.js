@@ -4,6 +4,7 @@ import { liveQuery } from 'dexie'
 
 import { formatDateTimeForDB } from '@/utils/dateUtils'
 import { db } from '@/db/dexie'
+import { recordDeletions } from '@/db/sync/dirty'
 
 export const useBudgetStore = defineStore('budget', () => {
     const budgets = ref([])
@@ -59,6 +60,7 @@ export const useBudgetStore = defineStore('budget', () => {
     }
 
     async function deleteBudget(id) {
+        await recordDeletions('budgets', id)
         return await db.budgets.delete(id)
     }
 

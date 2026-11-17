@@ -4,6 +4,7 @@ import { liveQuery } from 'dexie'
 
 import { formatDateTimeForDB } from '@/utils/dateUtils'
 import { db } from '@/db/dexie'
+import { recordDeletions } from '@/db/sync/dirty'
 
 export const useContactStore = defineStore('contact', () => {
     const contacts = ref([])
@@ -40,6 +41,7 @@ export const useContactStore = defineStore('contact', () => {
             throw new Error(`Cannot delete contact. It is being used in ${usageCount} transaction(s).`)
         }
 
+        await recordDeletions('contacts', id)
         return await db.contacts.delete(id)
     }
 

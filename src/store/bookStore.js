@@ -2,6 +2,7 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { liveQuery } from 'dexie'
 import { db } from '@/db/dexie'
+import { recordDeletions } from '@/db/sync/dirty'
 import { formatDateTimeForDB } from '@/utils/dateUtils'
 import { getLastBookId, setLastBookId } from '@/utils/lastBook'
 
@@ -33,6 +34,25 @@ export const useBookStore = defineStore('book', () => {
     }
 
     async function deleteBook(id) {
+        // Deleting a book removes its rows, so every removed row needs a
+        // tombstone or other devices would keep showing it.
+        const [transactions, categories, products, paymentModes, recurring, budgets] = await Promise.all([
+            db.transactions.where('book_id').equals(id).primaryKeys(),
+            db.categories.where('book_id').equals(id).primaryKeys(),
+            db.products.where('book_id').equals(id).primaryKeys(),
+            db.payment_modes.where('book_id').equals(id).primaryKeys(),
+            db.recurring_transactions.where('book_id').equals(id).primaryKeys(),
+            db.budgets.where('book_id').equals(id).primaryKeys(),
+        ])
+
+        await recordDeletions('transactions', transactions)
+        await recordDeletions('categories', categories)
+        await recordDeletions('products', products)
+        await recordDeletions('payment_modes', paymentModes)
+        await recordDeletions('recurring_transactions', recurring)
+        await recordDeletions('budgets', budgets)
+        await recordDeletions('books', id)
+
         // Delete the book
         await db.books.delete(id)
 

@@ -4,6 +4,7 @@ import { liveQuery } from 'dexie'
 
 import { formatDateTimeForDB } from '@/utils/dateUtils'
 import { db } from '@/db/dexie'
+import { recordDeletions } from '@/db/sync/dirty'
 
 export const usePaymentModeStore = defineStore('paymentMode', () => {
     const paymentModes = ref([])
@@ -44,6 +45,7 @@ export const usePaymentModeStore = defineStore('paymentMode', () => {
             throw new Error(`Cannot delete payment mode. It is being used in ${usageCount} transaction(s).`)
         }
 
+        await recordDeletions('payment_modes', id)
         return await db.payment_modes.delete(id)
     }
 

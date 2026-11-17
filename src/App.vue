@@ -3,6 +3,7 @@ import { onMounted, onUnmounted, ref, watch } from "vue"
 import { RouterView, useRoute } from "vue-router"
 
 import { useSettingsStore } from "@/store/settingsStore"
+import { useSyncStore } from "@/store/syncStore"
 import { useAppBadge } from "@/composables/useAppBadge"
 import { useReminders } from "@/composables/useReminders"
 import BiometricLock from "@/components/common/BiometricLock.vue"
@@ -13,6 +14,7 @@ import InstallPrompt from "@/components/common/InstallPrompt.vue"
 import BottomNav from "@/components/layout/BottomNav.vue"
 
 const settingsStore = useSettingsStore()
+const syncStore = useSyncStore()
 const appBadge = useAppBadge()
 const reminders = useReminders()
 const route = useRoute()
@@ -92,11 +94,16 @@ onMounted(async () => {
   // entries, so they start with the app and react to live data changes.
   appBadge.start()
   reminders.start()
+
+  // Watches local writes, flushes anything still pending and keeps the retry
+  // timer alive across app opens.
+  syncStore.start()
 })
 
 onUnmounted(() => {
   appBadge.stop()
   reminders.stop()
+  syncStore.stop()
   if (checkInterval.value) clearInterval(checkInterval.value)
 })
 

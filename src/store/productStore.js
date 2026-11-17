@@ -4,6 +4,7 @@ import { liveQuery } from 'dexie'
 
 import { formatDateTimeForDB, roundAmount } from '@/utils/dateUtils'
 import { db } from '@/db/dexie'
+import { recordDeletions } from '@/db/sync/dirty'
 
 export const useProductStore = defineStore('product', () => {
     const products = ref([])
@@ -98,6 +99,7 @@ export const useProductStore = defineStore('product', () => {
             await deleteProductRate(productRate.id)
         }
 
+        await recordDeletions('products', id)
         return await db.products.delete(id)
     }
 
@@ -116,6 +118,7 @@ export const useProductStore = defineStore('product', () => {
             rate: roundAmount(rateData.rate),
             created_at: formatDateTimeForDB(),
             updated_at: formatDateTimeForDB(),
+            sync_status: 'pending'
         })
     }
 
@@ -127,10 +130,12 @@ export const useProductStore = defineStore('product', () => {
         return await db.product_rates.update(id, {
             ...updatedData,
             updated_at: formatDateTimeForDB(),
+            sync_status: 'pending'
         })
     }
 
     async function deleteProductRate(id) {
+        await recordDeletions('product_rates', id)
         return await db.product_rates.delete(id)
     }
 

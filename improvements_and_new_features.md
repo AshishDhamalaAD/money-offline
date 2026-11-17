@@ -141,15 +141,18 @@ These are small fixes with outsized impact, because the app is consumed as an in
 
 ## 4. Performance and data layer
 
-**Progress: 1 of 4 done.**
+**Progress: 2 of 4 done.**
 
 - ✅ `store/transactionStore.js` no longer loads **every transaction for the book** into memory. The list
   screen now reads a date-ranged window from Dexie through a new compound book-and-date index, applies
   type, category, payment mode, contact, product and search filters inside the query, and grows by 50-row
   pages with the existing Load More button. Period stats are streamed from the database rather than
   computed from the loaded rows. *(Done 16 Nov 2026.)*
-- ⬜ `store/syncStore.js` is **push-only full-DB**, and `sync_status` is written but never cleared. Add
-  pull/merge, per-record dirty flags, retry with backoff, and Background Sync.
+- ✅ Sync is no longer **push-only full-DB**. Local writes are marked pending per record and only those
+  rows are uploaded; deletions travel as tombstones; the app pulls changes from other devices and merges
+  them last-writer-wins; failures retry with backoff and ask the browser to retry in the background.
+  Settings has a switch between this and the original full backup upload, which stays the default so
+  servers that only accept a full backup keep working unchanged. *(Done 17 Nov 2026.)*
 - ⬜ `composables/useDatabaseExport.js` import is full-replace with no preview or validation. Add a
   merge-vs-replace choice and a diff summary.
 - ⬜ The image upload component is a ~232 KB chunk. Compress before upload and lazy-load it only on the form.
@@ -164,8 +167,8 @@ These are small fixes with outsized impact, because the app is consumed as an in
 4. ✅ **Recurring transactions + budgets** — the features most likely to make the app open daily.
    *(Done 15–16 Nov 2026.)*
 5. ⬜ **Contact ledger + CSV export.**
-6. ⬜ **Sync rewrite** — do this before the dataset grows. The transaction pagination half of this item
-   shipped on 16 Nov 2026; pull/merge, dirty flags and retry are still open.
+6. ✅ **Sync rewrite + transaction pagination** — done before the dataset grows. Pagination shipped on
+   16 Nov 2026, incremental two-way sync on 17 Nov 2026.
 
 ---
 
@@ -361,3 +364,46 @@ list live, the edit form opened the correct row with its amount, and charts stil
 
 **Still open in Section 4:** sync pull/merge with dirty flags and retry, import merge-versus-replace with a
 diff summary, and image compression plus lazy loading of the upload chunk.
+
+### 17 November 2026 — Incremental two-way sync (performance, part 2 of 4)
+
+Replaced the "upload the whole database after every edit" sync with a change-based one:
+
+- **Per-record dirty flags**: every row already carried `sync_status`; it is now meaningful. Rows are
+  written as pending by the stores and flipped to synced only after the server accepts them. A Dexie hook
+  on every synced table schedules a debounced sync, so categories, products, budgets and recurring rules
+  are covered too, not just transactions.
+- **Deletions**: a new tombstones table records `table`, `record id` and time for every local delete, so
+  removals can be pushed instead of silently vanishing. Undo drops the matching tombstone. Deleting a book
+  records tombstones for all of its cascaded rows.
+- **Pull and merge**: the app asks the server for changes since its stored cursor and merges them into
+  Dexie. Remote rows win only when their timestamp is newer; a local edit newer than a remote delete
+  brings the row back and pushes it. Cursor, client id and retry state live in a small sync-state table.
+- **Push**: only pending rows and tombstones are uploaded, 200 at a time. The whole-database dump remains
+  as a fallback for servers that answer 404/405/501 on the changes endpoint, and is remembered so later
+  syncs do not probe again.
+- **Retries**: failures back off from 2 seconds to 5 minutes, persist across app restarts, and pause while
+  offline. Client errors stop automatic retries instead of hammering the server. Requests time out after
+  30 seconds.
+- **Background Sync**: after a failure the app registers a `money-sync` tag; the service worker listens for
+  it and asks an open window to run the sync. The retry schedule is respected, so a browser that fires the
+  tag immediately cannot turn one failure into a burst of attempts. On iOS, where Background Sync is not
+  supported, the app retries on next open or when connectivity returns.
+- **Sync style switch**: Settings offers a switch between full backup and incremental sync. Full backup
+  stays the default, so existing servers that only implement the original endpoint are never sent a
+  request to the newer one. Turning incremental on is an explicit choice; if the server rejects it, the
+  app falls back to full backups and says so in the status panel.
+- **Visibility**: the book header shows how many changes are waiting, and Settings now shows the sync
+  mode, pending count, last sync time, offline state and the next retry.
+
+Verified against a production build with a local mock server implementing the protocol: only the three
+pending rows were uploaded while the already-synced rows stayed untouched; a pull applied a newer remote
+edit, inserted a new remote row and deleted a remotely removed one; a newer local edit beat an older
+remote edit and was uploaded; a local edit newer than a remote delete survived and was re-uploaded;
+deleting an entry from the list pushed a tombstone and cleared it; a 500 response kept the row pending,
+scheduled a retry, showed the error and the countdown, then succeeded after the connection recovered; the
+service worker received the background sync event and messaged the page; and a server without the changes
+endpoint fell back to a single full-backup upload and marked everything synced. No console errors.
+
+**Still open in Section 4:** import merge-versus-replace with a diff summary, and image compression plus
+lazy loading of the upload chunk.

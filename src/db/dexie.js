@@ -67,3 +67,18 @@ db.version(12).stores({
     // instead of loading the whole book into memory.
     transactions: '++id, book_id, type, date, *category_ids, contact_id, payment_mode_id, discount, charge, amount, created_at, updated_at, sync_status, attachments, [book_id+date]'
 });
+
+db.version(13).stores({
+    // Sync bookkeeping. Tombstones remember local deletions so they can be
+    // pushed to the server, and sync_state holds the cursor, client id and
+    // retry information between sessions.
+    sync_tombstones: '++id, table, record_id, deleted_at, [table+record_id]',
+    sync_state: 'key',
+    product_rates: '++id, product_id, rate, created_at, updated_at, sync_status'
+}).upgrade(tx => {
+    // Rate history written before this version has no sync status; treat it as
+    // already backed up instead of queueing the whole history at once.
+    return tx.table('product_rates').toCollection().modify(rate => {
+        if (!rate.sync_status) rate.sync_status = 'synced'
+    })
+});

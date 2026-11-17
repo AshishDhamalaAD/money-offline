@@ -53,6 +53,23 @@ self.addEventListener("push", (event) => {
   )
 })
 
+// Background Sync: the sync engine lives in the page (it needs Dexie and the
+// Pinia store), so the worker asks any open window to run it. If no window is
+// open the browser retries the sync event later.
+self.addEventListener("sync", (event) => {
+  if (event.tag !== "money-sync") return
+
+  event.waitUntil(
+    (async () => {
+      const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true })
+
+      for (const client of windows) {
+        client.postMessage({ type: "RUN_SYNC", reason: "background-sync" })
+      }
+    })(),
+  )
+})
+
 precacheAndRoute(self.__WB_MANIFEST)
 cleanupOutdatedCaches()
 clientsClaim()

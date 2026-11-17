@@ -4,6 +4,7 @@ import { liveQuery } from 'dexie'
 
 import { formatDateTimeForDB } from '@/utils/dateUtils'
 import { db } from '@/db/dexie'
+import { recordDeletions } from '@/db/sync/dirty'
 
 export const useCategoryStore = defineStore('category', () => {
     const categories = ref([])
@@ -55,6 +56,7 @@ export const useCategoryStore = defineStore('category', () => {
             throw new Error(`Cannot delete category. It is being used by ${productUsageCount} product(s).`)
         }
 
+        await recordDeletions('categories', id)
         return await db.categories.delete(id)
     }
 

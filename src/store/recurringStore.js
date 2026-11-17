@@ -5,6 +5,7 @@ import { liveQuery } from 'dexie'
 import { formatDateTimeForDB } from '@/utils/dateUtils'
 import { addPeriod } from '@/utils/recurrence'
 import { db } from '@/db/dexie'
+import { recordDeletions } from '@/db/sync/dirty'
 
 export const useRecurringStore = defineStore('recurring', () => {
     const rules = ref([])
@@ -49,6 +50,7 @@ export const useRecurringStore = defineStore('recurring', () => {
     }
 
     async function deleteRule(id) {
+        await recordDeletions('recurring_transactions', id)
         return await db.recurring_transactions.delete(id)
     }
 

@@ -4,6 +4,7 @@ import { liveQuery } from 'dexie'
 
 import { formatDateTimeForDB, roundAmount } from '@/utils/dateUtils'
 import { db } from '@/db/dexie'
+import { forgetDeletions, recordDeletions } from '@/db/sync/dirty'
 import { useSyncStore } from '@/store/syncStore'
 import { useSettingsStore } from '@/store/settingsStore'
 import { useProductStore } from '@/store/productStore'
@@ -313,7 +314,7 @@ export const useTransactionStore = defineStore('transaction', () => {
 
         // Trigger background sync
         const syncStore = useSyncStore()
-        syncStore.triggerSync()
+        syncStore.scheduleSync()
 
         return id
     }
@@ -367,16 +368,17 @@ export const useTransactionStore = defineStore('transaction', () => {
 
         // Trigger background sync
         const syncStore = useSyncStore()
-        syncStore.triggerSync()
+        syncStore.scheduleSync()
     }
 
     async function deleteTransaction(id) {
         const snapshot = await db.transactions.get(id)
+        await recordDeletions('transactions', id)
         await db.transactions.delete(id)
 
         // Trigger background sync
         const syncStore = useSyncStore()
-        syncStore.triggerSync()
+        syncStore.scheduleSync()
 
         // The raw row is returned so the list can offer an undo.
         return snapshot
@@ -386,11 +388,12 @@ export const useTransactionStore = defineStore('transaction', () => {
         if (!ids || ids.length === 0) return []
 
         const snapshots = await db.transactions.bulkGet(ids)
+        await recordDeletions('transactions', ids)
         await db.transactions.bulkDelete(ids)
 
         // Trigger background sync
         const syncStore = useSyncStore()
-        syncStore.triggerSync()
+        syncStore.scheduleSync()
 
         return snapshots.filter(Boolean)
     }
@@ -399,12 +402,21 @@ export const useTransactionStore = defineStore('transaction', () => {
         if (!rows || rows.length === 0) return
 
         // Bulk put keeps the original ids, so an undo restores the exact rows.
-        const plainRows = JSON.parse(JSON.stringify(rows))
+        // They become pending again, and their tombstones must be dropped or the
+        // next pull would delete them right back.
+        const now = formatDateTimeForDB()
+        const plainRows = JSON.parse(JSON.stringify(rows)).map(row => ({
+            ...row,
+            updated_at: now,
+            sync_status: 'pending',
+        }))
+
         await db.transactions.bulkPut(plainRows)
+        await forgetDeletions('transactions', plainRows.map(row => row.id))
 
         // Trigger background sync
         const syncStore = useSyncStore()
-        syncStore.triggerSync()
+        syncStore.scheduleSync()
     }
 
     async function copyTransaction(transactionId, targetBookId) {
@@ -506,7 +518,7 @@ export const useTransactionStore = defineStore('transaction', () => {
 
         // Trigger Sync
         const syncStore = useSyncStore()
-        syncStore.triggerSync()
+        syncStore.scheduleSync()
 
         return id;
     }
