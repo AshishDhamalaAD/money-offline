@@ -36,11 +36,18 @@ import TransactionCard from "@/pages/book-details/TransactionCard.vue"
 import StatsSummary from "@/pages/book-details/StatsSummary.vue"
 import DeleteBook from "@/pages/book-details/DeleteBook.vue"
 import DateRangeTabs from "@/components/common/DateRangeTabs.vue"
+import PeriodNavigator from "@/components/common/PeriodNavigator.vue"
 import ActiveFilterChips from "@/components/common/ActiveFilterChips.vue"
 import BaseBottomSheet from "@/components/common/BaseBottomSheet.vue"
 
 const route = useRoute()
 const router = useRouter()
+
+// The filter watcher below keeps the URL in sync, and it flushes before this
+// component's onMounted hook runs. Take a copy of the incoming query during
+// setup so restoring a deep link does not read the already-rewritten URL.
+const initialQuery = { ...route.query }
+
 const bookStore = useBookStore()
 const transactionStore = useTransactionStore()
 const syncStore = useSyncStore()
@@ -54,6 +61,20 @@ const bookId = ref(null)
 const selectedFilter = ref("month") // Default to month
 const startDate = ref("")
 const endDate = ref("")
+
+// Chip values DateRangeTabs can emit, used to ignore junk in the URL.
+const FILTER_VALUES = ["all", "month", "last-month", "today", "yesterday", "this-year", "last-year", "custom"]
+
+// While the All chip is active an extra row lets the user walk through months
+// or years. It starts on the current month, which is what people usually want
+// to see when they leave the presets behind.
+const periodMode = ref("month") // all | month | year
+const periodAnchor = ref(currentPeriodAnchor())
+
+function currentPeriodAnchor() {
+  const now = new Date()
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
+}
 const showActionSheet = ref(false)
 const selectedTransaction = ref(null)
 
@@ -344,11 +365,16 @@ onMounted(async () => {
   productStore.watchProducts(bookId.value)
   // Contacts are global, already watched/loaded in store
 
-  // Restore filters from URL query params
-  const query = route.query
-  if (query.filter) selectedFilter.value = query.filter
+  // Restore filters from the query the page was opened with. Reading
+  // route.query here would see the URL the sync watcher has already rewritten.
+  const query = initialQuery
+  if (FILTER_VALUES.includes(query.filter)) selectedFilter.value = query.filter
   if (query.startDate) startDate.value = query.startDate
   if (query.endDate) endDate.value = query.endDate
+  if (["all", "month", "year"].includes(query.period)) periodMode.value = query.period
+  if (typeof query.periodAnchor === "string" && /^\d{4}-\d{2}$/.test(query.periodAnchor)) {
+    periodAnchor.value = query.periodAnchor
+  }
   if (query.category) filterCategory.value = parseInt(query.category)
   if (query.paymentMode) filterPaymentMode.value = parseInt(query.paymentMode)
   if (query.contact) filterContact.value = parseInt(query.contact)
@@ -376,12 +402,27 @@ onUnmounted(() => {
 
 // Persist filters to URL query params
 watch(
-  [selectedFilter, startDate, endDate, filterCategory, filterPaymentMode, filterContact, filterProduct, searchQuery],
+  [
+    selectedFilter,
+    startDate,
+    endDate,
+    periodMode,
+    periodAnchor,
+    filterCategory,
+    filterPaymentMode,
+    filterContact,
+    filterProduct,
+    searchQuery,
+  ],
   () => {
     const query = {}
     if (selectedFilter.value !== "month") query.filter = selectedFilter.value
     if (startDate.value) query.startDate = startDate.value
     if (endDate.value) query.endDate = endDate.value
+    if (selectedFilter.value === "all") {
+      query.period = periodMode.value
+      if (periodMode.value !== "all") query.periodAnchor = periodAnchor.value
+    }
     if (filterCategory.value) query.category = filterCategory.value
     if (filterPaymentMode.value) query.paymentMode = filterPaymentMode.value
     if (filterContact.value) query.contact = filterContact.value
@@ -442,12 +483,33 @@ function clearFilter(type) {
   }
 }
 
+// The window the All chip uses. "All" in the period row means every
+// transaction, "Month" a single calendar month and "Year" a whole year.
+const periodRange = computed(() => {
+  if (selectedFilter.value !== "all" || periodMode.value === "all") {
+    return { startDate: "", endDate: "" }
+  }
+
+  const [year, month] = periodAnchor.value.split("-").map(Number)
+
+  if (periodMode.value === "year") {
+    return { startDate: `${year}-01-01`, endDate: `${year}-12-31` }
+  }
+
+  const lastDay = new Date(year, month, 0).getDate()
+
+  return {
+    startDate: `${periodAnchor.value}-01`,
+    endDate: `${periodAnchor.value}-${String(lastDay).padStart(2, "0")}`,
+  }
+})
+
 // The store reads this window straight from Dexie using the [book_id+date]
 // index, so date ranges, advanced filters and search never load the whole book.
 const pageFilters = computed(() => ({
   bookId: bookId.value,
-  startDate: selectedFilter.value === "all" ? "" : startDate.value,
-  endDate: selectedFilter.value === "all" ? "" : endDate.value,
+  startDate: selectedFilter.value === "all" ? periodRange.value.startDate : startDate.value,
+  endDate: selectedFilter.value === "all" ? periodRange.value.endDate : endDate.value,
   type: "all",
   categoryId: filterCategory.value || null,
   paymentModeId: filterPaymentMode.value || null,
@@ -541,9 +603,7 @@ async function refreshStats() {
   try {
     const [totals, openingBalance] = await Promise.all([
       transactionStore.getTransactionTotals(filters),
-      selectedFilter.value === "all" || !filters.startDate
-        ? 0
-        : transactionStore.getBalanceBefore(filters.bookId, filters.startDate),
+      !filters.startDate ? 0 : transactionStore.getBalanceBefore(filters.bookId, filters.startDate),
     ])
 
     if (request !== statsRequest) return
@@ -734,6 +794,13 @@ async function handleRefresh() {
 
           <!-- Date Filters -->
           <DateRangeTabs v-model="selectedFilter" v-model:start-date="startDate" v-model:end-date="endDate" />
+
+          <!-- Month / year browser, only while the All chip is active -->
+          <PeriodNavigator
+            v-if="selectedFilter === 'all'"
+            v-model="periodMode"
+            v-model:anchor="periodAnchor"
+          />
 
           <!-- Search & Advanced Filters -->
           <div class="flex gap-2">

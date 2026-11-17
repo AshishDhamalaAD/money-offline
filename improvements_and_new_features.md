@@ -29,7 +29,7 @@ These are small fixes with outsized impact, because the app is consumed as an in
 
 ## 2. Mobile UX upgrades to existing features
 
-**Progress: 16 of 21 done.**
+**Progress: 17 of 22 done.**
 
 ### Entry flow — highest value, this is used daily
 
@@ -67,6 +67,11 @@ These are small fixes with outsized impact, because the app is consumed as an in
   result.
 - ✅ **Attachment viewer** directly from the card: thumbnails are tappable and open a full-screen viewer
   with a counter, previous / next arrows, swipe navigation and a close button, without opening the entry.
+- ✅ **Month / year browser** under the chips. Choosing **All** opens a second row with an All | Month | Year
+  control and a `‹ September 2026 ›` stepper, so old entries can be walked month by month or year by year
+  instead of scrolling the entire history. It starts on the current month, the arrows move one step at a
+  time, and the **All** segment still shows everything. The chosen period also drives the month groups,
+  totals and opening balance, and it survives a reload through the URL.
 
 ### Navigation and chrome
 
@@ -474,3 +479,32 @@ formats; a custom 1 Jan – 28 Feb 2026 range counted 15 rows, exported exactly 
 date inside the range, and produced a one-page PDF labelled 5 Jan 2026 – 25 Feb 2026 whose totals only
 covered that period; combining the same range with the Business book counted 5, and returning to "All" for
 that book restored 15. No console errors.
+
+### 17 November 2026 — month and year browsing in the transactions list
+
+The transaction list could jump to a month with the scrubber, but only for the months already loaded, and
+the date chips had nothing between "This Month" and "This Year". Finding an entry from a specific month
+meant scrolling.
+
+- **Where**: choosing the **All** chip now opens a second row under the chips. On the left is an
+  **All | Month | Year** segmented control; on the right is `‹ November 2026 ›`, with the arrows stepping
+  one month or one year at a time. It opens on Month for the current month, so the common case — "what have
+  I spent this month" — is one tap away, and the All segment still shows the complete history.
+- **Wiring**: the page turns the choice into a date range (first to last day of the month, or 1 January to
+  31 December) and sends it into the same Dexie window as the preset chips. The list, the month groups,
+  their totals and the opening balance all follow the visible period, and the month scrubber only shows the
+  months inside it. The state is kept in the URL as `period` and `periodAnchor`, so a reload, a back step or
+  a shared link lands on the same month.
+- **Fix found on the way**: restoring filters from the URL had never worked. The filter-to-URL watcher
+  flushes before `onMounted`, so reading `route.query` there returned the rewritten URL and a deep link
+  always fell back to This Month. The component now snapshots the incoming query during setup and reads
+  that, and it ignores a `filter` value that is not one of the chips.
+
+Verified on a production build at 390 px: the row appeared only for All, opened on November 2026, stepped to
+October and September, went back with the right arrow, switched to Year (2026 listed its five months, 2025
+showed only December), returned through the All segment to all eight rows, and reloading
+`?filter=all&period=month&periodAnchor=2026-09` restored September with its single row. The stats followed
+the visible period — November opened on 1,667 (Dr) and closed on 3,111 (Dr), October on 667 (Dr) and 1,667
+(Dr), 2026 on 111 (Dr) and 4,000 (Dr), and the All segment on 0 and 4,000 (Dr). The This Month chip hid the
+row again. Light and dark layouts checked at 390 px, including the long "September 2026" label. No console
+errors.
