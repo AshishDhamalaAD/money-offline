@@ -2,6 +2,14 @@ import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import { db } from '@/db/dexie'
 import { patchSyncState, resetSyncState } from '@/db/sync/state'
+import {
+    appLocale,
+    calendarSystem,
+    applyCalendarSystem,
+    applyLocale,
+    normalizeCalendarSystem,
+    normalizeLocale,
+} from '@/utils/locale'
 
 export const useSettingsStore = defineStore('settings', () => {
     const apiEndpoint = ref("")
@@ -24,7 +32,7 @@ export const useSettingsStore = defineStore('settings', () => {
     async function init() {
         if (initialized.value) return
         try {
-            const [endpoint, token, bioEnabled, bioCredId, pinEn, pin, timeout, theme, reminders, reminderAt, reminderShown, mode] = await Promise.all([
+            const [endpoint, token, bioEnabled, bioCredId, pinEn, pin, timeout, theme, reminders, reminderAt, reminderShown, mode, savedLocale, savedCalendar] = await Promise.all([
                 db.settings.get("apiEndpoint"),
                 db.settings.get("apiToken"),
                 db.settings.get("biometricEnabled"),
@@ -36,7 +44,9 @@ export const useSettingsStore = defineStore('settings', () => {
                 db.settings.get("remindersEnabled"),
                 db.settings.get("reminderTime"),
                 db.settings.get("reminderLastShown"),
-                db.settings.get("syncMode")
+                db.settings.get("syncMode"),
+                db.settings.get("locale"),
+                db.settings.get("calendarSystem")
             ])
 
             if (endpoint) apiEndpoint.value = endpoint.value
@@ -51,6 +61,9 @@ export const useSettingsStore = defineStore('settings', () => {
             if (reminderAt?.value) reminderTime.value = reminderAt.value
             if (reminderShown?.value) reminderLastShown.value = reminderShown.value
             if (mode?.value === "incremental") syncMode.value = "incremental"
+
+            applyLocale(savedLocale?.value)
+            applyCalendarSystem(savedCalendar?.value)
 
             applyTheme(themePreference.value)
         } catch (e) {
@@ -261,6 +274,30 @@ export const useSettingsStore = defineStore('settings', () => {
         }
     }
 
+    async function setLocale(value) {
+        const next = normalizeLocale(value)
+        try {
+            await db.settings.put({ key: "locale", value: next })
+            applyLocale(next)
+            return { success: true }
+        } catch (error) {
+            console.error("Failed to save locale", error)
+            return { success: false, message: error.message }
+        }
+    }
+
+    async function setCalendarSystem(value) {
+        const next = normalizeCalendarSystem(value)
+        try {
+            await db.settings.put({ key: "calendarSystem", value: next })
+            applyCalendarSystem(next)
+            return { success: true }
+        } catch (error) {
+            console.error("Failed to save calendar", error)
+            return { success: false, message: error.message }
+        }
+    }
+
     async function setAutoLockTimeout(minutes) {
         try {
             await db.settings.put({ key: "autoLockTimeout", value: minutes })
@@ -317,6 +354,8 @@ export const useSettingsStore = defineStore('settings', () => {
         autoLockTimeout,
         initialized,
         themePreference,
+        locale: appLocale,
+        calendarSystem,
         remindersEnabled,
         reminderTime,
         reminderLastShown,
@@ -331,6 +370,8 @@ export const useSettingsStore = defineStore('settings', () => {
         disablePin,
         setAutoLockTimeout,
         setThemePreference,
+        setLocale,
+        setCalendarSystem,
         setRemindersEnabled,
         setReminderTime,
         markReminderShown,

@@ -3,7 +3,7 @@ import { computed, ref, watch } from "vue"
 import { Bar } from "vue-chartjs"
 import { Chart as ChartJS, Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale } from "chart.js"
 import DateRangeTabs from "@/components/common/DateRangeTabs.vue"
-import { filterByDateRange } from "@/utils/dateUtils"
+import { filterByDateRange, formatMonthShort } from "@/utils/dateUtils"
 
 ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale)
 
@@ -37,13 +37,13 @@ const filteredTransactions = computed(() => {
 })
 
 const chartData = computed(() => {
-  const data = {} // { year: { Jan: 0, Feb: 0, ... } }
+  const data = {} // { year: { 0: 0, 1: 0, ... } }
   const years = new Set()
 
   filteredTransactions.value.forEach((t) => {
     const date = new Date(t.date)
     const year = date.getFullYear()
-    const month = date.toLocaleString("default", { month: "short" })
+    const month = date.getMonth()
 
     years.add(year)
     if (!data[year]) data[year] = {}
@@ -52,7 +52,11 @@ const chartData = computed(() => {
   })
 
   const sortedYears = Array.from(years).sort()
-  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+  // Month names follow the language setting, but the grouping stays Gregorian:
+  // this chart compares AD years month by month.
+  const months = Array.from({ length: 12 }, (_, index) =>
+    formatMonthShort(new Date(2020, index, 1), { calendar: "ad" }),
+  )
 
   // Distinct colors for years
   const colors = ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF", "#FF9F40"]
@@ -60,7 +64,7 @@ const chartData = computed(() => {
   const datasets = sortedYears.map((year, index) => ({
     label: `Year ${year}`,
     backgroundColor: colors[index % colors.length],
-    data: months.map((m) => data[year]?.[m] || 0),
+    data: months.map((_, month) => data[year]?.[month] || 0),
   }))
 
   return {

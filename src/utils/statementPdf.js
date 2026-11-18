@@ -6,6 +6,9 @@
 // small and works offline. The trade-off is that the text is an image, not
 // selectable.
 
+import { formatDate } from "./dateUtils"
+import { appLocale } from "./locale"
+
 const PAGE_WIDTH = 595.28 // A4 at 72 dpi
 const PAGE_HEIGHT = 841.89
 const SCALE = 2 // render at 144 dpi so text stays sharp when printed
@@ -16,13 +19,20 @@ const TABLE_BOTTOM = PAGE_HEIGHT - 52
 const FIRST_TABLE_TOP = 162
 const NEXT_TABLE_TOP = 100
 
-const amountFormatter = new Intl.NumberFormat("en-IN", {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-})
+let amountFormatter = null
+let amountLocale = ""
 
-// A statement looks wrong with a ragged number of decimals, so force two.
+// A statement looks wrong with a ragged number of decimals, so force two. The
+// formatter follows the language setting, like the rest of the app.
 function formatAmount(value) {
+  if (!amountFormatter || amountLocale !== appLocale.value) {
+    amountLocale = appLocale.value
+    amountFormatter = new Intl.NumberFormat(amountLocale, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })
+  }
+
   return amountFormatter.format(Number(value) || 0)
 }
 
@@ -37,8 +47,6 @@ const COLORS = {
   expense: "#b91c1c",
   accent: "#4338ca",
 }
-
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
 const FONT_STACK = '"Helvetica Neue", Helvetica, Arial, sans-serif'
 
@@ -65,7 +73,9 @@ export function formatStatementDate(value) {
 
   if (!match) return String(value || "")
 
-  return `${Number(match[3])} ${MONTHS[Number(match[2]) - 1]} ${match[1]}`
+  return formatDate(new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3])), {
+    weekday: undefined,
+  })
 }
 
 function roundRect(context, x, y, width, height, radius) {

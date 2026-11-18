@@ -10,6 +10,7 @@ import { useContactStore } from "@/store/contactStore"
 import { usePaymentModeStore } from "@/store/paymentModeStore"
 import { useProductStore } from "@/store/productStore"
 import { useRecurringStore } from "@/store/recurringStore"
+import { getNepalDate } from "@/utils/dateUtils"
 import BaseButton from "@/components/common/BaseButton.vue"
 import BaseInput from "@/components/common/BaseInput.vue"
 import BaseModal from "@/components/common/BaseModal.vue"
@@ -59,8 +60,8 @@ const transactionAttachments = ref([])
 const form = ref({
   type: "out",
   date: (() => {
-    // Use local time without timezone conversion
-    const now = new Date()
+    // Use Nepal wall-clock time so the default date is the same for every user
+    const now = getNepalDate()
     const year = now.getFullYear()
     const month = String(now.getMonth() + 1).padStart(2, "0")
     const day = String(now.getDate()).padStart(2, "0")

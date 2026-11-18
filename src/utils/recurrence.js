@@ -1,6 +1,8 @@
 // Date helpers for recurring transactions. Dates are kept as date-only strings
 // ("YYYY-MM-DD") so a rule keeps its calendar day regardless of time zone.
 
+import { formatDate, getNepalDate } from "./dateUtils"
+
 export const FREQUENCIES = [
   { value: "daily", label: "Daily" },
   { value: "weekly", label: "Weekly" },
@@ -23,7 +25,7 @@ export function toDateOnly(value) {
 }
 
 export function todayDateOnly() {
-  return toDateOnly(new Date())
+  return toDateOnly(getNepalDate())
 }
 
 export function parseDateOnly(value) {
@@ -104,9 +106,5 @@ export function frequencyLabel(value) {
 
 export function formatDateOnly(value) {
   if (!value) return ""
-  return parseDateOnly(value).toLocaleDateString("en-US", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  })
+  return formatDate(parseDateOnly(value), { weekday: undefined })
 }

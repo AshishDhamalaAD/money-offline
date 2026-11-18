@@ -4,6 +4,7 @@ import { computed } from "vue"
 import IconCaretDown from "@/assets/icons/IconCaretDown.vue"
 import IconChevronLeft from "@/assets/icons/IconChevronLeft.vue"
 import IconChevronRight from "@/assets/icons/IconChevronRight.vue"
+import { formatMonthYear } from "@/utils/dateUtils"
 
 const props = defineProps({
   modelValue: {
@@ -50,10 +51,7 @@ const label = computed(() => {
 
   if (props.modelValue === "year") return String(parts.value.year)
 
-  return new Date(parts.value.year, parts.value.month - 1, 1).toLocaleDateString("en-US", {
-    month: "long",
-    year: "numeric",
-  })
+  return formatMonthYear(new Date(parts.value.year, parts.value.month - 1, 1), { calendar: "ad" })
 })
 
 const stepLabel = computed(() => (props.modelValue === "year" ? "year" : "month"))

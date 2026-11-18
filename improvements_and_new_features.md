@@ -29,7 +29,7 @@ These are small fixes with outsized impact, because the app is consumed as an in
 
 ## 2. Mobile UX upgrades to existing features
 
-**Progress: 17 of 22 done.**
+**Progress: 20 of 22 done.**
 
 ### Entry flow — highest value, this is used daily
 
@@ -92,10 +92,13 @@ These are small fixes with outsized impact, because the app is consumed as an in
 
 ### Formatting and locale
 
-- ⬜ `formatCurrency` hardcodes the Indian locale and renders **no currency symbol**; date helpers hardcode
-  the US locale. Add a settings-driven locale/currency (NPR/INR).
-- ⬜ `getNepalDate` is currently a stub that just returns the current date.
-- ⬜ Optional Bikram Sambat (BS) date display if that's the target context.
+- ✅ `formatCurrency` still renders **no currency symbol** by design, and now follows a settings-driven
+  locale. The date helpers use the same setting, so amounts and dates are written consistently.
+- ✅ `getNepalDate` returns the current Nepal wall-clock date (`Asia/Kathmandu`) instead of a plain
+  `new Date()`, and the daily defaults use it.
+- ✅ Optional **Bikram Sambat (BS)** date display: a switch in Settings turns dates in the list, cards and
+  charts into BS, with English or Nepali month names depending on the locale. Entry, filters and storage
+  stay Gregorian.
 
 ---
 
@@ -521,3 +524,39 @@ followed the visible period — November opened on 1,667 (Dr) and closed on 3,11
 and 1,667 (Dr), 2026 on 111 (Dr) and 4,000 (Dr), and the All segment on 0 and 4,000 (Dr). The This Month
 chip hid the row again. Light and dark layouts checked at 390 px, including the long "September 2026"
 label, which fits without clipping. No console errors.
+
+### 18 November 2026 — locale settings, Nepal time and Bikram Sambat dates
+
+Amounts had always used Indian digit grouping and dates had always used the US order, regardless of who
+was reading them. `getNepalDate` was a stub that returned `new Date()`, so a device in another time zone
+could open a new transaction on the wrong day. Bikram Sambat was not available at all.
+
+- **Where**: Settings → Appearance has a new **Language & region** card. It holds a locale picker —
+  English (India), English (US) or नेपाली (नेपाल) — and a PIN-style switch for **Bikram Sambat dates**, plus
+  a live preview of an amount and today's date. Both save as soon as they change and survive a reload.
+- **Amounts and dates**: `formatCurrency` still shows no currency symbol on purpose, but it now follows the
+  locale, so Indian grouping (12,34,567.89) and Western grouping (1,234,567.89) are both available. The
+  date and time helpers read the same setting, which also reaches book cards, the transaction list, charts,
+  recurring due dates, sync timestamps and PDF statements. CSV numbers stay plain for spreadsheets.
+- **Nepal time**: `getNepalDate` now asks `Intl` for `Asia/Kathmandu` and returns a date whose fields are
+  Nepal wall-clock time. New and duplicated transactions, Today / This Month / This Year chips, dashboard
+  summaries, period bounds and recurring due dates use it, so a phone set to Hawaii still starts a new
+  entry on the Nepali day rather than the previous one.
+- **Bikram Sambat**: a small bundled conversion table (2000–2090 BS, no library) turns AD dates into BS.
+  With the switch on, the list groups months by BS month — so a BS month is not split at an AD boundary —
+  and the month headers, date headers, scrubber, book cards, charts and PDF dates follow. English uses
+  transliterated month names (Baisakh, Mangsir…); Nepali uses Devanagari names and digits. Gregorian dates
+  in नेपाली use their own Nepali month names and Devanagari digits too, because the browser's `ne-NP` data
+  falls back to English. Entry, date filters, URL state and storage stay Gregorian, so the switch is purely
+  a display choice.
+
+Verified on a production build at 390 px with the seeded March 2024 – November 2026 book: the Appearance
+card showed English (India) and a preview of 12,34,567.89 / 18 Nov 2026; switching to English (US) changed
+the preview to 1,234,567.89 / Nov 18, 2026 and persisted after a reload; turning on BS changed it to
+2 Mangsir 2083. With BS on, the list's All view grouped the same rows into Kartik 2083, Aswin 2083, Bhadra
+2083, Magh 2082, Kartik 2082, Baisakh 2082, Chaitra 2081, Mangsir 2081 and Chaitra 2080, with matching
+scrubber labels. Choosing नेपाली produced कार्तिक २०८३ and सोम १६ कार्तिक २०८३. With the device time zone
+forced to Pacific/Honolulu (still 17 November there), a new transaction opened on 18 November, the Nepal
+date. The charts followed the setting too: Monthly Trends grouped by BS month with Nepali labels, while the
+yearly comparison kept its Gregorian month axis (localized) because it compares AD years. Light and dark
+layouts checked; no console errors.

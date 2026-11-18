@@ -4,6 +4,7 @@ import { storeToRefs } from "pinia"
 
 import { useSyncStore } from "@/store/syncStore"
 import { useSettingsStore } from "@/store/settingsStore"
+import { formatDateTime } from "@/utils/dateUtils"
 import BaseButton from "@/components/common/BaseButton.vue"
 import BaseInput from "@/components/common/BaseInput.vue"
 import Toast from "@/components/common/BaseToast.vue"
@@ -59,7 +60,7 @@ const protocolHint = computed(() => {
 
 const lastSyncLabel = computed(() => {
   if (!lastSyncTime.value) return "Never"
-  return lastSyncTime.value.toLocaleString()
+  return formatDateTime(lastSyncTime.value)
 })
 
 const pendingLabel = computed(() => {

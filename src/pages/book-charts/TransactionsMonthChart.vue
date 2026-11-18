@@ -12,7 +12,7 @@ import {
   CategoryScale,
 } from "chart.js"
 import DateRangeTabs from "@/components/common/DateRangeTabs.vue"
-import { filterByDateRange } from "@/utils/dateUtils"
+import { filterByDateRange, formatMonthYear, getMonthKey } from "@/utils/dateUtils"
 
 ChartJS.register(Title, Tooltip, Legend, LineElement, LinearScale, PointElement, CategoryScale)
 
@@ -51,24 +51,36 @@ const filteredTransactions = computed(() => {
 })
 
 const chartData = computed(() => {
-  const data = {}
+  const data = new Map()
+
   filteredTransactions.value.forEach((t) => {
     const date = new Date(t.date)
-    const key = `${date.toLocaleString("default", { month: "short" })} ${date.getFullYear()}`
-    if (!data[key]) data[key] = 0
-    data[key] += parseFloat(t.amount)
+    const key = getMonthKey(date)
+    const total = parseFloat(t.amount) || 0
+
+    if (!data.has(key)) {
+      data.set(key, { date, total: 0 })
+    } else if (date < data.get(key).date) {
+      // Keep the earliest date so the points sort in calendar order even when
+      // the incoming list is not already ordered.
+      data.get(key).date = date
+    }
+
+    data.get(key).total += total
   })
 
-  const sortedKeys = Object.keys(data).sort((a, b) => new Date(a) - new Date(b))
+  // Group by the displayed calendar, so a BS month is one point rather than
+  // two halves either side of an AD month boundary.
+  const points = Array.from(data.values()).sort((a, b) => a.date - b.date)
 
   return {
-    labels: sortedKeys,
+    labels: points.map((point) => formatMonthYear(point.date)),
     datasets: [
       {
         label: props.filterType === "out" ? "Monthly Expenses" : "Monthly Income",
         backgroundColor: "#f87979",
         borderColor: "#f87979",
-        data: sortedKeys.map((key) => data[key]),
+        data: points.map((point) => point.total),
         tension: 0.1,
       },
     ],

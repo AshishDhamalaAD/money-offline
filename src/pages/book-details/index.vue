@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from "vue"
 import { useRoute, useRouter } from "vue-router"
 
-import { formatDate } from "@/utils/dateUtils"
+import { formatDate, formatMonthShort, formatMonthYear, getMonthKey, getNepalDate } from "@/utils/dateUtils"
 import { formatCurrency } from "@/utils/moneyUtils"
 import { setLastBookId } from "@/utils/lastBook"
 import { useBookStore } from "@/store/bookStore"
@@ -77,7 +77,7 @@ const firstTransactionDate = ref("")
 const periodBoundsReady = ref(false)
 
 function currentPeriodAnchor() {
-  const now = new Date()
+  const now = getNepalDate()
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
 }
 const showActionSheet = ref(false)
@@ -250,7 +250,7 @@ function executeDuplicate(includeDescription) {
   }
 
   // Build a current local timestamp for the new transaction
-  const now = new Date()
+  const now = getNepalDate()
   const pad = (n) => String(n).padStart(2, "0")
   const dateLocal = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`
 
@@ -517,7 +517,7 @@ const periodRange = computed(() => {
 // current month is the newest: anything outside that range is empty by
 // definition.
 const periodLimits = computed(() => {
-  const now = new Date()
+  const now = getNepalDate()
   const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
   const earliestMonth = firstTransactionDate.value
     ? firstTransactionDate.value.slice(0, 7)
@@ -551,10 +551,7 @@ const periodOptions = computed(() => {
 
   while (year > firstYear || (year === firstYear && month >= firstMonth)) {
     months.push({
-      label: new Date(year, month - 1, 1).toLocaleDateString("en-US", {
-        month: "long",
-        year: "numeric",
-      }),
+      label: formatMonthYear(new Date(year, month - 1, 1), { calendar: "ad" }),
       value: `${year}-${String(month).padStart(2, "0")}`,
     })
 
@@ -654,15 +651,15 @@ const monthGroups = computed(() => {
 
   filteredTransactions.value.forEach((transaction) => {
     const date = new Date(transaction.date)
-    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`
+    const monthKey = getMonthKey(date)
     const amount = parseFloat(transaction.amount) || 0
 
     if (!months.has(monthKey)) {
       months.set(monthKey, {
         key: monthKey,
-        label: date.toLocaleDateString("en-US", { month: "long", year: "numeric" }),
-        shortLabel: date.toLocaleDateString("en-US", { month: "short" }),
-        timestamp: new Date(date.getFullYear(), date.getMonth(), 1).getTime(),
+        label: formatMonthYear(date),
+        shortLabel: formatMonthShort(date),
+        timestamp: date.getTime(),
         amount: 0,
         days: new Map(),
       })
@@ -670,6 +667,7 @@ const monthGroups = computed(() => {
 
     const month = months.get(monthKey)
     month.amount += amount
+    month.timestamp = Math.max(month.timestamp, date.getTime())
 
     const dateKey = formatDate(date)
     if (!month.days.has(dateKey)) {

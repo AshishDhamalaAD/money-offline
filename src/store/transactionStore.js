@@ -2,7 +2,7 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { liveQuery } from 'dexie'
 
-import { formatDateTimeForDB, roundAmount } from '@/utils/dateUtils'
+import { formatDateTimeForDB, getNepalDate, roundAmount } from '@/utils/dateUtils'
 import { db } from '@/db/dexie'
 import { forgetDeletions, recordDeletions } from '@/db/sync/dirty'
 import { useSyncStore } from '@/store/syncStore'
@@ -555,7 +555,7 @@ export const useTransactionStore = defineStore('transaction', () => {
         if (!sourceTx) throw new Error('Transaction not found')
 
         // Strip fields not relevant for the new record; set date to now, clear description
-        const now = new Date()
+        const now = getNepalDate()
         const year = now.getFullYear()
         const month = String(now.getMonth() + 1).padStart(2, '0')
         const day = String(now.getDate()).padStart(2, '0')

@@ -8,6 +8,7 @@ import { useBookStore } from "@/store/bookStore"
 import { useBudgetStore } from "@/store/budgetStore"
 import { useCategoryStore } from "@/store/categoryStore"
 import { formatCurrency } from "@/utils/moneyUtils"
+import { getNepalDate } from "@/utils/dateUtils"
 import { getLastBookId } from "@/utils/lastBook"
 import IconPlus from "@/assets/icons/IconPlus.vue"
 import IconBook from "@/assets/icons/IconBook.vue"
@@ -44,7 +45,7 @@ function dayStart(date) {
 }
 
 function buildSummaries(transactions) {
-  const now = new Date()
+  const now = getNepalDate()
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
   const weekStart = dayStart(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6))
 

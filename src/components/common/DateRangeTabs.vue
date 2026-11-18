@@ -1,6 +1,7 @@
 <script setup>
 import { watch } from "vue"
 import BaseInput from "@/components/common/BaseInput.vue"
+import { getNepalDate } from "@/utils/dateUtils"
 
 const props = defineProps({
   modelValue: {
@@ -38,7 +39,7 @@ function formatDate(date) {
 }
 
 function calculateDateRange(filter) {
-  const now = new Date()
+  const now = getNepalDate()
   let start = null
   let end = null
 
