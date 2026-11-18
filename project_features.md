@@ -47,7 +47,7 @@ Extensive configuration options to tailor the application to user needs.
 
 Robust security features to protect your financial data.
 
-- **Transaction Trash**: Restore deleted transactions from Book Settings for 30 days on this device, or delete them permanently. Trash is excluded from backups and sync.
+- **Transaction Trash**: Restore deleted transactions from Book Settings for 30 days on this device, or delete them permanently. Trash shows items with quantity, rate and amount, plus categories, payment method, contact, description and receipt images when recorded. Labels are preserved at deletion; older entries resolve available references. Trash is excluded from backups and sync.
 - **Safe Descriptions**: Legacy transaction HTML is shown as plain text in lists, charts, search and exports.
 - **Security Locks**: Multiple layers of protection to secure your financial data.
   - **6-Digit PIN Lock**: Set a mandatory 6-digit PIN to secure the app. Supports dynamic light and dark modes. PINs are salted and hashed; five failed attempts trigger a persistent, escalating lockout.

@@ -1,3 +1,9 @@
+import { describeTrashEntries } from '/src/services/trashDetails.js'
+import { createApp, nextTick } from 'vue'
+import { getActivePinia } from 'pinia'
+import { createRouter, createMemoryHistory } from 'vue-router'
+import TrashList from '/src/pages/book-settings/TrashList.vue'
+import '/src/assets/styles/base.css'
 import Dexie from 'dexie'
 import { ungzip } from 'pako'
 import { db } from '/src/db/dexie.js'
@@ -142,6 +148,39 @@ export async function runDataTests() {
   const photo = await enqueueCompressedUpload(blob, 'transactions', bookId)
   const id = await db.transactions.add({ book_id: bookId, attachments: [photo], amount: 2 })
   await trashTransactions([id])
+  const categoryId = await db.categories.add({ book_id: bookId, name: 'Groceries' })
+  const productId = await db.products.add({ book_id: bookId, name: 'Rice' })
+  const contactId = await db.contacts.add({ name: 'Corner shop' })
+  const paymentId = await db.payment_modes.add({ book_id: bookId, name: 'Cash' })
+  const detailsId = await db.transactions.add({
+    book_id: bookId, type: 'out', amount: 120, description: '', date: '2026-11-18 11:59:00',
+    category_ids: [categoryId], contact_id: contactId, payment_mode_id: paymentId,
+    products: [{ product_id: productId, quantity: 2, rate: 60, amount: 120 }], attachments: [],
+  })
+  await trashTransactions([detailsId])
+  const detailedEntry = await db.trash.where('[table+record_id]').equals(['transactions', detailsId]).first()
+  check(detailedEntry.details.productNames[0] === 'Rice', 'Trash snapshot omitted product name')
+  check(!detailedEntry.row.products[0].name, 'display metadata changed the original row')
+  const legacyEntry = { ...detailedEntry }; delete legacyEntry.details
+  check((await describeTrashEntries([legacyEntry]))[0].details.productNames[0] === 'Rice', 'older Trash entries do not resolve product references')
+  await db.products.update(productId, { name: 'Renamed product' })
+  check((await describeTrashEntries([detailedEntry]))[0].details.productNames[0] === 'Rice', 'renaming product changed the Trash snapshot')
+  const host = document.createElement('div'); document.body.appendChild(host)
+  const router = createRouter({ history: createMemoryHistory(), routes: [
+    { path: '/book/:bookId/settings/trash', name: 'book-settings-trash', component: TrashList },
+    { path: '/book/:id', name: 'book-details', component: { template: '<div />' } },
+  ] })
+  await router.push(`/book/${bookId}/settings/trash`); await router.isReady()
+  const app = createApp(TrashList); app.use(getActivePinia()); app.use(router); app.mount(host)
+  for (let attempt = 0; attempt < 100 && !host.textContent.includes('Rice'); attempt++) {
+    await new Promise(resolve => setTimeout(resolve, 20)); await nextTick()
+  }
+  check(['Rice', '2 x 60', 'Groceries', 'Cash', 'Corner shop', '120'].every(text => host.textContent.includes(text)), 'Trash UI omitted identifying transaction details')
+  check(!host.textContent.includes('No description'), 'blank description placeholder hides transaction details')
+  app.unmount(); host.remove()
+  await restoreTrashEntries([detailedEntry.id])
+  check(!(await db.transactions.get(detailsId)).details, 'restoring leaked display metadata into the transaction')
+  passed.push('description-free Trash shows line items and metadata; old entries resolve names and new snapshots preserve them')
   const dump = await useDatabaseExport().getDatabaseDump()
   check(!('settings' in dump.data) && !('trash' in dump.data) && !('upload_queue' in dump.data), 'local tables included in backup')
   await useBookStore().deleteBook(bookId)

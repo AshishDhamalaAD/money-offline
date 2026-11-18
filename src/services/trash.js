@@ -1,3 +1,4 @@
+import { describeTrashEntries } from '@/services/trashDetails'
 import { db } from '@/db/dexie'
 import { recordDeletions, forgetDeletions } from '@/db/sync/dirty'
 import { withSyncLock } from '@/db/sync/lock'
@@ -8,11 +9,12 @@ export const TRASH_RETENTION_MS = 30 * 24 * 60 * 60 * 1000
 
 export function trashTransactions(ids = []) {
   if (!ids.length) return Promise.resolve([])
-  return withSyncLock(() => db.transaction('rw', db.transactions, db.trash, db.sync_tombstones, async () => {
+  return withSyncLock(() => db.transaction('rw', db.transactions, db.trash, db.sync_tombstones, db.products, db.categories, db.contacts, db.payment_modes, async () => {
     const rows = (await db.transactions.bulkGet([...new Set(ids)])).filter(Boolean)
-    for (const row of rows) {
-      await db.trash.add({ table: 'transactions', record_id: row.id, book_id: row.book_id, row, deleted_at: Date.now() })
-    }
+    const entries = await describeTrashEntries(rows.map(row => ({
+      table: 'transactions', record_id: row.id, book_id: row.book_id, row, deleted_at: Date.now(),
+    })))
+    await db.trash.bulkAdd(entries)
     await recordDeletions('transactions', rows.map(row => row.id))
     await db.transactions.bulkDelete(rows.map(row => row.id))
     return rows

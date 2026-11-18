@@ -258,3 +258,12 @@ encryption and app locking.
 
 Browser regression checks run with npm run test:browser in a fresh Chrome profile on an isolated
 localhost origin. Set CHROME_PATH when Chrome is installed outside the default macOS location.
+
+### Trash transaction identification
+
+Trash lists transaction line items (including quantity, rate and line amount), cash direction, categories,
+payment method, contact, discounts/charges, description and receipt attachments when present. Missing
+descriptions do not hide other information. Deletion snapshots display labels separately in the Trash
+entry's details field; the original transaction row remains unchanged for restore. Existing entries
+without these labels resolve referenced master records reactively on read. Missing master records show
+an explicit unavailable label rather than an empty item. No schema or sync protocol changes are needed.

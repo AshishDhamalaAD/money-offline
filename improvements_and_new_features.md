@@ -604,3 +604,10 @@ Run the suite with npm run test:browser (Chrome required; CHROME_PATH can overri
 Production PWA checks also passed at 390 px in light/dark mode: offline reload restored the photo
 preview; the 11-month rail, Trash and charts fit; the PIN lockout countdown disabled the keypad. No
 console errors or horizontal page overflow. The data suite uses a mocked server, not live credentials.
+
+### 18 November 2026 — Identify transactions in Trash without descriptions
+
+Trash cards now show saved items with quantity, rate and amount, categories, cash direction, payment
+method, contact, adjustments and receipt attachments. The description appears when supplied instead
+of replacing the transaction detail with a blank-description placeholder. New deletions preserve
+display labels separately from the restorable row; existing Trash entries resolve available references.

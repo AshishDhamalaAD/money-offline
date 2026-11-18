@@ -1,7 +1,8 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, defineAsyncComponent } from 'vue'
 import { useRoute } from 'vue-router'
 import { liveQuery } from 'dexie'
+import { describeTrashEntries } from '@/services/trashDetails'
 import { db } from '@/db/dexie'
 import { restoreTrashEntries, purgeExpiredTrash } from '@/services/trash'
 import { useSyncStore } from '@/store/syncStore'
@@ -13,6 +14,8 @@ import PageHeader from '@/components/layout/PageHeader.vue'
 import BaseButton from '@/components/common/BaseButton.vue'
 import BaseConfirm from '@/components/common/BaseConfirm.vue'
 import SettingsTabs from './components/SettingsTabs.vue'
+
+const LightGallery = defineAsyncComponent(() => import('@/components/common/LightGallery.vue'))
 
 const bookId = Number(useRoute().params.bookId)
 const rows = ref([])
@@ -26,7 +29,9 @@ let subscription
 onMounted(async () => {
   await purgeExpiredTrash()
   book.value = await db.books.get(bookId)
-  subscription = liveQuery(() => db.trash.where('book_id').equals(bookId).reverse().sortBy('deleted_at'))
+  subscription = liveQuery(async () => describeTrashEntries(
+    await db.trash.where('book_id').equals(bookId).reverse().sortBy('deleted_at'),
+  ))
     .subscribe({ next: value => rows.value = value, error: error => message.value = error.message })
 })
 onUnmounted(() => subscription?.unsubscribe())
@@ -68,11 +73,32 @@ async function remove() {
       <p v-if="message" role="status" class="text-sm text-indigo-700 dark:text-indigo-300">{{ message }}</p>
       <p v-if="!rows.length" class="py-8 text-center text-gray-500 dark:text-gray-400">Trash is empty.</p>
       <article v-for="entry in rows" :key="entry.id" class="space-y-3 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-        <div class="flex justify-between gap-3 text-sm text-gray-900 dark:text-gray-100">
+        <div class="flex items-start justify-between gap-3 text-sm text-gray-900 dark:text-gray-100">
           <span>{{ formatDateTime(entry.row.date) }}</span>
-          <strong>{{ entry.row.type === 'out' ? '-' : '+' }}{{ formatCurrency(entry.row.amount) }}</strong>
+          <strong class="shrink-0">{{ entry.row.type === 'out' ? '-' : '+' }}{{ formatCurrency(entry.row.amount) }}</strong>
         </div>
-        <p class="whitespace-pre-wrap break-words text-sm text-gray-700 dark:text-gray-200">{{ descriptionToText(entry.row.description) || 'No description' }}</p>
+        <div class="flex flex-wrap gap-2 text-xs">
+          <span class="rounded-full bg-gray-100 px-2 py-1 font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-200">{{ entry.row.type === 'in' ? 'Cash in' : 'Cash out' }}</span>
+          <span v-for="category in entry.details.categories" :key="category" class="rounded-full bg-indigo-50 px-2 py-1 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-200">{{ category }}</span>
+        </div>
+        <ul v-if="entry.row.products?.length" class="space-y-3 border-y border-gray-100 py-3 dark:border-gray-800" aria-label="Transaction items">
+          <li v-for="(item, index) in entry.row.products" :key="index" class="flex items-start justify-between gap-3 text-sm">
+            <div class="min-w-0">
+              <p class="break-words font-medium text-gray-900 dark:text-gray-100">{{ entry.details.productNames[index] }}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">{{ formatCurrency(item.quantity ?? 1) }} x {{ formatCurrency(item.rate) }}</p>
+            </div>
+            <span class="shrink-0 font-medium text-gray-900 dark:text-gray-100">{{ formatCurrency(item.amount) }}</span>
+          </li>
+        </ul>
+        <p v-if="descriptionToText(entry.row.description)" class="whitespace-pre-wrap break-words text-sm text-gray-700 dark:text-gray-200">{{ descriptionToText(entry.row.description) }}</p>
+        <dl class="space-y-1 text-sm text-gray-600 dark:text-gray-300">
+          <div v-if="entry.details.contact" class="flex flex-wrap gap-x-2"><dt>Contact:</dt><dd class="break-words font-medium">{{ entry.details.contact }}</dd></div>
+          <div v-if="entry.details.paymentMode" class="flex flex-wrap gap-x-2"><dt>Payment:</dt><dd class="break-words font-medium">{{ entry.details.paymentMode }}</dd></div>
+          <div v-if="Number(entry.row.discount)" class="flex justify-between gap-3"><dt>Discount</dt><dd>{{ formatCurrency(entry.row.discount) }}</dd></div>
+          <div v-if="Number(entry.row.charge)" class="flex justify-between gap-3"><dt>Charge</dt><dd>{{ formatCurrency(entry.row.charge) }}</dd></div>
+        </dl>
+        <LightGallery v-if="entry.row.attachments?.length" :images="entry.row.attachments" />
+        <p v-if="!entry.row.products?.length && !descriptionToText(entry.row.description) && !entry.details.categories.length && !entry.details.contact && !entry.details.paymentMode && !entry.row.attachments?.length" class="text-sm text-gray-500 dark:text-gray-400">No items or additional details were recorded.</p>
         <p class="text-xs text-gray-500 dark:text-gray-400">Deleted {{ formatDateTime(new Date(entry.deleted_at)) }}</p>
         <div class="flex flex-wrap gap-2">
           <BaseButton size="sm" :disabled="busy" @click="restore(entry)">Restore</BaseButton>
