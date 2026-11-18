@@ -15,6 +15,7 @@ const route = useRoute()
 const router = useRouter()
 
 const tabs = [
+  { id: "trash", label: "Trash", routeName: "book-settings-trash" },
   { id: "products", label: "Products", routeName: "book-settings-products" },
   { id: "categories", label: "Categories", routeName: "book-settings-categories" },
   { id: "payment-modes", label: "Payment Modes", routeName: "book-settings-payment-modes" },
@@ -23,6 +24,7 @@ const tabs = [
 ]
 
 const activeTab = computed(() => {
+  if (route.name?.includes("trash")) return "trash"
   if (route.name?.includes("products")) return "products"
   if (route.name?.includes("categories")) return "categories"
   if (route.name?.includes("payment-modes")) return "payment-modes"

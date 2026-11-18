@@ -21,7 +21,7 @@ Comprehensive tools for recording and managing financial transactions.
   - **Contact**: Associate transactions with specific people or entities (Payee/Payer).
   - **Payment Mode**: Specify the method of payment (e.g., Cash, Card, UPI).
   - **Discount & Charges**: Add specific adjustments to the final amount.
-  - **Attachments**: Upload multiple images (receipts, bills) directly from the device. Supports offline queuing and management.
+  - **Attachments**: Upload multiple images (receipts, bills) directly from the device. Photos taken offline stay on this device with immediate previews, including after reload, and upload before data sync when reconnected. The queue holds up to 20 photos / 40 MB; Sync settings show waiting/failed photos and Retry now.
 - **Calculations**: Automatic computation of totals based on line items, discounts, and extra charges.
 
 ## 3. Inventory & Product Management
@@ -47,8 +47,10 @@ Extensive configuration options to tailor the application to user needs.
 
 Robust security features to protect your financial data.
 
+- **Transaction Trash**: Restore deleted transactions from Book Settings for 30 days on this device, or delete them permanently. Trash is excluded from backups and sync.
+- **Safe Descriptions**: Legacy transaction HTML is shown as plain text in lists, charts, search and exports.
 - **Security Locks**: Multiple layers of protection to secure your financial data.
-  - **6-Digit PIN Lock**: Set a mandatory 6-digit PIN to secure the app. Supports dynamic light and dark modes.
+  - **6-Digit PIN Lock**: Set a mandatory 6-digit PIN to secure the app. Supports dynamic light and dark modes. PINs are salted and hashed; five failed attempts trigger a persistent, escalating lockout.
   - **Biometric Lock**: Secure the application with your device's native biometric authentication (Fingerprint, FaceID, TouchID).
   - **Biometric Fallback**: If biometric authentication fails, users can automatically fall back to their 6-digit PIN for entry.
   - **Enforced Security**: Enabling Biometric lock automatically requires setting up a PIN to ensure constant access.
@@ -99,3 +101,6 @@ Polished interface for a premium user experience.
 - **Toast Notifications**: Non-intrusive feedback messages for user actions (success, error).
 - **Searchable Selects**: Multi-select capable dropdowns with search, hidden selected options to prevent duplicates, and clear-all buttons for fast adjustments in forms and filters.
 - **Responsive Design**: Optimized for both desktop and mobile devices.
+
+- **Device secret storage**: API tokens are encrypted on secure origins using a device-local key. Non-secure contexts show a legacy-storage warning. App records are not encrypted by this feature.
+- **Touch charts**: Larger tooltips and point hit areas make month/year charts easier to inspect on a phone.

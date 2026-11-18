@@ -2,6 +2,7 @@ import Dexie from "dexie"
 
 import { db } from "@/db/dexie"
 import { formatDateTimeForDB, roundAmount } from "@/utils/dateUtils"
+import { descriptionToText } from "@/utils/description"
 import { toCsv } from "@/utils/csvExport"
 import { buildStatementPdf, formatStatementDate } from "@/utils/statementPdf"
 
@@ -112,7 +113,7 @@ export function useDataExport() {
         category: categoryNames.join(", "),
         paymentMode: paymentModeMap.get(transaction.payment_mode_id)?.name || "",
         contact: contactMap.get(transaction.contact_id)?.name || "",
-        description: transaction.description || "",
+        description: descriptionToText(transaction.description),
         products: productLines.join("; "),
         discount: roundAmount(transaction.discount || 0),
         charge: roundAmount(transaction.charge || 0),

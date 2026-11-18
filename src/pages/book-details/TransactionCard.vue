@@ -2,6 +2,7 @@
 import { computed } from "vue"
 
 import { formatTime } from "@/utils/dateUtils"
+import { descriptionToText } from "@/utils/description"
 import { formatCurrency } from "@/utils/moneyUtils"
 import { resizedImageUrls } from "@/utils/imageUtils"
 import { useCategoryStore } from "@/store/categoryStore"
@@ -33,6 +34,8 @@ const paymentMode = computed(() => {
 })
 
 const formattedAmount = computed(() => formatCurrency(props.transaction.amount))
+
+const descriptionText = computed(() => descriptionToText(props.transaction.description))
 
 const productsTotal = computed(() => {
   if (!props.transaction.products || props.transaction.products.length === 0) return 0
@@ -126,9 +129,8 @@ const allImages = computed(() => {
     <!-- Row 3: Description + Time -->
     <div class="flex justify-between items-start gap-2">
       <span
-        class="text-xs text-gray-600 flex-1 whitespace-pre-wrap dark:text-gray-300"
-        v-html="transaction.description"
-      ></span>
+        class="text-xs text-gray-600 flex-1 whitespace-pre-wrap break-words dark:text-gray-300"
+      >{{ descriptionText }}</span>
       <span class="text-xs text-gray-500 shrink-0 dark:text-gray-400">{{ formattedTime }}</span>
     </div>
 
@@ -136,7 +138,7 @@ const allImages = computed(() => {
       v-if="allImages.length > 0"
       class="flex items-start gap-2"
       :class="{
-        'mt-2': transaction.description,
+        'mt-2': descriptionText,
       }"
     >
       <button
@@ -147,7 +149,7 @@ const allImages = computed(() => {
         aria-label="View attachment"
         @click.stop="emit('view-attachments', { images: allImages, index })"
       >
-        <img class="h-10 w-10 object-cover" :src="attachment" loading="lazy" />
+        <img class="h-11 w-11 object-cover" :src="attachment" loading="lazy" />
       </button>
     </div>
   </div>

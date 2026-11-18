@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onUnmounted, watch, nextTick } from "vue"
 import { useRoute, useRouter } from "vue-router"
 
 import { formatDate, formatMonthShort, formatMonthYear, getMonthKey, getNepalDate } from "@/utils/dateUtils"
+import { descriptionToText } from "@/utils/description"
 import { formatCurrency } from "@/utils/moneyUtils"
 import { setLastBookId } from "@/utils/lastBook"
 import { useBookStore } from "@/store/bookStore"
@@ -243,10 +244,10 @@ function executeDuplicate(includeDescription) {
 
   const t = selectedTransaction.value
 
-  // Normalize description for form (strip HTML paragraph formatting)
+  // Normalize description for form (legacy HTML becomes plain text)
   let description = ""
   if (includeDescription && t.description) {
-    description = t.description.replace(/<\/p>\s*<p>/g, "\n").replace(/<\/?p>/g, "")
+    description = descriptionToText(t.description)
   }
 
   // Build a current local timestamp for the new transaction
@@ -324,7 +325,9 @@ let scrollFrame = null
 
 function measureHeader() {
   const header = document.querySelector("header")
-  if (header) headerOffset.value = header.offsetHeight
+  const banner = document.querySelector("[data-status-banner]")
+  const bannerHeight = banner ? banner.offsetHeight : 0
+  if (header) headerOffset.value = header.offsetHeight + bannerHeight
 }
 
 function updateActiveMonth() {
@@ -400,12 +403,14 @@ onMounted(async () => {
 
   window.addEventListener("scroll", onPageScroll, { passive: true })
   window.addEventListener("resize", measureHeader)
+  window.addEventListener("status-banner-resize", measureHeader)
 })
 
 onUnmounted(() => {
   transactionStore.closeTransactionList()
   window.removeEventListener("scroll", onPageScroll)
   window.removeEventListener("resize", measureHeader)
+  window.removeEventListener("status-banner-resize", measureHeader)
   if (scrollFrame) cancelAnimationFrame(scrollFrame)
 })
 
@@ -896,7 +901,7 @@ async function handleRefresh() {
     </PageHeader>
 
     <!-- Content -->
-    <main class="pl-4 pt-4" :class="[hasScrubber ? 'pr-10' : 'pr-4', isSelecting ? 'pb-44' : 'pb-24']">
+    <main class="pl-4 pt-4" :class="[hasScrubber ? 'pr-14' : 'pr-4', isSelecting ? 'pb-44' : 'pb-24']">
       <PullToRefresh :on-refresh="handleRefresh" :disabled="isSelecting">
         <div class="space-y-4">
           <!-- Stats Toggle -->
@@ -1048,7 +1053,7 @@ async function handleRefresh() {
         v-for="month in monthGroups"
         :key="month.key"
         type="button"
-        class="w-6 rounded-full py-1 text-[10px] font-semibold uppercase leading-none transition-colors"
+        class="w-9 rounded-full py-2 text-[11px] font-semibold uppercase leading-none transition-colors"
         :class="
           activeMonth === month.key
             ? 'bg-indigo-600 text-white'

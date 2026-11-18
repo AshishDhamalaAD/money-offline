@@ -246,7 +246,7 @@ function onContextMenu() {
       <button
         v-if="selecting"
         type="button"
-        class="shrink-0 self-center rounded-full p-1"
+        class="flex h-11 w-11 shrink-0 self-center items-center justify-center rounded-full"
         :aria-label="selected ? 'Deselect transaction' : 'Select transaction'"
         @click.stop="emit('toggle-select', transaction.id)"
       >

@@ -11,6 +11,7 @@ import {
   PointElement,
   CategoryScale,
 } from "chart.js"
+import { createChartOptions } from '@/utils/chartOptions'
 import DateRangeTabs from "@/components/common/DateRangeTabs.vue"
 import { filterByDateRange, formatMonthYear, getMonthKey } from "@/utils/dateUtils"
 
@@ -87,10 +88,7 @@ const chartData = computed(() => {
   }
 })
 
-const chartOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-}
+const chartOptions = createChartOptions()
 </script>
 
 <template>

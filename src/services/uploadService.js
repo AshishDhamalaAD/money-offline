@@ -1,49 +1,28 @@
-import { db } from "@/db/dexie"
-import { UPLOAD_IMAGE_API_URL } from "@/constants/routes"
 import { compressImage } from "@/utils/imageCompression"
+import { enqueueCompressedUpload, enqueueUpload } from "@/services/uploadQueue"
+import { uploadBlob } from "@/services/uploadTransport"
 
 export const uploadService = {
-    async uploadImage(file, from) {
-        const endpoint = await db.settings.get("apiEndpoint")
-        const token = await db.settings.get("apiToken")
-
-        if (!endpoint || !endpoint.value) {
-            throw new Error("API Endpoint not configured")
-        }
-
-        if (!token || !token.value) {
-            throw new Error("API Token not configured")
+    async uploadImage(file, from, bookId) {
+        // Offline is not an error any more: the photo is stored on the device
+        // and referenced as `local:<uuid>` until the queue can send it.
+        if (typeof navigator !== "undefined" && !navigator.onLine) {
+            return enqueueUpload(file, from, bookId)
         }
 
         // Both the camera button and FilePond come through here, so resizing
         // once at this point covers every upload path.
         const upload = await compressImage(file)
 
-        const formData = new FormData()
-        formData.append("image", upload, upload.name || "image.jpg")
-        formData.append("from", from)
+        try {
+            return await uploadBlob(upload, from, upload.name || "image.jpg", upload.type)
+        } catch (e) {
+            // A rejected token or a missing endpoint will never succeed by
+            // itself, so surface it instead of silently queueing.
+            if (e?.permanent) throw e
 
-        const response = await fetch(`${endpoint.value}${UPLOAD_IMAGE_API_URL}`, {
-            method: "POST",
-            headers: {
-                "Accept": "application/json",
-                "X-TOKEN": token.value,
-            },
-            body: formData,
-        })
-
-        if (!response.ok) {
-            throw new Error(`Upload failed: ${response.statusText}`)
+            // The connection dropped mid-request: keep the photo.
+            return enqueueCompressedUpload(upload, from, bookId)
         }
-
-        const data = await response.json()
-        // Assuming server returns { url: "..." } or similar. 
-        // The requirement says "The server will return the images urls."
-        // If it returns a list, I'll take the first one (since we upload one by one).
-        // Or if it returns the url directly.
-        // I'll assume it returns { url: "path/to/image.jpg" } or just the string.
-        // Let's assume standard JSON response { url: ... } or { data: { url: ... } }
-        // I'll return data.url
-        return data.url
-    }
+    },
 }

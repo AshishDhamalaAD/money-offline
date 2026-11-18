@@ -1,3 +1,6 @@
+import { getApiToken } from '@/utils/secureStore'
+import { withSyncLock } from './lock'
+import { countLocalAttachmentRefs } from '@/services/uploadQueue'
 import { gzip } from 'pako'
 
 import { db } from '@/db/dexie'
@@ -41,13 +44,13 @@ const endpointBase = endpoint => String(endpoint || '').trim().replace(/\/+$/, '
 async function readConfig() {
     const [endpoint, token, mode] = await Promise.all([
         db.settings.get('apiEndpoint'),
-        db.settings.get('apiToken'),
+        getApiToken(),
         db.settings.get('syncMode'),
     ])
 
     return {
         endpoint: endpointBase(endpoint?.value),
-        token: token?.value || '',
+        token: token || '',
         // Full backup is the default, so a server that only knows the original
         // endpoint never receives a probe for the newer one.
         mode: mode?.value === 'incremental' ? 'incremental' : 'dump',
@@ -138,13 +141,23 @@ async function pullChanges(config, clientId, state) {
     return summary
 }
 
+function assertUploadedAttachments(changes) {
+    for (const table of ['transactions', 'products']) {
+        if ((changes[table] || []).some(row => row.attachments?.some(ref => typeof ref === 'string' && ref.startsWith('local:')))) {
+            throw new Error('Waiting for photos to upload')
+        }
+    }
+}
+
 async function pushChanges(config, clientId) {
     const summary = { pushed: 0, deleted: 0 }
 
     for (let round = 0; round < SYNC_MAX_PAGES; round += 1) {
         const batch = await collectPendingChanges(SYNC_BATCH_SIZE)
         if (!batch.count) break
+        assertUploadedAttachments(batch.changes)
 
+        await db.trash.filter(entry => (batch.deletions.transactions || []).some(row => row.id === entry.record_id)).modify({ delete_attempted: true })
         const response = await request(`${config.endpoint}${SYNC_CHANGES_API_URL}`, {
             method: 'POST',
             headers: requestHeaders(config.token, clientId, true),
@@ -185,11 +198,13 @@ async function pushChanges(config, clientId) {
 async function pushFullDump(config) {
     const { getDatabaseDump } = useDatabaseExport()
     const data = await getDatabaseDump()
+    assertUploadedAttachments(data.data)
     const compressed = gzip(JSON.stringify(data))
 
     const form = new FormData()
     form.append('file', new Blob([compressed], { type: 'application/gzip' }), 'data.json.gz')
 
+    await db.trash.toCollection().modify({ delete_attempted: true })
     const response = await request(`${config.endpoint}${SYNC_APP_DATA_API_URL}`, {
         method: 'POST',
         headers: {
@@ -217,8 +232,13 @@ function isRetryable(error) {
 
 // Pull, then push. Pulling first means local edits that are newer than the
 // server's copy survive the merge and are uploaded afterwards.
-export async function runSync() {
+export function runSync() {
+    return withSyncLock(runSyncLocked)
+}
+
+async function runSyncLocked() {
     try {
+        if (await countLocalAttachmentRefs()) return { success: false, retryable: true, message: 'Waiting for photos to upload' }
         const config = await readConfig()
 
         if (!config.endpoint) {

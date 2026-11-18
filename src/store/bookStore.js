@@ -1,8 +1,10 @@
+import { withSyncLock } from '@/db/sync/lock'
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { liveQuery } from 'dexie'
 import { db } from '@/db/dexie'
 import { recordDeletions } from '@/db/sync/dirty'
+import { discardQueuedUploads } from '@/services/uploadQueue'
 import { formatDateTimeForDB } from '@/utils/dateUtils'
 import { getLastBookId, setLastBookId } from '@/utils/lastBook'
 
@@ -33,7 +35,11 @@ export const useBookStore = defineStore('book', () => {
         return id
     }
 
-    async function deleteBook(id) {
+    function deleteBook(id) {
+        return withSyncLock(() => deleteBookLocked(id))
+    }
+
+    async function deleteBookLocked(id) {
         // Deleting a book removes its rows, so every removed row needs a
         // tombstone or other devices would keep showing it.
         const [transactions, categories, products, paymentModes, recurring, budgets] = await Promise.all([
@@ -52,6 +58,24 @@ export const useBookStore = defineStore('book', () => {
         await recordDeletions('recurring_transactions', recurring)
         await recordDeletions('budgets', budgets)
         await recordDeletions('books', id)
+
+        // Photos still waiting for a connection belong to this book and would
+        // otherwise upload into a book that no longer exists.
+        const [transactionRows, productRows] = await Promise.all([
+            db.transactions.where('book_id').equals(id).toArray(),
+            db.products.where('book_id').equals(id).toArray(),
+        ])
+        const trashRows = await db.trash.where('book_id').equals(id).toArray()
+        const queuedRows = await db.upload_queue.where('book_id').equals(id).toArray()
+        await discardQueuedUploads([
+            ...trashRows.flatMap(entry => entry.row.attachments || []),
+            ...queuedRows.map(row => row.ref),
+            ...transactionRows.flatMap(row => row.attachments || []),
+            ...productRows.flatMap(row => row.attachments || []),
+        ])
+
+        await db.trash.where('book_id').equals(id).delete()
+        await db.upload_queue.where('book_id').equals(id).delete()
 
         // Delete the book
         await db.books.delete(id)

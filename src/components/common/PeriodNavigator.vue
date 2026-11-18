@@ -83,7 +83,7 @@ function shift(step) {
         @click="emit('update:modelValue', mode.value)"
         :aria-pressed="modelValue === mode.value"
         :class="[
-          'rounded-full px-3 py-1 text-xs font-medium transition-colors',
+          'rounded-full px-3 py-1.5 text-xs font-medium transition-colors',
           modelValue === mode.value
             ? 'bg-indigo-600 text-white shadow-sm dark:bg-indigo-500'
             : 'text-gray-600 dark:text-gray-200',
@@ -99,7 +99,7 @@ function shift(step) {
         :disabled="!canPrev"
         @click="shift(-1)"
         :aria-label="`Previous ${stepLabel}`"
-        class="flex h-8 w-8 items-center justify-center rounded-full text-gray-600 transition-colors hover:bg-gray-100 active:bg-gray-200 disabled:opacity-30 disabled:hover:bg-transparent dark:text-gray-200 dark:hover:bg-gray-800 dark:active:bg-gray-700 dark:disabled:hover:bg-transparent"
+        class="flex h-10 w-10 items-center justify-center rounded-full text-gray-600 transition-colors hover:bg-gray-100 active:bg-gray-200 disabled:opacity-30 disabled:hover:bg-transparent dark:text-gray-200 dark:hover:bg-gray-800 dark:active:bg-gray-700 dark:disabled:hover:bg-transparent"
       >
         <IconChevronLeft class="h-4 w-4" />
       </button>
@@ -134,7 +134,7 @@ function shift(step) {
         :disabled="!canNext"
         @click="shift(1)"
         :aria-label="`Next ${stepLabel}`"
-        class="flex h-8 w-8 items-center justify-center rounded-full text-gray-600 transition-colors hover:bg-gray-100 active:bg-gray-200 disabled:opacity-30 disabled:hover:bg-transparent dark:text-gray-200 dark:hover:bg-gray-800 dark:active:bg-gray-700 dark:disabled:hover:bg-transparent"
+        class="flex h-10 w-10 items-center justify-center rounded-full text-gray-600 transition-colors hover:bg-gray-100 active:bg-gray-200 disabled:opacity-30 disabled:hover:bg-transparent dark:text-gray-200 dark:hover:bg-gray-800 dark:active:bg-gray-700 dark:disabled:hover:bg-transparent"
       >
         <IconChevronRight class="h-4 w-4" />
       </button>

@@ -1,3 +1,4 @@
+import { migrateSecrets, getApiToken, setApiToken, setPin, verifyPin, secureStorageAvailable } from '@/utils/secureStore'
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import { db } from '@/db/dexie'
@@ -20,7 +21,9 @@ export const useSettingsStore = defineStore('settings', () => {
     const biometricEnabled = ref(false)
     const biometricCredentialId = ref(null)
     const pinEnabled = ref(false)
-    const pinCode = ref(null)
+    const pinLockout = ref({ failures: 0, level: 0, until: 0 })
+    const securityWarning = ref(secureStorageAvailable ? '' : 'Secure storage is unavailable. Use HTTPS to hash your PIN and encrypt your API token. New secrets are stored as plaintext until then.')
+    let verifyingPin = null
     const autoLockTimeout = ref(0) // 0 means immediate/on-startup, others are minutes
     const initialized = ref(false)
     const themePreference = ref("system")
@@ -32,13 +35,14 @@ export const useSettingsStore = defineStore('settings', () => {
     async function init() {
         if (initialized.value) return
         try {
+            await migrateSecrets().catch(error => { securityWarning.value = error.message })
             const [endpoint, token, bioEnabled, bioCredId, pinEn, pin, timeout, theme, reminders, reminderAt, reminderShown, mode, savedLocale, savedCalendar] = await Promise.all([
                 db.settings.get("apiEndpoint"),
-                db.settings.get("apiToken"),
+                getApiToken().catch(error => { securityWarning.value = error.message; return "" }),
                 db.settings.get("biometricEnabled"),
                 db.settings.get("biometricCredentialId"),
                 db.settings.get("pinEnabled"),
-                db.settings.get("pinCode"),
+                db.settings.get("pinLockout"),
                 db.settings.get("autoLockTimeout"),
                 db.settings.get("themePreference"),
                 db.settings.get("remindersEnabled"),
@@ -50,11 +54,11 @@ export const useSettingsStore = defineStore('settings', () => {
             ])
 
             if (endpoint) apiEndpoint.value = endpoint.value
-            if (token) apiToken.value = token.value
+            apiToken.value = token
             if (bioEnabled) biometricEnabled.value = bioEnabled.value
             if (bioCredId) biometricCredentialId.value = bioCredId.value
             if (pinEn) pinEnabled.value = pinEn.value
-            if (pin) pinCode.value = pin.value
+            if (pin) pinLockout.value = pin.value
             if (timeout) autoLockTimeout.value = timeout.value
             if (theme?.value) themePreference.value = theme.value
             if (reminders) remindersEnabled.value = Boolean(reminders.value)
@@ -75,10 +79,12 @@ export const useSettingsStore = defineStore('settings', () => {
 
     async function saveSettings(endpoint, token) {
         try {
-            const changed = apiEndpoint.value !== endpoint || apiToken.value !== token
+            const savedEndpoint = (await db.settings.get("apiEndpoint"))?.value || ""
+            const savedToken = await getApiToken().catch(() => null)
+            const changed = savedEndpoint !== endpoint || savedToken !== token
 
             await db.settings.put({ key: "apiEndpoint", value: endpoint })
-            await db.settings.put({ key: "apiToken", value: token })
+            if (savedToken !== token) await setApiToken(token)
             apiEndpoint.value = endpoint
             apiToken.value = token
 
@@ -198,27 +204,54 @@ export const useSettingsStore = defineStore('settings', () => {
 
     async function savePinCode(pin) {
         try {
+            await setPin(pin)
             await db.settings.put({ key: "pinEnabled", value: true })
-            await db.settings.put({ key: "pinCode", value: pin })
+            await resetPinLockout()
             pinEnabled.value = true
-            pinCode.value = pin
             return { success: true }
         } catch (error) {
             return { success: false, message: error.message }
         }
     }
 
-    async function verifyPinCode(pin) {
-        return pinCode.value === pin
+    async function resetPinLockout() {
+        pinLockout.value = { failures: 0, level: 0, until: 0 }
+        await db.settings.put({ key: 'pinLockout', value: { ...pinLockout.value } })
+    }
+
+    function verifyPinCode(pin) {
+        if (verifyingPin) return Promise.resolve(false)
+        const work = async () => {
+            const state = (await db.settings.get('pinLockout'))?.value || { failures: 0, level: 0, until: 0 }
+            pinLockout.value = state
+            if (state.until > Date.now()) return false
+            const valid = await verifyPin(pin)
+            if (valid) await resetPinLockout()
+            else {
+                const next = { ...state, failures: (state.failures || 0) + 1 }
+                if (next.failures >= 5) {
+                    next.until = Date.now() + Math.min(300000, 30000 * 2 ** (state.level || 0))
+                    next.level = Math.min(4, (state.level || 0) + 1)
+                    next.failures = 0
+                }
+                pinLockout.value = next
+                await db.settings.put({ key: 'pinLockout', value: next })
+            }
+            return valid
+        }
+        verifyingPin = (globalThis.navigator?.locks
+            ? navigator.locks.request('money-pin-verification', work)
+            : work()).finally(() => { verifyingPin = null })
+        return verifyingPin
     }
 
     async function disablePin() {
         try {
             await db.settings.put({ key: "pinEnabled", value: false })
-            await db.settings.put({ key: "pinCode", value: null })
+            await db.settings.bulkDelete(['pinCode', 'pinHash'])
+            await resetPinLockout()
             await disableBiometric() // PIN is required for biometric
             pinEnabled.value = false
-            pinCode.value = null
             return { success: true }
         } catch (error) {
             return { success: false, message: error.message }
@@ -350,7 +383,8 @@ export const useSettingsStore = defineStore('settings', () => {
         biometricEnabled,
         biometricCredentialId,
         pinEnabled,
-        pinCode,
+        pinLockout,
+        securityWarning,
         autoLockTimeout,
         initialized,
         themePreference,

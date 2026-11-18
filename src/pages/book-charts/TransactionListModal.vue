@@ -5,6 +5,7 @@ import BaseTable from "@/components/common/BaseTable.vue"
 import { formatCurrency } from "@/utils/moneyUtils"
 import { useCategoryStore } from "@/store/categoryStore"
 import { formatDate } from "@/utils/dateUtils"
+import { descriptionToText } from "@/utils/description"
 
 const props = defineProps({
   show: Boolean,
@@ -42,7 +43,7 @@ const flatData = computed(() => {
         ...t,
         rowType: "header",
         displayDate: t.date,
-        displayDescription: t.description || "Transaction",
+        displayDescription: descriptionToText(t.description) || "Transaction",
         itemCount: t.products.length,
       })
       // Product rows
@@ -66,7 +67,7 @@ const flatData = computed(() => {
         ...t,
         rowType: "single",
         displayDate: t.date,
-        displayDescription: t.description,
+        displayDescription: descriptionToText(t.description),
         rate: product ? product.rate : null,
       })
     }
@@ -91,22 +92,22 @@ const flatData = computed(() => {
             class="pl-4 text-gray-600 flex items-center gap-2 dark:text-gray-300"
           >
             <span class="w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-gray-600"></span>
-            <div v-html="row.description"></div>
+            <div class="whitespace-pre-wrap">{{ row.description }}</div>
           </div>
         </template>
 
         <template #cell-description="{ row }">
           <!-- Header Row -->
           <div v-if="row.rowType === 'header'" class="font-medium text-gray-900 dark:text-gray-100">
-            <div v-html="row.displayDescription"></div>
+            <div class="whitespace-pre-wrap">{{ row.displayDescription }}</div>
             <span class="text-xs text-gray-500 font-normal ml-1 dark:text-gray-400">({{ row.itemCount }} items)</span>
           </div>
 
           <!-- Single Row -->
           <div v-else>
             <div class="text-gray-900 dark:text-gray-100">
-              <div>{{ row.products.map((p) => p.name).join(", ") }}</div>
-              <div v-html="row.displayDescription" class="min-w-32 overflow-y-auto whitespace-pre-line"></div>
+              <div>{{ (row.products || []).map((p) => p.name).join(", ") }}</div>
+              <div class="min-w-32 overflow-y-auto whitespace-pre-wrap">{{ row.displayDescription }}</div>
             </div>
             <div class="text-xs text-gray-500 dark:text-gray-400" v-if="row.category_ids && row.category_ids.length">
               {{ row.category_ids.map(getCategoryName).join(", ") }}

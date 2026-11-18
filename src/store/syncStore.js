@@ -1,3 +1,4 @@
+import { getApiToken } from '@/utils/secureStore'
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 
@@ -7,6 +8,13 @@ import { countPendingChanges } from '@/db/sync/dirty'
 import { BACKGROUND_SYNC_TAG } from '@/db/sync/protocol'
 import { getSyncState, patchSyncState, resetSyncState } from '@/db/sync/state'
 import { installChangeTracking, onLocalChange } from '@/db/sync/tracking'
+import {
+    countLocalAttachmentRefs,
+    processQueue,
+    refreshQueueState,
+    retryFailedUploads as resetFailedUploads,
+    uploadQueueState,
+} from '@/services/uploadQueue'
 
 // Retries grow: quick while the phone is still awake, then patient enough to
 // stop draining the battery on a dead connection.
@@ -39,10 +47,10 @@ export const useSyncStore = defineStore('sync', () => {
     async function hasSyncConfig() {
         const [endpoint, token] = await Promise.all([
             db.settings.get('apiEndpoint'),
-            db.settings.get('apiToken'),
+            getApiToken(),
         ])
 
-        return Boolean(endpoint?.value && token?.value)
+        return Boolean(endpoint?.value && token)
     }
 
     async function refreshPending() {
@@ -50,6 +58,12 @@ export const useSyncStore = defineStore('sync', () => {
             pendingChanges.value = await countPendingChanges()
         } catch (e) {
             console.error('Failed to count pending changes', e)
+        }
+
+        try {
+            await refreshQueueState()
+        } catch (e) {
+            console.error('Failed to count queued photos', e)
         }
 
         return pendingChanges.value
@@ -148,6 +162,33 @@ export const useSyncStore = defineStore('sync', () => {
                 isSyncing.value = true
                 error.value = null
 
+                // Queued photos go first: a backup containing `local:` paths
+                // would point at files the server has never seen.
+                const uploads = await processQueue()
+                if (uploads.uploaded > 0) await refreshPending()
+
+                const pendingPhotos = await countLocalAttachmentRefs()
+                if (pendingPhotos > 0) {
+                    const blocked = uploads.failed > 0
+                    const message = blocked
+                        ? 'Some photos could not upload. Retry from Settings → Sync, or remove them from the entry.'
+                        : 'Waiting for photos to upload'
+
+                    error.value = message
+                    const result = {
+                        success: false,
+                        message,
+                        retryable: !blocked,
+                        deferred: true,
+                        pendingUploads: uploads.queued,
+                        pendingPhotos,
+                    }
+                    lastResult.value = { ...result, reason, at: Date.now() }
+
+                    if (!blocked) await scheduleRetry()
+                    return result
+                }
+
                 const result = await runSync()
                 lastResult.value = { ...result, reason, at: Date.now() }
 
@@ -179,6 +220,20 @@ export const useSyncStore = defineStore('sync', () => {
         return inFlight
     }
 
+    // Settings → Sync "Retry now": failed photos become queued again, then the
+    // queue is drained immediately.
+    async function retryUploads() {
+        await resetFailedUploads()
+        const result = await processQueue()
+        await refreshPending()
+
+        if (result.uploaded > 0 && pendingChanges.value > 0) {
+            return triggerSync({ reason: 'manual' })
+        }
+
+        return result
+    }
+
     // Called for every local write: keeps the pending badge honest and lets a
     // quiet period settle before uploading.
     function scheduleSync() {
@@ -193,6 +248,9 @@ export const useSyncStore = defineStore('sync', () => {
     async function handleOnline() {
         online.value = true
         await resetBackoff()
+        // Sending the photos first also rewrites the records that reference
+        // them, which is what makes the following sync safe.
+        if (await hasSyncConfig()) await processQueue()
         await refreshPending()
 
         if (pendingChanges.value > 0) triggerSync({ reason: 'online' })
@@ -238,6 +296,14 @@ export const useSyncStore = defineStore('sync', () => {
         retryAt.value = state.nextRetryAt || 0
 
         await refreshPending()
+
+        if (online.value && uploadQueueState.value.queued > 0 && await hasSyncConfig()) {
+            // A photo queued in a previous session should still go out, even if
+            // the form it belonged to was never saved.
+            processQueue()
+                .then(() => refreshPending())
+                .catch(e => console.error('Failed to drain the photo queue', e))
+        }
 
         if (pendingChanges.value > 0) await registerBackgroundSync()
         if (!(await hasSyncConfig())) return
@@ -288,9 +354,11 @@ export const useSyncStore = defineStore('sync', () => {
         online,
         lastResult,
         backgroundSyncSupported,
+        uploadQueueState,
         start,
         stop,
         triggerSync,
+        retryUploads,
         scheduleSync,
         refreshPending,
         registerBackgroundSync,

@@ -2,6 +2,7 @@
 import { computed, ref, watch } from "vue"
 import { Bar } from "vue-chartjs"
 import { Chart as ChartJS, Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale } from "chart.js"
+import { createChartOptions } from '@/utils/chartOptions'
 import DateRangeTabs from "@/components/common/DateRangeTabs.vue"
 import { filterByDateRange, formatMonthShort } from "@/utils/dateUtils"
 
@@ -73,10 +74,7 @@ const chartData = computed(() => {
   }
 })
 
-const chartOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-}
+const chartOptions = createChartOptions()
 </script>
 
 <template>

@@ -49,7 +49,7 @@ src/
 
 ## 4. Database Schema (Dexie.js)
 
-The application uses a versioned schema in `src/db/dexie.js`. The current version is **13**.
+The application uses a versioned schema in `src/db/dexie.js`. The current version is **16**.
 
 ### Tables
 
@@ -63,6 +63,8 @@ The application uses a versioned schema in `src/db/dexie.js`. The current versio
 - **settings**: `key, value` (Key-value store for app settings like API endpoint, themePreference, biometric flags)
 - **sync_tombstones**: `++id, table, record_id, deleted_at, [table+record_id]` (Local deletions waiting to be pushed)
 - **sync_state**: `key` (Pull cursor, client id, protocol choice and retry state)
+- **upload_queue**: `++id, ref, book_id, status, created_at` (Device-local compressed photo blobs and resolution records; version 14, book index added in version 16)
+- **trash**: `++id, table, book_id, deleted_at, [table+record_id]` (Device-local deleted transaction snapshots; version 16)
 
 > **Note**: `*category_ids` indicates a multi-entry index, allowing efficient querying of transactions by multiple categories.
 
@@ -107,7 +109,7 @@ Image uploads are handled separately from the main database sync to ensure effic
 - **Component**: `ImageUpload.vue` uses **FilePond** for handling file selection, validation (size, type), and previews. FilePond and its preview plugin are the heaviest third-party chunk in the app, so every screen mounts the widget through `LazyImageUpload.vue`: the component is an async import and is only fetched when the uploader scrolls into view (or when the "Add New Product" modal opens). Pages that never show an uploader, and forms where the user never scrolls to it, do not load that chunk at all.
 - **Service**: `uploadService.js` handles the API communication.
 - **Process**:
-  1.  **Validation**: Checks for internet connection, file type (JPG/PNG), and size (<20MB). The limit is generous because the next step shrinks the image before it leaves the device.
+  1.  **Validation**: Checks file type (JPG/PNG), and size (<20MB). The limit is generous because the next step shrinks the image before it leaves the device.
   2.  **Compression**: `utils/imageCompression.js` redraws the file on a canvas with its long edge capped at 1600 px and re-encodes it as JPEG at quality 0.8. PNGs keep their format only when they actually contain transparency. Files under 250 KB, animated/vector formats, and anything that fails to decode (for example HEIC) are uploaded untouched, and a result that is not smaller than the original is discarded. Both the camera button and FilePond go through this path, so a 6 MB phone photo typically uploads as a few hundred kilobytes.
   3.  **Direct Upload**: Images are uploaded immediately to `${apiEndpoint}/upload-image` via POST.
   4.  **Storage**: The server returns the image URL, which is then stored in the `attachments` array of the respective product or transaction in IndexedDB.
@@ -121,7 +123,10 @@ The application implements a multi-layered security system consisting of Biometr
 
 - **Storage (Dexie settings table)**:
   - `pinEnabled`: (Boolean) Whether PIN lock is active.
-  - `pinCode`: (String) The 6-digit PIN code.
+  - `pinHash`: Salt, iteration count and PBKDF2-SHA256 hash (210,000 iterations, random 16-byte salt).
+  - `pinLockout`: Failed-attempt count, escalation level and expiry timestamp. Five failures lock for 30 seconds, doubling to five minutes; success resets the state.
+  - `apiTokenEnc`: AES-GCM ciphertext and random 12-byte IV.
+  - `tokenKey`: Non-extractable 256-bit CryptoKey stored in IndexedDB.
   - `autoLockTimeout`: (Number) Timeout in minutes for auto-locking (0 = startup only).
   - `biometricEnabled`: (Boolean) Whether biometric lock is active.
   - `biometricCredentialId`: (String) WebAuthn credential ID.
@@ -208,3 +213,48 @@ The Settings → Import / Export tab offers CSV and PDF exports of transactions 
 
 - **BaseSearchableSelect**: Supports multi-select, hides already selected options by default to prevent duplicates, provides search + limit handling, and exposes a clear-all button for quick resets (used in filters and forms).
 - **BaseTable**: Provides search, sorting, pagination, and an exposed `resetPage()` helper so parents can reset pagination after filter changes (e.g., transaction drill-down modal).
+
+## 12. Offline attachments, descriptions and Trash
+
+- The upload service compresses offline photos into upload_queue and returns a local reference.
+  A reactive reference-to-object-URL map is hydrated before mount, so thumbnails survive reload.
+  Network failures fall back to the queue; rejected uploads are surfaced rather than retried forever.
+- The single-flight queue runs before sync, on startup and reconnection. It rewrites transaction,
+  product and Trash attachments atomically when an upload succeeds. Completed resolution rows stay
+  for up to 24 hours (at most 100) to resolve forms still holding local references. It reconciles
+  completed rows on subsequent runs to recover interrupted or late form saves.
+- Queue caps are checked transactionally: 20 active/failed photos and 40 MB. Discard strips references
+  before removing a blob. Book deletion purges that book's uploads, including photos in Trash.
+- StatusBanner publishes its height for sticky PageHeader positioning; SyncIndicator and Sync
+  settings report queued/failed uploads and offer manual retry. Data sync is deferred while records
+  contain local references. The engine also checks the actual payload before sending.
+- Descriptions use safe Vue interpolation and descriptionToText for legacy block markup, line
+  breaks and entities. Search, CSV/PDF export and editing use the same helper. Version 15 rewrites
+  existing descriptions with change tracking suspended and leaves sync status unchanged.
+- Transaction deletion atomically saves a Trash snapshot and tombstone before deleting the active
+  record. Trash is local, transactions-only and retained for 30 days, with expiry purged at startup
+  and when opening Trash. Restore drops the snapshot and marks the row pending. Unsent
+  deletion tombstones are removed when the original ID is restored; uncertain deletes remain queued
+  when a fresh ID is assigned.
+  Original IDs are reused only before deletion has been attempted; after sync or an uncertain
+  network response a new ID avoids relying on server support for recreating deleted identities.
+- A shared lock serializes sync, queue processing, Trash mutations and book deletion; Web Locks
+  extends it across tabs. Trash/queue/settings are excluded from exported backups and SYNC_TABLES.
+  The original compressed full-backup protocol remains the default with no server changes.
+
+## 13. Secret migration and security scope
+
+secureStore migrates plaintext PIN/token settings idempotently from settings initialization and lazy
+token reads. PBKDF2 comparison uses a constant-time byte comparison. AES-GCM uses a random IV for each
+changed token; unchanged tokens are not re-encrypted on Save. Sync configuration, the sync engine and
+upload transport all decrypt through getApiToken. The PIN keypad disables during verification and
+persisted lockouts, with a countdown. Secrets and the encryption key stay out of backups.
+
+Without crypto.subtle (for example non-HTTPS hosting), new secrets retain legacy plaintext storage
+with a visible warning instead of silently breaking synchronization. Existing encrypted secrets need
+a secure origin. This protects against casual database/backup inspection; same-origin code can use
+the device key and read financial data. It does not encrypt transaction records or replace OS disk
+encryption and app locking.
+
+Browser regression checks run with npm run test:browser in a fresh Chrome profile on an isolated
+localhost origin. Set CHROME_PATH when Chrome is installed outside the default macOS location.

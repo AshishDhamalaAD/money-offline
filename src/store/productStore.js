@@ -5,6 +5,7 @@ import { liveQuery } from 'dexie'
 import { formatDateTimeForDB, roundAmount } from '@/utils/dateUtils'
 import { db } from '@/db/dexie'
 import { recordDeletions } from '@/db/sync/dirty'
+import { resolveAttachmentRefs, discardUnusedUploads } from '@/services/uploadQueue'
 
 export const useProductStore = defineStore('product', () => {
     const products = ref([])
@@ -26,6 +27,8 @@ export const useProductStore = defineStore('product', () => {
     }
 
     async function addProduct(name, rate, description, quantityType, bookId, categoryId, attachments = []) {
+        const resolvedAttachments = await resolveAttachmentRefs(attachments)
+
         const productId = await db.products.add({
             name,
             rate: roundAmount(rate),
@@ -33,7 +36,7 @@ export const useProductStore = defineStore('product', () => {
             quantity_type: quantityType,
             book_id: bookId,
             category_id: categoryId,
-            attachments,
+            attachments: resolvedAttachments,
             created_at: formatDateTimeForDB(),
             updated_at: formatDateTimeForDB(),
             sync_status: 'pending'
@@ -50,6 +53,10 @@ export const useProductStore = defineStore('product', () => {
     async function updateProduct(id, updates) {
         const updatedData = { ...updates }
 
+        if (Array.isArray(updatedData.attachments)) {
+            updatedData.attachments = await resolveAttachmentRefs(updatedData.attachments)
+        }
+
         // Fetch current product to check for rate change
         const currentProduct = await db.products.get(id)
 
@@ -62,6 +69,10 @@ export const useProductStore = defineStore('product', () => {
             updated_at: formatDateTimeForDB(),
             sync_status: 'pending'
         })
+
+        if (Array.isArray(updatedData.attachments)) {
+            await discardUnusedUploads((currentProduct?.attachments || []).filter(ref => !updatedData.attachments.includes(ref)))
+        }
 
         // Check if rate changed and add to history
         if (updatedData.rate !== undefined && currentProduct && String(currentProduct.rate) !== String(updatedData.rate)) {
@@ -99,8 +110,11 @@ export const useProductStore = defineStore('product', () => {
             await deleteProductRate(productRate.id)
         }
 
+        const product = await db.products.get(id)
         await recordDeletions('products', id)
-        return await db.products.delete(id)
+        const result = await db.products.delete(id)
+        await discardUnusedUploads(product?.attachments || [])
+        return result
     }
 
     // Product Rates

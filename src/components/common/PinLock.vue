@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from "vue"
+import { ref, watch, computed, onMounted, onUnmounted } from "vue"
 import { useSettingsStore } from "@/store/settingsStore"
 import IconLock from "@/assets/icons/IconLock.vue"
 import IconX from "@/assets/icons/IconX.vue"
@@ -28,10 +28,17 @@ const confirmMode = ref(false)
 const firstPin = ref("")
 const isUnlocking = ref(false)
 
+const now = ref(Date.now())
+const verifying = ref(false)
+const lockoutSeconds = computed(() => props.mode === 'setup' ? 0 : Math.max(0, Math.ceil((settingsStore.pinLockout.until - now.value) / 1000)))
+let ticker
+onMounted(() => { ticker = setInterval(() => { now.value = Date.now() }, 500) })
+onUnmounted(() => clearInterval(ticker))
+
 const keypad = [1, 2, 3, 4, 5, 6, 7, 8, 9, "", 0, "backspace"]
 
 function handleKey(key) {
-  if (key === "" || isUnlocking.value) return
+  if (key === "" || isUnlocking.value || verifying.value || lockoutSeconds.value || error.value) return
   if (key === "backspace") {
     pin.value = pin.value.slice(0, -1)
     return
@@ -45,7 +52,11 @@ function handleKey(key) {
 watch(pin, async (newPin) => {
   if (newPin.length === 6) {
     if (props.mode === "unlock" || props.mode === "verify") {
-      const isValid = await settingsStore.verifyPinCode(newPin)
+      verifying.value = true
+      let isValid = false
+      try { isValid = await settingsStore.verifyPinCode(newPin) }
+      catch (failure) { error.value = failure.message }
+      finally { verifying.value = false; now.value = Date.now() }
       if (isValid) {
         isUnlocking.value = true
         setTimeout(() => {
@@ -56,7 +67,7 @@ watch(pin, async (newPin) => {
           }
         }, 400)
       } else {
-        error.value = "Incorrect PIN"
+        error.value ||= "Incorrect PIN"
         setTimeout(() => {
           pin.value = ""
           error.value = null
@@ -142,7 +153,8 @@ function onCancel() {
         />
       </div>
 
-      <div v-if="error" class="text-red-600 dark:text-red-400 text-sm h-5 font-medium">
+      <div v-if="lockoutSeconds" role="status" class="text-red-600 dark:text-red-400 text-sm h-5 font-medium">Try again in {{ lockoutSeconds }} seconds</div>
+      <div v-else-if="error" class="text-red-600 dark:text-red-400 text-sm h-5 font-medium">
         {{ error }}
       </div>
       <div v-else class="h-5"></div>
@@ -153,6 +165,7 @@ function onCancel() {
           v-for="key in keypad"
           :key="key"
           @click="handleKey(key)"
+          :disabled="Boolean(lockoutSeconds || verifying || isUnlocking || error)"
           :class="[
             'flex items-center justify-center h-16 w-16 text-2xl font-medium rounded-full transition-all active:scale-95',
             key === ''

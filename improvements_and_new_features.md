@@ -4,13 +4,13 @@
 > prioritised around touch input, small screens, offline behaviour, and daily-use convenience.
 
 **Status legend:** ✅ Done · 🔄 In progress · ⬜ Not started
-**Last updated:** 17 November 2026
+**Last updated:** 18 November 2026
 
 ---
 
 ## 1. Fix first: PWA bugs that hurt installed mobile use
 
-**Progress: 5 of 8 done.**
+**Progress: 8 of 8 done.**
 
 These are small fixes with outsized impact, because the app is consumed as an installed PWA.
 
@@ -21,9 +21,9 @@ These are small fixes with outsized impact, because the app is consumed as an in
 | ✅ | No full-screen viewport handling, no safe-area insets | `index.html`, `FixedSaveButton.vue`, `FloatingActionButton.vue`, `PageLayout.vue`, `PageHeader.vue` | Fixed. The viewport opts into the full screen and the fixed save bar, FAB, page padding and sticky header all respect the notch and home indicator. |
 | ✅ | No `theme-color`, no `apple-mobile-web-app-*` metas | `index.html` | Fixed. iOS standalone metas added, and the browser chrome colour now follows the active theme (light or dark) instead of staying white. |
 | ✅ | `registerType: 'prompt'` with **no update UI** | `vite.config.js`, `App.vue` | Fixed. A "new version available" prompt with Reload / Later now appears when a fresh build is deployed, and the app checks for updates hourly while open. |
-| ⬜ | No online/offline indicator and no request queue | `App.vue`, `syncStore.js` | Image uploads silently fail offline even though the docs claim offline queuing. |
-| ⬜ | Raw HTML rendering of the transaction description | `book-details/TransactionCard.vue` | Script injection risk from user-entered content. |
-| ⬜ | PIN and API token stored in plaintext in Dexie `settings` | `store/settingsStore.js` | On a phone, local data is the whole threat model. No PIN rate limiting either. |
+| ✅ | Online/offline indicator and photo upload queue | App status strip and Sync settings | Photos persist on the device offline and upload before data sync; queue limits and retry errors are visible. |
+| ✅ | Plain-text transaction descriptions | Transaction cards, chart modal, form, search and exports | Legacy markup is converted to readable text; descriptions use safe interpolation. |
+| ✅ | Hardened PIN and API-token storage | Security and Sync settings | PIN hashing, device-local token encryption and persistent PIN lockouts; insecure contexts show a warning. |
 
 ---
 
@@ -104,7 +104,7 @@ These are small fixes with outsized impact, because the app is consumed as an in
 
 ## 3. New mobile-first features
 
-**Progress: 6 of 17 done.**
+**Progress: 8 of 17 done.**
 
 ### Habit-forming (drives daily use)
 
@@ -121,7 +121,7 @@ These are small fixes with outsized impact, because the app is consumed as an in
 - ⬜ **Contact ledger** — per-person payable/receivable balance ("Ramesh owes you 2,500"). The contact
   field already makes this data available.
 - ⬜ **Payment-mode reconciliation** — opening/closing balance per cash/wallet account.
-- ⬜ **Soft delete + Trash** so deletes are recoverable.
+- ✅ **Soft delete + Trash** for transactions: recover deleted entries from Book Settings for 30 days on this device, or delete forever. Other entities remain hard-delete.
 - ✅ **CSV / PDF export** and share-sheet export — pick a book or all books, narrow it to a period, then
   share the file into WhatsApp, Mail or Files, or download it. JSON backup stays in `DatabaseBackup.vue`.
   *(Done 17 Nov 2026.)*
@@ -132,7 +132,7 @@ These are small fixes with outsized impact, because the app is consumed as an in
 
 - ⬜ Cash-flow (income vs expense over time), net-worth trend, and category donut/breakdown.
   The current set is mostly month/year line and bar charts.
-- ⬜ Touch-friendly tooltips and larger hit targets.
+- ✅ Touch-friendly chart tooltips, column-wide interaction, larger point hit areas, and larger navigation, date-chip, thumbnail and selection targets.
 
 ### PWA-native extras
 
@@ -560,3 +560,47 @@ forced to Pacific/Honolulu (still 17 November there), a new transaction opened o
 date. The charts followed the setting too: Monthly Trends grouped by BS month with Nepali labels, while the
 yearly comparison kept its Gregorian month axis (localized) because it compares AD years. Light and dark
 layouts checked; no console errors.
+
+### 18 November 2026 — Offline status and queued photos
+
+Added a global status strip, persistent compressed photo queue (20 photos / 40 MB), local previews after
+reload, queue-first sync, permanent-error reporting and Retry now. Completed uploads resolve open-form
+references and recover after interrupted processing. Book deletion clears queued photos. The legacy
+full-backup endpoint remains the default; the server API is unchanged.
+
+### 18 November 2026 — Plain-text descriptions
+
+Removed HTML rendering from transaction cards and chart modals. The same text helper handles legacy
+markup in the edit form, search, CSV and PDF output. Database version 15 converts existing descriptions
+without changing sync status or scheduling sync. Ordinary plain-text descriptions remain unchanged.
+
+### 18 November 2026 — Transaction Trash
+
+Database version 16 keeps local transaction snapshots for 30 days. Book Settings has Restore, Delete
+forever and confirmed Empty trash. Undo uses those persisted snapshots. A delete not yet attempted
+restores its original identity; a synced or attempted delete restores with a new identity. Sync and
+restore are serialized, including across tabs where Web Locks is available. Book deletion clears Trash.
+Trash and photo queue data are excluded from backup and sync.
+
+### 18 November 2026 — Touch interaction
+
+All three charts share larger tooltips and point hit areas, formatted values and column-wide selection.
+Enlarged the month rail, period arrows, date chips, back button, receipt thumbnails and selection buttons.
+
+### 18 November 2026 — Device secret storage
+
+Existing plaintext PINs migrate to salted PBKDF2-SHA256 hashes (210,000 iterations), and API tokens to
+AES-GCM ciphertext using a non-extractable device key. Five incorrect PIN attempts trigger a persisted
+30-second lockout, doubling to a maximum of five minutes; success resets it. The keypad shows the
+countdown. Non-secure contexts retain legacy storage with a visible warning. This protects casual
+database inspection, not code running in the app origin or the financial records themselves.
+
+Verification: production build and the isolated Chrome data suite cover the version-13 database upgrade,
+secret migration, encryption after reopening storage, lockout persistence/escalation, photo queue caps,
+thumbnail recovery, upload single flight, local-reference sync guards, permanent upload failures, Trash
+restore identities/expiry, book cleanup, backup exclusion and the unchanged full-backup sync protocol.
+Run the suite with npm run test:browser (Chrome required; CHROME_PATH can override its location).
+
+Production PWA checks also passed at 390 px in light/dark mode: offline reload restored the photo
+preview; the 11-month rail, Trash and charts fit; the PIN lockout countdown disabled the keypad. No
+console errors or horizontal page overflow. The data suite uses a mocked server, not live credentials.

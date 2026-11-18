@@ -29,13 +29,18 @@ function handleBack() {
 
 <template>
   <header
-    class="bg-white px-4 pt-safe-4 pb-4 shadow-sm sticky top-0 z-20 flex items-center justify-between dark:bg-gray-900 dark:shadow-gray-900/20 transition-colors"
+    class="bg-white px-4 pb-4 shadow-sm sticky z-20 flex items-center justify-between dark:bg-gray-900 dark:shadow-gray-900/20 transition-colors"
+    :style="{
+      top: 'var(--status-banner-height, 0px)',
+      paddingTop: 'calc(1rem + var(--status-banner-inset, env(safe-area-inset-top, 0px)))',
+    }"
   >
     <div class="flex items-center gap-3">
       <button
         v-if="showBack"
         @click="handleBack"
-        class="rounded-full p-1 text-gray-600 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+        aria-label="Go back"
+        class="flex min-h-11 min-w-11 items-center justify-center rounded-full p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
       >
         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />

@@ -3,8 +3,10 @@ import { defineStore } from 'pinia'
 import { liveQuery } from 'dexie'
 
 import { formatDateTimeForDB, getNepalDate, roundAmount } from '@/utils/dateUtils'
+import { descriptionToText } from '@/utils/description'
 import { db } from '@/db/dexie'
-import { forgetDeletions, recordDeletions } from '@/db/sync/dirty'
+import { trashTransactions, restoreTrashedTransactions } from '@/services/trash'
+import { resolveAttachmentRefs, discardUnusedUploads } from '@/services/uploadQueue'
 import { useSyncStore } from '@/store/syncStore'
 import { useSettingsStore } from '@/store/settingsStore'
 import { useProductStore } from '@/store/productStore'
@@ -130,7 +132,7 @@ export const useTransactionStore = defineStore('transaction', () => {
 
         if (filters.search) {
             const query = filters.search.toLowerCase()
-            const descriptionMatch = transaction.description?.toLowerCase().includes(query)
+            const descriptionMatch = descriptionToText(transaction.description).toLowerCase().includes(query)
             const amountMatch = String(transaction.amount).includes(query)
             const productMatch = (transaction.products || []).some(product => {
                 const name = product.name || productMap.get(product.product_id)?.name || ''
@@ -296,6 +298,12 @@ export const useTransactionStore = defineStore('transaction', () => {
         // Convert to plain object to avoid DataCloneError with Vue reactive proxies
         const plainTransaction = JSON.parse(JSON.stringify(transaction))
 
+        // A photo uploaded while the form was open is already on the server;
+        // store its real URL instead of the local ref.
+        if (Array.isArray(plainTransaction.attachments)) {
+            plainTransaction.attachments = await resolveAttachmentRefs(plainTransaction.attachments)
+        }
+
         // Convert date from datetime-local format to database format
         const transactionDate = plainTransaction.date ? formatDateTimeForDB(new Date(plainTransaction.date)) : formatDateTimeForDB()
 
@@ -309,6 +317,7 @@ export const useTransactionStore = defineStore('transaction', () => {
         const id = await db.transactions.add({
             book_id: currentBookId.value, // Default to current
             ...plainTransaction,
+            description: descriptionToText(plainTransaction.description),
             date: transactionDate,
             products,
             amount: roundAmount(plainTransaction.amount),
@@ -340,7 +349,13 @@ export const useTransactionStore = defineStore('transaction', () => {
     }
 
     async function updateTransaction(id, updates) {
+        const previous = await db.transactions.get(id)
         const plainUpdates = JSON.parse(JSON.stringify(updates))
+        if ("description" in plainUpdates) plainUpdates.description = descriptionToText(plainUpdates.description)
+
+        if (Array.isArray(plainUpdates.attachments)) {
+            plainUpdates.attachments = await resolveAttachmentRefs(plainUpdates.attachments)
+        }
 
         // Round all product amounts to 2 decimal places if products exist
         if (plainUpdates.products) {
@@ -372,6 +387,9 @@ export const useTransactionStore = defineStore('transaction', () => {
         }
 
         await db.transactions.update(id, updateData)
+        if (Array.isArray(updateData.attachments)) {
+            await discardUnusedUploads((previous?.attachments || []).filter(ref => !updateData.attachments.includes(ref)))
+        }
 
         // Check for rate changes in products if products were updated
         if (updateData.products) {
@@ -392,51 +410,19 @@ export const useTransactionStore = defineStore('transaction', () => {
     }
 
     async function deleteTransaction(id) {
-        const snapshot = await db.transactions.get(id)
-        await recordDeletions('transactions', id)
-        await db.transactions.delete(id)
-
-        // Trigger background sync
-        const syncStore = useSyncStore()
-        syncStore.scheduleSync()
-
-        // The raw row is returned so the list can offer an undo.
-        return snapshot
+        const rows = await deleteTransactions([id])
+        return rows[0]
     }
 
     async function deleteTransactions(ids) {
-        if (!ids || ids.length === 0) return []
-
-        const snapshots = await db.transactions.bulkGet(ids)
-        await recordDeletions('transactions', ids)
-        await db.transactions.bulkDelete(ids)
-
-        // Trigger background sync
-        const syncStore = useSyncStore()
-        syncStore.scheduleSync()
-
-        return snapshots.filter(Boolean)
+        const rows = await trashTransactions(ids)
+        useSyncStore().scheduleSync()
+        return rows
     }
 
     async function restoreTransactions(rows) {
-        if (!rows || rows.length === 0) return
-
-        // Bulk put keeps the original ids, so an undo restores the exact rows.
-        // They become pending again, and their tombstones must be dropped or the
-        // next pull would delete them right back.
-        const now = formatDateTimeForDB()
-        const plainRows = JSON.parse(JSON.stringify(rows)).map(row => ({
-            ...row,
-            updated_at: now,
-            sync_status: 'pending',
-        }))
-
-        await db.transactions.bulkPut(plainRows)
-        await forgetDeletions('transactions', plainRows.map(row => row.id))
-
-        // Trigger background sync
-        const syncStore = useSyncStore()
-        syncStore.scheduleSync()
+        await restoreTrashedTransactions((rows || []).map(row => row.id))
+        useSyncStore().scheduleSync()
     }
 
     async function copyTransaction(transactionId, targetBookId) {

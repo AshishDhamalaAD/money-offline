@@ -9,10 +9,7 @@ import "lightgallery/css/lightgallery.css"
 import "lightgallery/css/lg-zoom.css"
 import "lightgallery/css/lg-thumbnail.css"
 
-import { resizedImageUrls } from "@/utils/imageUtils"
-import { useSettingsStore } from "@/store/settingsStore"
-
-const settingsStore = useSettingsStore()
+import { attachmentUrl, resizedImageUrls } from "@/utils/imageUtils"
 
 const props = defineProps({
   images: {
@@ -31,7 +28,7 @@ const plugins = [Thumbnail, Zoom]
 
 const fullImageUrls = computed(() => {
   return props.images.map((url) => ({
-    src: `${settingsStore.apiEndpoint}/storage/${url}`,
+    src: attachmentUrl(url),
     thumb: resizedImageUrls({ width: 200, imageUrls: [url] })[0],
   }))
 })

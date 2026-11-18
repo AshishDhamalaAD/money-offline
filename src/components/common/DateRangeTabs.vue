@@ -100,7 +100,7 @@ watch(
         :key="opt.value"
         @click="updateFilter(opt.value)"
         :class="[
-          'rounded-full px-4 py-1.5 text-sm font-medium whitespace-nowrap transition-colors',
+          'rounded-full px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors',
           modelValue === opt.value
             ? 'bg-indigo-600 text-white shadow-md dark:bg-indigo-500'
             : 'bg-white text-gray-600 ring-1 ring-gray-200 shadow-sm dark:bg-gray-800 dark:text-gray-200 dark:ring-gray-700',

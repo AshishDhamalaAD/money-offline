@@ -10,7 +10,7 @@ import BaseInput from "@/components/common/BaseInput.vue"
 import Toast from "@/components/common/BaseToast.vue"
 
 const syncStore = useSyncStore()
-const { isSyncing, pendingChanges, lastSyncTime, error, protocol, retryAt, online, backgroundSyncSupported } =
+const { isSyncing, pendingChanges, lastSyncTime, error, protocol, retryAt, online, backgroundSyncSupported, uploadQueueState } =
   storeToRefs(syncStore)
 const settingsStore = useSettingsStore()
 const { apiEndpoint, apiToken, syncMode } = storeToRefs(settingsStore)
@@ -69,6 +69,13 @@ const pendingLabel = computed(() => {
   return `${pendingChanges.value} changes waiting to sync`
 })
 
+const photosLabel = computed(() => {
+  const { queued, failed } = uploadQueueState.value
+  if (failed > 0 && queued > 0) return `${queued} waiting, ${failed} failed`
+  if (failed > 0) return failed === 1 ? "1 photo failed" : `${failed} photos failed`
+  return queued === 1 ? "1 photo waiting to upload" : `${queued} photos waiting to upload`
+})
+
 function showToastMsg(msg, type = "success") {
   toastMessage.value = msg
   toastType.value = type
@@ -124,6 +131,22 @@ async function syncToServer() {
     showToastMsg("Sync failed: " + result.message, "error")
   }
 }
+
+async function retryPhotos() {
+  const result = await syncStore.retryUploads()
+
+  if (result?.success) {
+    showToastMsg("Photos uploaded and sync finished.", "success")
+    return
+  }
+
+  if ((result?.failed || 0) > 0) {
+    showToastMsg("Some photos still could not upload.", "error")
+    return
+  }
+
+  showToastMsg(result?.uploaded ? "Photos uploaded." : "No photos were waiting.", "success")
+}
 </script>
 
 <template>
@@ -164,10 +187,35 @@ async function syncToServer() {
             <dd class="font-medium">{{ pendingLabel }}</dd>
           </div>
           <div class="flex justify-between gap-2">
+            <dt>Photos</dt>
+            <dd class="font-medium">
+              {{ uploadQueueState.queued > 0 || uploadQueueState.failed > 0 ? photosLabel : "None waiting" }}
+            </dd>
+          </div>
+          <div class="flex justify-between gap-2">
             <dt>Last sync</dt>
             <dd class="font-medium">{{ lastSyncLabel }}</dd>
           </div>
         </dl>
+
+        <p v-if="uploadQueueState.failed > 0" class="mt-2 text-xs text-red-700 dark:text-red-400">
+          A rejected upload usually means the token is wrong or the file is too large.
+          <button
+            type="button"
+            class="font-medium underline underline-offset-2"
+            :disabled="isSyncing"
+            @click="retryPhotos"
+          >
+            Retry photo uploads
+          </button>
+        </p>
+
+        <p
+          v-else-if="uploadQueueState.queued > 0"
+          class="mt-2 text-xs text-gray-500 dark:text-gray-400"
+        >
+          Photos are sent before your data, so a backup never contains an unfinished photo.
+        </p>
 
         <p v-if="retrySeconds > 0" class="mt-2 text-xs text-amber-700 dark:text-amber-400">
           Retrying in {{ retrySeconds }}s.
@@ -213,6 +261,7 @@ async function syncToServer() {
       <div class="grid gap-4">
         <BaseInput v-model="apiEndpoint" label="API Endpoint" placeholder="https://example.com" />
         <BaseInput v-model="apiToken" label="API Token" type="password" placeholder="Enter your API token" />
+        <p class="text-xs text-gray-500 dark:text-gray-400">{{ settingsStore.securityWarning || "Encrypted on this device." }}</p>
       </div>
 
       <div class="flex gap-3">

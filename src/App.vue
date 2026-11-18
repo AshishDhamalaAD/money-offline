@@ -12,6 +12,7 @@ import PwaUpdatePrompt from "@/components/common/PwaUpdatePrompt.vue"
 import RecurringDuePrompt from "@/components/common/RecurringDuePrompt.vue"
 import InstallPrompt from "@/components/common/InstallPrompt.vue"
 import BottomNav from "@/components/layout/BottomNav.vue"
+import StatusBanner from "@/components/layout/StatusBanner.vue"
 
 const settingsStore = useSettingsStore()
 const syncStore = useSyncStore()
@@ -120,6 +121,8 @@ function switchToPin() {
 
 <template>
   <div class="min-h-screen bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-50 transition-colors">
+    <StatusBanner v-if="!isLocked" />
+
     <template v-if="isLocked">
       <BiometricLock v-if="lockType === 'biometric'" @unlocked="onUnlocked" @use-pin="switchToPin" />
       <PinLock v-if="lockType === 'pin'" @unlocked="onUnlocked" />

@@ -22,6 +22,11 @@ const router = createRouter({
                 return { name: 'book-settings-products', params: { bookId: to.params.bookId } }
             }
         },
+        {
+            path: "/book/:bookId/settings/trash",
+            name: "book-settings-trash",
+            component: () => import("@/pages/book-settings/TrashList.vue")
+        },
         // Products
         {
             path: '/book/:bookId/settings/products',

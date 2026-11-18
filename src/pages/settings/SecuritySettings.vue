@@ -88,11 +88,13 @@ function onPinVerifyCancel() {
       <p class="text-sm text-gray-500 dark:text-gray-400">Manage your app security settings</p>
     </div>
 
+    <p v-if="settingsStore.securityWarning" role="alert" class="mb-4 text-sm text-amber-700 dark:text-amber-300">{{ settingsStore.securityWarning }}</p>
+
     <!-- PIN Lock Section -->
     <div class="flex items-center justify-between gap-4 py-4 border-t border-gray-100 dark:border-gray-800">
       <div class="space-y-1">
         <h3 class="text-base font-medium text-gray-900 dark:text-gray-100">PIN Lock</h3>
-        <p class="text-sm text-gray-500 dark:text-gray-400">Require a 6-digit PIN to open the app</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400">Your PIN is stored as a hash and cannot be recovered</p>
       </div>
 
       <button

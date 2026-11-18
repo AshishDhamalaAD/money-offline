@@ -7,7 +7,17 @@ import FilePondPluginFileValidateType from "filepond-plugin-file-validate-type"
 import FilePondPluginFileValidateSize from "filepond-plugin-file-validate-size"
 import FilePondPluginImagePreview from "filepond-plugin-image-preview"
 
+import { useRoute } from "vue-router"
+import { useSyncStore } from "@/store/syncStore"
 import { uploadService } from "@/services/uploadService"
+
+const route = useRoute()
+const syncStore = useSyncStore()
+async function uploadPhoto(file) {
+  const url = await uploadService.uploadImage(file, props.from, Number(route.params.bookId))
+  syncStore.scheduleSync()
+  return url
+}
 
 const props = defineProps({
   from: {
@@ -57,7 +67,7 @@ async function handleCameraCapture(event) {
 
   isCapturing.value = true
   try {
-    const url = await uploadService.uploadImage(file, props.from)
+    const url = await uploadPhoto(file)
     emit("upload", url)
   } catch (e) {
     console.error(e)
@@ -72,7 +82,7 @@ async function handleCameraCapture(event) {
 const serverOptions = {
   process: async (fieldName, file, metadata, load, error, progress, abort, transfer, options) => {
     try {
-      const url = await uploadService.uploadImage(file, props.from)
+      const url = await uploadPhoto(file)
       load(url)
       emit("upload", url)
 
@@ -116,12 +126,12 @@ const serverOptions = {
   >
     <div
       v-if="!isOnline"
-      class="bg-yellow-50 border border-yellow-200 text-yellow-800 p-3 rounded-lg text-sm mb-2 dark:bg-yellow-900/30 dark:border-yellow-800 dark:text-yellow-100"
+      class="mb-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-100"
     >
-      Internet connection is required to upload images.
+      You're offline. Photos are saved on this device and uploaded automatically when you reconnect.
     </div>
 
-    <div v-else>
+    <div>
       <div class="mb-2 flex items-center gap-2">
         <button
           type="button"
@@ -138,7 +148,7 @@ const serverOptions = {
             />
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
-          {{ isCapturing ? "Uploading..." : "Take photo" }}
+          {{ isCapturing ? "Saving..." : "Take photo" }}
         </button>
 
         <input

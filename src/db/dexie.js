@@ -1,5 +1,8 @@
 import Dexie from 'dexie';
 
+import { withTrackingSuspended } from '@/db/sync/tracking';
+import { descriptionToText } from '@/utils/description';
+
 export const db = new Dexie('ExpenseTrackerDB');
 
 db.version(1).stores({
@@ -81,4 +84,27 @@ db.version(13).stores({
     return tx.table('product_rates').toCollection().modify(rate => {
         if (!rate.sync_status) rate.sync_status = 'synced'
     })
+});
+
+db.version(14).stores({
+    // Photos taken offline are kept here until they can be uploaded. Records
+    // reference them as `local:<uuid>`; the queue rewrites those refs to the
+    // server URL before sync runs. Deliberately not part of SYNC_TABLES.
+    upload_queue: '++id, ref, status, created_at'
+});
+
+db.version(15).stores({}).upgrade(async tx => {
+    // Descriptions are plain text now. Rewriting legacy HTML once means search,
+    // export and every device show the same readable value. Only the text
+    // changes, so nothing is queued for sync by this cosmetic fix-up.
+    const transactions = tx.table('transactions')
+    await withTrackingSuspended(() => transactions.toCollection().modify(row => {
+        const text = descriptionToText(row.description)
+        if (text !== row.description) row.description = text
+    }))
+});
+
+db.version(16).stores({
+  trash: '++id, table, book_id, deleted_at, [table+record_id]',
+  upload_queue: '++id, ref, book_id, status, created_at',
 });

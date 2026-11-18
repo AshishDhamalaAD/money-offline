@@ -11,6 +11,8 @@ import { usePaymentModeStore } from "@/store/paymentModeStore"
 import { useProductStore } from "@/store/productStore"
 import { useRecurringStore } from "@/store/recurringStore"
 import { getNepalDate } from "@/utils/dateUtils"
+import { discardUnusedUploads } from "@/services/uploadQueue"
+import { descriptionToText } from "@/utils/description"
 import BaseButton from "@/components/common/BaseButton.vue"
 import BaseInput from "@/components/common/BaseInput.vue"
 import BaseModal from "@/components/common/BaseModal.vue"
@@ -137,7 +139,10 @@ function removeAttachment(index) {
     message: "This image will be removed from the transaction.",
     confirmLabel: "Delete",
     variant: "danger",
-    action: () => transactionAttachments.value.splice(index, 1),
+    action: async () => {
+      const removed = transactionAttachments.value.splice(index, 1)
+      await discardUnusedUploads(removed)
+    },
   })
 }
 
@@ -229,9 +234,7 @@ onMounted(async () => {
         t.date = `${datePart}T${timePart}`
       }
       if (t.description) {
-        t.description = t.description
-          .replace(/<\/p>\s*<p>/g, "\n") // replace between paragraphs with newline
-          .replace(/<\/?p>/g, "") // remove remaining <p> or </p>
+        t.description = descriptionToText(t.description)
       }
       form.value = { ...t }
       // Handle migration/compatibility for old transactions with single category_id
@@ -447,12 +450,12 @@ async function deleteTransaction() {
     <BaseModal :show="showDeleteModal" title="Delete Transaction" @close="showDeleteModal = false">
       <div class="space-y-4">
         <p class="text-gray-600 dark:text-gray-300">
-          Are you sure you want to delete this transaction? This action cannot be undone.
+          Move this transaction to Trash? You can restore it from Book Settings for 30 days.
         </p>
 
         <div class="bg-red-50 border border-red-200 rounded-lg p-3 dark:bg-red-900/30 dark:border-red-800">
           <p class="text-sm text-red-800 dark:text-red-200">
-            <strong>Warning:</strong> This will permanently delete the transaction.
+            <strong>Warning:</strong> The transaction will be kept in Trash on this device for 30 days.
           </p>
         </div>
 

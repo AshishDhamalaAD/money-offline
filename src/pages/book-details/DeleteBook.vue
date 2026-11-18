@@ -45,7 +45,7 @@ async function handleDeleteBook() {
   <Modal :show="showDeleteModal" title="Delete Book" @close="showDeleteModal = false">
     <p class="text-gray-600 dark:text-gray-300">
       Are you sure you want to delete this book? This will also delete all associated categories, products, and payment
-      modes. This action cannot be undone.
+      modes, transactions, queued photos and Trash. This action cannot be undone.
     </p>
     <div class="flex justify-end gap-3 mt-6">
       <BaseButton variant="ghost" @click="showDeleteModal = false">Cancel</BaseButton>

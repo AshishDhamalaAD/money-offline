@@ -1,4 +1,5 @@
 <script setup>
+import { discardUnusedUploads } from "@/services/uploadQueue"
 import { ref, onMounted, computed, toRaw } from "vue"
 import { useRoute, useRouter } from "vue-router"
 
@@ -103,9 +104,10 @@ function handleUpload(url) {
   attachments.value.push(url)
 }
 
-function removeAttachment(index) {
+async function removeAttachment(index) {
   if (confirm("Are you sure you want to delete this image?")) {
-    attachments.value.splice(index, 1)
+    const removed = attachments.value.splice(index, 1)
+    await discardUnusedUploads(removed)
   }
 }
 
