@@ -270,6 +270,26 @@ export const useTransactionStore = defineStore('transaction', () => {
         return balance
     }
 
+    // First and last dates a book has data for, used to bound the month / year
+    // browser so it cannot walk into empty history.
+    async function getBookDateBounds(bookId) {
+        if (!bookId) return { first: "", last: "" }
+
+        const first = await db.transactions
+            .where('[book_id+date]')
+            .between([bookId, MIN_DATE], [bookId, MAX_DATE])
+            .first()
+        const last = await db.transactions
+            .where('[book_id+date]')
+            .between([bookId, MIN_DATE], [bookId, MAX_DATE])
+            .last()
+
+        return {
+            first: first?.date?.slice(0, 10) || "",
+            last: last?.date?.slice(0, 10) || "",
+        }
+    }
+
     async function createTransaction(transaction) {
         // transaction object should include:
         // type, date, amount, category_ids (array), contact_id, payment_mode_id, description, products (array)
@@ -595,6 +615,7 @@ export const useTransactionStore = defineStore('transaction', () => {
         closeTransactionList,
         getTransactionTotals,
         getBalanceBefore,
+        getBookDateBounds,
         createTransaction,
         updateTransaction,
         deleteTransaction,

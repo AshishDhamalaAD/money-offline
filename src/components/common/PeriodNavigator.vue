@@ -1,18 +1,33 @@
 <script setup>
 import { computed } from "vue"
 
+import IconCaretDown from "@/assets/icons/IconCaretDown.vue"
 import IconChevronLeft from "@/assets/icons/IconChevronLeft.vue"
 import IconChevronRight from "@/assets/icons/IconChevronRight.vue"
 
 const props = defineProps({
   modelValue: {
     type: String,
-    default: "month",
+    default: "all",
   },
   // The visible period as "YYYY-MM". The day is irrelevant here.
   anchor: {
     type: String,
     required: true,
+  },
+  // Periods the user may pick, newest first. The list stops at the current
+  // month and at the book's first record, so there is nothing empty to browse.
+  options: {
+    type: Array,
+    default: () => [],
+  },
+  canPrev: {
+    type: Boolean,
+    default: true,
+  },
+  canNext: {
+    type: Boolean,
+    default: true,
   },
 })
 
@@ -30,6 +45,9 @@ const parts = computed(() => {
 })
 
 const label = computed(() => {
+  const match = props.options.find((option) => option.value === props.anchor)
+  if (match) return match.label
+
   if (props.modelValue === "year") return String(parts.value.year)
 
   return new Date(parts.value.year, parts.value.month - 1, 1).toLocaleDateString("en-US", {
@@ -80,25 +98,45 @@ function shift(step) {
     <div v-if="modelValue !== 'all'" class="flex items-center">
       <button
         type="button"
+        :disabled="!canPrev"
         @click="shift(-1)"
         :aria-label="`Previous ${stepLabel}`"
-        class="flex h-8 w-8 items-center justify-center rounded-full text-gray-600 transition-colors hover:bg-gray-100 active:bg-gray-200 dark:text-gray-200 dark:hover:bg-gray-800 dark:active:bg-gray-700"
+        class="flex h-8 w-8 items-center justify-center rounded-full text-gray-600 transition-colors hover:bg-gray-100 active:bg-gray-200 disabled:opacity-30 disabled:hover:bg-transparent dark:text-gray-200 dark:hover:bg-gray-800 dark:active:bg-gray-700 dark:disabled:hover:bg-transparent"
       >
         <IconChevronLeft class="h-4 w-4" />
       </button>
 
+      <!-- Tapping the label opens the native period picker, so a month three
+           years back is one tap instead of thirty-six. -->
+      <label v-if="options.length" class="relative flex min-w-[7.5rem] items-center justify-center">
+        <span class="sr-only">Choose {{ stepLabel }}</span>
+        <select
+          :value="anchor"
+          @change="emit('update:anchor', $event.target.value)"
+          class="w-full cursor-pointer appearance-none bg-transparent py-1 pl-1 pr-5 text-center text-sm font-semibold text-gray-900 focus:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500 rounded-sm dark:text-gray-100"
+        >
+          <option v-for="option in options" :key="option.value" :value="option.value">
+            {{ option.label }}
+          </option>
+        </select>
+        <IconCaretDown
+          class="pointer-events-none absolute right-1 h-3.5 w-3.5 text-gray-400 dark:text-gray-500"
+        />
+      </label>
+
       <span
-        class="min-w-[6.75rem] whitespace-nowrap text-center text-sm font-semibold text-gray-900 dark:text-gray-100"
-        aria-live="polite"
+        v-else
+        class="min-w-[7.5rem] whitespace-nowrap text-center text-sm font-semibold text-gray-900 dark:text-gray-100"
       >
         {{ label }}
       </span>
 
       <button
         type="button"
+        :disabled="!canNext"
         @click="shift(1)"
         :aria-label="`Next ${stepLabel}`"
-        class="flex h-8 w-8 items-center justify-center rounded-full text-gray-600 transition-colors hover:bg-gray-100 active:bg-gray-200 dark:text-gray-200 dark:hover:bg-gray-800 dark:active:bg-gray-700"
+        class="flex h-8 w-8 items-center justify-center rounded-full text-gray-600 transition-colors hover:bg-gray-100 active:bg-gray-200 disabled:opacity-30 disabled:hover:bg-transparent dark:text-gray-200 dark:hover:bg-gray-800 dark:active:bg-gray-700 dark:disabled:hover:bg-transparent"
       >
         <IconChevronRight class="h-4 w-4" />
       </button>

@@ -66,10 +66,15 @@ const endDate = ref("")
 const FILTER_VALUES = ["all", "month", "last-month", "today", "yesterday", "this-year", "last-year", "custom"]
 
 // While the All chip is active an extra row lets the user walk through months
-// or years. It starts on the current month, which is what people usually want
-// to see when they leave the presets behind.
-const periodMode = ref("month") // all | month | year
+// or years. It starts on "All" so the chip behaves exactly like it always did;
+// the month and year modes are one tap further.
+const periodMode = ref("all") // all | month | year
 const periodAnchor = ref(currentPeriodAnchor())
+
+// The book's own date range. The picker never offers a period before the first
+// record or after the current month, because there would be nothing to show.
+const firstTransactionDate = ref("")
+const periodBoundsReady = ref(false)
 
 function currentPeriodAnchor() {
   const now = new Date()
@@ -359,6 +364,7 @@ onMounted(async () => {
   bookId.value = bookIdParam
   setLastBookId(bookIdParam)
   book.value = await bookStore.getBook(bookId.value)
+  await refreshPeriodBounds()
 
   categoryStore.watchCategories(bookId.value)
   paymentModeStore.watchPaymentModes(bookId.value)
@@ -380,6 +386,9 @@ onMounted(async () => {
   if (query.contact) filterContact.value = parseInt(query.contact)
   if (query.product) filterProduct.value = parseInt(query.product)
   if (query.search) searchQuery.value = query.search
+
+  // A stale or hand-edited link may point at a period the book never had.
+  clampPeriodAnchor()
 
   // The list itself is paged: Dexie reads only the loaded window, so the page
   // never holds the whole book in memory.
@@ -503,6 +512,126 @@ const periodRange = computed(() => {
     endDate: `${periodAnchor.value}-${String(lastDay).padStart(2, "0")}`,
   }
 })
+
+// The month of the first record is the oldest period worth offering, and the
+// current month is the newest: anything outside that range is empty by
+// definition.
+const periodLimits = computed(() => {
+  const now = new Date()
+  const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
+  const earliestMonth = firstTransactionDate.value
+    ? firstTransactionDate.value.slice(0, 7)
+    : currentMonth
+
+  return {
+    minMonth: earliestMonth > currentMonth ? currentMonth : earliestMonth,
+    maxMonth: currentMonth,
+  }
+})
+
+// Newest first, so the picker opens on the current month and the arrows read
+// the same way as the list.
+const periodOptions = computed(() => {
+  const { minMonth, maxMonth } = periodLimits.value
+  const anchorMonth = periodAnchor.value.split("-")[1] || "01"
+
+  if (periodMode.value === "year") {
+    const years = []
+
+    for (let year = Number(maxMonth.slice(0, 4)); year >= Number(minMonth.slice(0, 4)); year -= 1) {
+      years.push({ label: String(year), value: `${year}-${anchorMonth}` })
+    }
+
+    return years
+  }
+
+  const months = []
+  let [year, month] = maxMonth.split("-").map(Number)
+  const [firstYear, firstMonth] = minMonth.split("-").map(Number)
+
+  while (year > firstYear || (year === firstYear && month >= firstMonth)) {
+    months.push({
+      label: new Date(year, month - 1, 1).toLocaleDateString("en-US", {
+        month: "long",
+        year: "numeric",
+      }),
+      value: `${year}-${String(month).padStart(2, "0")}`,
+    })
+
+    month -= 1
+    if (month === 0) {
+      month = 12
+      year -= 1
+    }
+  }
+
+  return months
+})
+
+const periodCanPrev = computed(() => {
+  if (periodMode.value === "year") {
+    return Number(periodAnchor.value.slice(0, 4)) > Number(periodLimits.value.minMonth.slice(0, 4))
+  }
+
+  return periodAnchor.value > periodLimits.value.minMonth
+})
+
+const periodCanNext = computed(() => {
+  if (periodMode.value === "year") {
+    return Number(periodAnchor.value.slice(0, 4)) < Number(periodLimits.value.maxMonth.slice(0, 4))
+  }
+
+  return periodAnchor.value < periodLimits.value.maxMonth
+})
+
+function clampPeriodAnchor() {
+  const anchor = periodAnchor.value
+  const { minMonth, maxMonth } = periodLimits.value
+
+  if (periodMode.value === "year") {
+    const month = anchor.slice(5)
+    const year = Number(anchor.slice(0, 4))
+    const minYear = Number(minMonth.slice(0, 4))
+    const maxYear = Number(maxMonth.slice(0, 4))
+
+    if (year < minYear) periodAnchor.value = `${minYear}-${month}`
+    else if (year > maxYear) periodAnchor.value = `${maxYear}-${month}`
+    return
+  }
+
+  if (periodMode.value !== "month") return
+
+  if (anchor < minMonth) periodAnchor.value = minMonth
+  else if (anchor > maxMonth) periodAnchor.value = maxMonth
+}
+
+async function refreshPeriodBounds() {
+  if (!bookId.value) return
+
+  try {
+    const { first } = await transactionStore.getBookDateBounds(bookId.value)
+    firstTransactionDate.value = first
+  } catch (error) {
+    console.error("Could not read the book's date range:", error)
+    firstTransactionDate.value = ""
+  } finally {
+    periodBoundsReady.value = true
+  }
+}
+
+watch(periodOptions, () => {
+  if (periodBoundsReady.value) clampPeriodAnchor()
+})
+
+// Keep the picker honest when the book gains or loses its oldest entry.
+watch(() => transactionStore.listVersion, refreshPeriodBounds)
+
+// Picking the All chip starts from All again; Month and Year are opt-in. Using
+// an explicit handler (instead of v-model) means tapping All again resets it.
+function handleFilterPick(value) {
+  selectedFilter.value = value
+  if (value === "all") periodMode.value = "all"
+}
 
 // The store reads this window straight from Dexie using the [book_id+date]
 // index, so date ranges, advanced filters and search never load the whole book.
@@ -793,13 +922,21 @@ async function handleRefresh() {
           </div>
 
           <!-- Date Filters -->
-          <DateRangeTabs v-model="selectedFilter" v-model:start-date="startDate" v-model:end-date="endDate" />
+          <DateRangeTabs
+            :model-value="selectedFilter"
+            v-model:start-date="startDate"
+            v-model:end-date="endDate"
+            @update:model-value="handleFilterPick"
+          />
 
           <!-- Month / year browser, only while the All chip is active -->
           <PeriodNavigator
             v-if="selectedFilter === 'all'"
             v-model="periodMode"
             v-model:anchor="periodAnchor"
+            :options="periodOptions"
+            :can-prev="periodCanPrev"
+            :can-next="periodCanNext"
           />
 
           <!-- Search & Advanced Filters -->

@@ -68,10 +68,12 @@ These are small fixes with outsized impact, because the app is consumed as an in
 - ✅ **Attachment viewer** directly from the card: thumbnails are tappable and open a full-screen viewer
   with a counter, previous / next arrows, swipe navigation and a close button, without opening the entry.
 - ✅ **Month / year browser** under the chips. Choosing **All** opens a second row with an All | Month | Year
-  control and a `‹ September 2026 ›` stepper, so old entries can be walked month by month or year by year
-  instead of scrolling the entire history. It starts on the current month, the arrows move one step at a
-  time, and the **All** segment still shows everything. The chosen period also drives the month groups,
-  totals and opening balance, and it survives a reload through the URL.
+  control and a `‹ September 2026 ›` stepper. The label is tappable and opens a picker of every month (or
+  year) from the first record to the current month, so old entries are one tap away instead of dozens of
+  arrow presses. The picker never offers a future period or anything before the history starts, and the
+  arrows disable at both ends. It opens on **All**, so the chip still shows everything until Month or Year
+  is picked, and the chosen period drives the month groups, totals and opening balance. It survives a
+  reload through the URL.
 
 ### Navigation and chrome
 
@@ -480,16 +482,23 @@ date inside the range, and produced a one-page PDF labelled 5 Jan 2026 – 25 Fe
 covered that period; combining the same range with the Business book counted 5, and returning to "All" for
 that book restored 15. No console errors.
 
-### 17 November 2026 — month and year browsing in the transactions list
+### 17–18 November 2026 — month and year browsing in the transactions list
 
 The transaction list could jump to a month with the scrubber, but only for the months already loaded, and
 the date chips had nothing between "This Month" and "This Year". Finding an entry from a specific month
 meant scrolling.
 
 - **Where**: choosing the **All** chip now opens a second row under the chips. On the left is an
-  **All | Month | Year** segmented control; on the right is `‹ November 2026 ›`, with the arrows stepping
-  one month or one year at a time. It opens on Month for the current month, so the common case — "what have
-  I spent this month" — is one tap away, and the All segment still shows the complete history.
+  **All | Month | Year** segmented control; on the right is `‹ November 2026 ›`. It opens on **All**, so
+  the chip still shows the complete history until a narrower period is picked.
+- **Picking a period**: the label between the arrows is tappable and opens a picker of every month — or
+  every year — from the book's first record up to the current month, newest first. A month three years back
+  is one tap instead of thirty-six. The arrows still step one month or year at a time.
+- **Bounds**: the picker starts at the month of the book's first record and stops at the current month, so
+  it never offers an empty future period or anything before the history starts. Both arrows disable at the
+  ends, and a stale or hand-edited link that points outside the range is pulled back to the nearest bound.
+  The range is re-read whenever the list changes, so adding an older entry or deleting the oldest one moves
+  the limit with it.
 - **Wiring**: the page turns the choice into a date range (first to last day of the month, or 1 January to
   31 December) and sends it into the same Dexie window as the preset chips. The list, the month groups,
   their totals and the opening balance all follow the visible period, and the month scrubber only shows the
@@ -500,11 +509,15 @@ meant scrolling.
   always fell back to This Month. The component now snapshots the incoming query during setup and reads
   that, and it ignores a `filter` value that is not one of the chips.
 
-Verified on a production build at 390 px: the row appeared only for All, opened on November 2026, stepped to
-October and September, went back with the right arrow, switched to Year (2026 listed its five months, 2025
-showed only December), returned through the All segment to all eight rows, and reloading
-`?filter=all&period=month&periodAnchor=2026-09` restored September with its single row. The stats followed
-the visible period — November opened on 1,667 (Dr) and closed on 3,111 (Dr), October on 667 (Dr) and 1,667
-(Dr), 2026 on 111 (Dr) and 4,000 (Dr), and the All segment on 0 and 4,000 (Dr). The This Month chip hid the
-row again. Light and dark layouts checked at 390 px, including the long "September 2026" label. No console
-errors.
+Verified on a production build at 390 px with a seeded book running from March 2024 to November 2026: the
+row appeared only for All and showed the All segment as active with every row listed; Month opened on
+November 2026 with the next arrow disabled; the picker listed 33 months from November 2026 back to March
+2024; picking April 2025 showed its two rows and picking March 2024 showed one with the previous arrow
+disabled; Year listed 2026, 2025 and 2024, stepped between them, and disabled the next arrow on 2026 and the
+previous arrow on 2024; tapping the All chip again while in Month mode reset the segment to All. Reloading
+`?filter=all&period=month&periodAnchor=2026-09` restored September 2026, a future anchor (`2031-05`) fell
+back to November 2026, and an anchor older than the history (`2019-01`) clamped to March 2024. The stats
+followed the visible period — November opened on 1,667 (Dr) and closed on 3,111 (Dr), October on 667 (Dr)
+and 1,667 (Dr), 2026 on 111 (Dr) and 4,000 (Dr), and the All segment on 0 and 4,000 (Dr). The This Month
+chip hid the row again. Light and dark layouts checked at 390 px, including the long "September 2026"
+label, which fits without clipping. No console errors.
