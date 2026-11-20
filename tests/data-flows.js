@@ -17,6 +17,7 @@ import { trashTransactions, restoreTrashEntries, purgeExpiredTrash } from '/src/
 import { useBookStore } from '/src/store/bookStore.js'
 import { runSync } from '/src/db/sync/engine.js'
 import { useDatabaseExport } from '/src/composables/useDatabaseExport.js'
+import { runBackupHealthTests } from './backup-health.js'
 
 function check(value, message) { if (!value) throw new Error(message) }
 export async function runDataTests() {
@@ -186,5 +187,6 @@ export async function runDataTests() {
   await useBookStore().deleteBook(bookId)
   check(!(await db.trash.count()) && !(await db.upload_queue.count()), 'book deletion retained trash/photos')
   passed.push('atomic trash delete, undo, synced and uncertain restore IDs, retention, book cleanup and backup exclusion')
+  passed.push(...await runBackupHealthTests())
   return passed
 }

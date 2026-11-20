@@ -88,7 +88,10 @@ Built with modern web technologies for performance and reliability.
   - **Sync Status**: Visual indicators for data synchronization state.
 - **Backup & Restore**:
   - **Manual Import/Export**: Export data to a file for backup and import it back when needed.
-  - **Manual Import/Export**: Export data to a file for backup and import it back when needed.
+  - **Backup History**: Shows the last JSON backup generated on this device. Download initiation does not confirm that the file was saved. Receipt files, Trash, and device settings are not bundled.
+  - **Backup Reminders**: Off by default, with 7-, 14-, and 30-day intervals. In-app reminders offer a 24-hour snooze; no recorded backup means an immediate reminder when enabled.
+  - **Storage Health**: Shows estimated site storage usage where supported, with warnings at 80% in settings and across the unlocked app. Global warnings can be hidden for 24 hours.
+  - **Persistent Storage**: Offers a browser persistence request with clear status. Persistence reduces automatic eviction risk and does not replace backups.
 
 ## 8. User Interface & Experience (UI/UX)
 

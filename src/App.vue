@@ -6,6 +6,7 @@ import { useSettingsStore } from "@/store/settingsStore"
 import { useSyncStore } from "@/store/syncStore"
 import { useAppBadge } from "@/composables/useAppBadge"
 import { useReminders } from "@/composables/useReminders"
+import { useBackupHealth } from "@/composables/useBackupHealth"
 import BiometricLock from "@/components/common/BiometricLock.vue"
 import PinLock from "@/components/common/PinLock.vue"
 import PwaUpdatePrompt from "@/components/common/PwaUpdatePrompt.vue"
@@ -18,6 +19,7 @@ const settingsStore = useSettingsStore()
 const syncStore = useSyncStore()
 const appBadge = useAppBadge()
 const reminders = useReminders()
+const backupHealth = useBackupHealth()
 const route = useRoute()
 const isLocked = ref(false)
 const lockType = ref(null) // 'biometric' | 'pin'
@@ -95,6 +97,7 @@ onMounted(async () => {
   // entries, so they start with the app and react to live data changes.
   appBadge.start()
   reminders.start()
+  backupHealth.start()
 
   // Watches local writes, flushes anything still pending and keeps the retry
   // timer alive across app opens.
@@ -104,6 +107,7 @@ onMounted(async () => {
 onUnmounted(() => {
   appBadge.stop()
   reminders.stop()
+  backupHealth.stop()
   syncStore.stop()
   if (checkInterval.value) clearInterval(checkInterval.value)
 })
@@ -121,7 +125,7 @@ function switchToPin() {
 
 <template>
   <div class="min-h-screen bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-50 transition-colors">
-    <StatusBanner v-if="!isLocked" />
+    <StatusBanner v-if="settingsStore.initialized && !isLocked" />
 
     <template v-if="isLocked">
       <BiometricLock v-if="lockType === 'biometric'" @unlocked="onUnlocked" @use-pin="switchToPin" />

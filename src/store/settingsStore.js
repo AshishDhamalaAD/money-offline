@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import { db } from '@/db/dexie'
 import { patchSyncState, resetSyncState } from '@/db/sync/state'
+import { BACKUP_INTERVALS, BACKUP_SETTING_KEYS, DAY_MS } from '@/utils/backupHealth'
 import {
     appLocale,
     calendarSystem,
@@ -30,7 +31,55 @@ export const useSettingsStore = defineStore('settings', () => {
     const remindersEnabled = ref(false)
     const reminderTime = ref("09:00")
     const reminderLastShown = ref("")
+    const lastBackupGeneratedAt = ref(null)
+    const backupReminderIntervalDays = ref(0)
+    const backupReminderSnoozedUntil = ref(0)
+    const storageWarningSnoozedUntil = ref(0)
+    const backupSettings = { lastBackupGeneratedAt, backupReminderIntervalDays, backupReminderSnoozedUntil, storageWarningSnoozedUntil }
     let systemMediaQuery = null
+
+    function applyBackupSettings(rows) {
+        const values = Object.fromEntries(rows.filter(Boolean).map(row => [row.key, row.value]))
+        const timestamp = values.lastBackupGeneratedAt
+        lastBackupGeneratedAt.value = typeof timestamp === 'string' && Number.isFinite(Date.parse(timestamp)) ? timestamp : null
+        backupReminderIntervalDays.value = BACKUP_INTERVALS.includes(values.backupReminderIntervalDays) ? values.backupReminderIntervalDays : 0
+        for (const key of ['backupReminderSnoozedUntil', 'storageWarningSnoozedUntil']) {
+            backupSettings[key].value = Number.isFinite(values[key]) && values[key] > 0 ? values[key] : 0
+        }
+    }
+
+    async function refreshBackupSettings() {
+        applyBackupSettings(await db.settings.bulkGet(BACKUP_SETTING_KEYS))
+    }
+
+    async function saveBackupSettings(values) {
+        try {
+            // bulkPut commits the timestamp and snooze changes together.
+            await db.settings.bulkPut(Object.entries(values).map(([key, value]) => ({ key, value })))
+            for (const [key, value] of Object.entries(values)) backupSettings[key].value = value
+            return { success: true }
+        } catch (error) {
+            return { success: false, message: error.message }
+        }
+    }
+
+    function setBackupReminderInterval(value) {
+        const days = Number(value)
+        if (!BACKUP_INTERVALS.includes(days)) return Promise.resolve({ success: false, message: 'Choose Off, 7, 14 or 30 days.' })
+        return saveBackupSettings({ backupReminderIntervalDays: days, backupReminderSnoozedUntil: 0 })
+    }
+
+    function recordBackupGenerated() {
+        return saveBackupSettings({ lastBackupGeneratedAt: new Date().toISOString(), backupReminderSnoozedUntil: 0 })
+    }
+
+    function snoozeBackupReminder() {
+        return saveBackupSettings({ backupReminderSnoozedUntil: Date.now() + DAY_MS })
+    }
+
+    function snoozeStorageWarning() {
+        return saveBackupSettings({ storageWarningSnoozedUntil: Date.now() + DAY_MS })
+    }
 
     async function init() {
         if (initialized.value) return
@@ -65,6 +114,8 @@ export const useSettingsStore = defineStore('settings', () => {
             if (reminderAt?.value) reminderTime.value = reminderAt.value
             if (reminderShown?.value) reminderLastShown.value = reminderShown.value
             if (mode?.value === "incremental") syncMode.value = "incremental"
+
+            await refreshBackupSettings()
 
             applyLocale(savedLocale?.value)
             applyCalendarSystem(savedCalendar?.value)
@@ -393,6 +444,16 @@ export const useSettingsStore = defineStore('settings', () => {
         remindersEnabled,
         reminderTime,
         reminderLastShown,
+        lastBackupGeneratedAt,
+        backupReminderIntervalDays,
+        backupReminderSnoozedUntil,
+        storageWarningSnoozedUntil,
+        applyBackupSettings,
+        refreshBackupSettings,
+        setBackupReminderInterval,
+        recordBackupGenerated,
+        snoozeBackupReminder,
+        snoozeStorageWarning,
         init,
         saveSettings,
         setSyncMode,

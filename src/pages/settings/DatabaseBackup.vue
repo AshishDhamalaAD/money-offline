@@ -1,12 +1,33 @@
 <script setup>
-import { ref } from "vue"
+import { computed, ref } from "vue"
 
 import { db } from "@/db/dexie"
 import { useDatabaseExport } from "@/composables/useDatabaseExport"
+import { useBackupHealth } from "@/composables/useBackupHealth"
+import { useSettingsStore } from "@/store/settingsStore"
+import { formatDateTime } from "@/utils/dateUtils"
 import BaseButton from "@/components/common/BaseButton.vue"
 import Modal from "@/components/common/BaseModal.vue"
 
 const { getDatabaseDump } = useDatabaseExport()
+const settings = useSettingsStore()
+const health = useBackupHealth()
+const exportFeedback = ref('')
+const exportFeedbackError = ref(false)
+const reminderSaving = ref(false)
+const reminderError = ref('')
+const lastBackupLabel = computed(() => settings.lastBackupGeneratedAt
+  ? `Last backup generated: ${formatDateTime(settings.lastBackupGeneratedAt)}`
+  : 'No backup recorded on this device')
+
+async function changeReminder(event) {
+  reminderSaving.value = true
+  reminderError.value = ''
+  const result = await settings.setBackupReminderInterval(event.target.value)
+  if (!result.success) reminderError.value = `Could not save backup reminders: ${result.message}`
+  event.target.value = String(settings.backupReminderIntervalDays)
+  reminderSaving.value = false
+}
 
 // Export/Import state
 const isExporting = ref(false)
@@ -19,8 +40,11 @@ const selectedFile = ref(null)
 const fileInput = ref(null)
 
 async function exportDatabase() {
+  if (isExporting.value || isImporting.value) return
   isExporting.value = true
   exportProgress.value = 0
+  exportFeedback.value = ''
+  exportFeedbackError.value = false
 
   try {
     const exportData = await getDatabaseDump((progress) => {
@@ -34,18 +58,25 @@ async function exportDatabase() {
     a.href = url
     a.download = `expense-tracker-backup-${new Date().toISOString().split("T")[0]}.json`
     document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
+    try {
+      a.click()
+    } finally {
+      a.remove()
+      URL.revokeObjectURL(url)
+    }
 
     exportProgress.value = 100
-    setTimeout(() => {
-      isExporting.value = false
-      exportProgress.value = 0
-    }, 1000)
+    const result = await settings.recordBackupGenerated()
+    exportFeedbackError.value = !result.success
+    exportFeedback.value = result.success
+      ? 'Backup download started. Check that the file was saved somewhere safe.'
+      : 'Backup download started, but its generation time could not be recorded. Check that the file was saved; reminders may still appear.'
+    health.refresh()
   } catch (error) {
     console.error("Export failed:", error)
-    alert("Failed to export database: " + error.message)
+    exportFeedbackError.value = true
+    exportFeedback.value = `Failed to generate backup: ${error.message}`
+  } finally {
     isExporting.value = false
     exportProgress.value = 0
   }
@@ -144,9 +175,9 @@ async function startImport() {
         <div class="flex items-center justify-between">
           <div>
             <h3 class="font-medium text-gray-900 dark:text-gray-100">Export Database</h3>
-            <p class="text-sm text-gray-500 dark:text-gray-400">Download all your data as a backup file</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Download your records as a JSON backup file</p>
           </div>
-          <BaseButton @click="exportDatabase" :disabled="isExporting" size="sm">
+          <BaseButton @click="exportDatabase" :disabled="isExporting || isImporting" size="sm">
             <span v-if="isExporting" class="flex items-center gap-2">
               <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -160,6 +191,33 @@ async function startImport() {
             </span>
             <span v-else>Export</span>
           </BaseButton>
+        </div>
+
+        <p class="text-sm font-medium text-gray-900 dark:text-gray-100" data-last-backup>{{ lastBackupLabel }}</p>
+        <p class="text-xs text-gray-500 dark:text-gray-400">
+          The recorded time means a download was generated on this device. It does not confirm the file was saved.
+          Receipt files are not bundled. Uploaded photos rely on the server; photos waiting to upload remain on this device and are not included.
+          Trash and device settings are excluded.
+        </p>
+        <p v-if="exportFeedback" :role="exportFeedbackError ? 'alert' : 'status'" class="text-sm" :class="exportFeedbackError ? 'text-amber-800 dark:text-amber-200' : 'text-gray-600 dark:text-gray-300'">{{ exportFeedback }}</p>
+
+        <div class="space-y-2">
+          <label for="backup-reminder-interval" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Backup reminders</label>
+          <select
+            id="backup-reminder-interval"
+            :value="settings.backupReminderIntervalDays"
+            :disabled="reminderSaving"
+            class="w-full rounded-sm border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+            @change="changeReminder"
+          >
+            <option :value="0">Off</option>
+            <option :value="7">Every 7 days</option>
+            <option :value="14">Every 14 days</option>
+            <option :value="30">Every 30 days</option>
+          </select>
+          <p class="text-xs text-gray-500 dark:text-gray-400">Reminders appear while the app is open. With no recorded backup, enabling reminders shows one immediately.</p>
+          <p v-if="health.backupDue" role="status" class="text-sm text-amber-800 dark:text-amber-200">A backup reminder is due. Generate a backup using Export above.</p>
+          <p v-if="reminderError || health.settingsError" role="alert" class="text-sm text-red-600 dark:text-red-300">{{ reminderError || health.settingsError }}</p>
         </div>
 
         <!-- Export Progress -->
@@ -186,7 +244,7 @@ async function startImport() {
             <h3 class="font-medium text-gray-900 dark:text-gray-100">Import Database</h3>
             <p class="text-sm text-gray-500 dark:text-gray-400">Restore data from a backup file</p>
           </div>
-          <BaseButton @click="openImportDialog" :disabled="isImporting" variant="secondary" size="sm">
+          <BaseButton @click="openImportDialog" :disabled="isImporting || isExporting" variant="secondary" size="sm">
             <span v-if="isImporting" class="flex items-center gap-2">
               <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>

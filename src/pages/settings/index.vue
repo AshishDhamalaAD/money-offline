@@ -5,6 +5,7 @@ import { useRouter, useRoute } from "vue-router"
 import PageLayout from "@/components/layout/PageLayout.vue"
 import PageHeader from "@/components/layout/PageHeader.vue"
 import DatabaseBackup from "@/pages/settings/DatabaseBackup.vue"
+import StorageHealth from "@/pages/settings/StorageHealth.vue"
 import ExportData from "@/pages/settings/ExportData.vue"
 import ServerSync from "@/pages/settings/ServerSync.vue"
 import ContactsManager from "@/pages/settings/ContactsManager.vue"
@@ -89,6 +90,8 @@ watch(
         <ExportData />
 
         <DatabaseBackup />
+
+        <StorageHealth />
 
         <ServerSync />
       </div>

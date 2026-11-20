@@ -267,3 +267,38 @@ descriptions do not hide other information. Deletion snapshots display labels se
 entry's details field; the original transaction row remains unchanged for restore. Existing entries
 without these labels resolve referenced master records reactively on read. Missing master records show
 an explicit unavailable label rather than an empty item. No schema or sync protocol changes are needed.
+
+## Backup reminders and storage health
+
+- `settingsStore` keeps `lastBackupGeneratedAt` (UTC ISO or null), `backupReminderIntervalDays`
+  (0/7/14/30), `backupReminderSnoozedUntil` and `storageWarningSnoozedUntil` (epoch milliseconds)
+  in the existing local settings table. These are excluded from JSON backups and sync. No schema
+  or backup-format migration is required; old backup-generation times remain unknown.
+- Only the manual JSON download in DatabaseBackup records a generation time, after generating the
+  file and initiating download. It cannot verify saving. Generation failures retain the old time;
+  metadata-write failures report that download started but the time could not be recorded. Imports,
+  server sync and CSV/PDF reports do not refresh the time. Database reset clears this metadata.
+- `useBackupHealth` is shared through Pinia and started/stopped by App after settings initialization.
+  A Dexie liveQuery observes the four settings across documents. Reminders default Off and become
+  due after the selected number of elapsed 24-hour days, or immediately if no backup is recorded.
+  Interval changes and new backups clear the backup snooze. Each snooze lasts 24 hours independently.
+- Health checks run on startup, foreground/focus, every minute while visible, after downloads,
+  and following explicit persistence requests. Storage checks and requests each run single-flight.
+  `navigator.storage.estimate()` reports approximate origin-wide usage, including caches; it is not
+  device free space. Missing/invalid values and API failures show an unavailable state. Usage at
+  least 80% warns in settings even while the global storage warning is snoozed.
+- Persistence is read with `persisted()` and requested with `persist()` only from a button gesture.
+  Granted, not granted, unsupported and error states are distinct. Estimate and persistence failures
+  are independent. Persistence reduces eviction risk; clearing site data or losing a device can
+  still lose records. JSON exports retain receipt references and do not bundle queued photo blobs.
+- StatusBanner stacks sync status, storage warnings and backup reminders within one measured wrapper.
+  ResizeObserver updates sticky header offsets when rows or wrapping change. The banner is absent
+  while the app is locked, and both health links open `/settings?tab=data`. Reminders are in-app only.
+- **Release prerequisite:** roadmap item 1 (Safe Backup and Restore) remains separate and must be
+  completed before releasing this feature. Attachment-inclusive recovery remains roadmap item 4.
+  This change does not replace or harden the existing restore implementation.
+
+Browser regression coverage includes interval/snooze boundaries, cross-document preferences,
+manual-download failures, report/sync exclusion, storage API fallbacks, persistence requests,
+stacked banner layout, and biometric/PIN/inactivity lock gates. Use `CHROME_PATH` with
+`npm run test:browser` for another Chromium binary.
