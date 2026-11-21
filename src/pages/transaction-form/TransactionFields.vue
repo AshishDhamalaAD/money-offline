@@ -67,6 +67,11 @@ function updateProduct(index, item) {
   calculateTotal()
 }
 
+function updateAdjustment(field, value) {
+  props.form[field] = value
+  calculateTotal()
+}
+
 function calculateTotal() {
   // If no products, amount is manually entered, so don't overwrite it
   if (props.form.products.length === 0) return
@@ -389,23 +394,23 @@ defineExpose({ calculateTotal })
     >
       <div class="grid grid-cols-2 gap-4">
         <BaseInput
-          v-model="form.discount"
+          :model-value="form.discount"
           type="number"
           step="0.01"
           label="Discount"
           placeholder="0.00"
           enterkeyhint="next"
-          @input="calculateTotal"
+          @update:model-value="updateAdjustment('discount', $event)"
         />
 
         <BaseInput
-          v-model="form.charge"
+          :model-value="form.charge"
           type="number"
           step="0.01"
           label="Charge"
           placeholder="0.00"
           enterkeyhint="done"
-          @input="calculateTotal"
+          @update:model-value="updateAdjustment('charge', $event)"
         />
       </div>
     </div>

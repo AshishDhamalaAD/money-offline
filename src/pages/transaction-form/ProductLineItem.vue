@@ -37,6 +37,13 @@ watch(
 )
 
 // Auto-calc logic
+function updateField(field, value) {
+  const number = parseFloat(value)
+  item.value[field] = Number.isFinite(number) ? number : ""
+  if (field === "amount") updateQuantity()
+  else updateAmount()
+}
+
 function updateAmount() {
   const qty = parseFloat(item.value.quantity) || 0
   const rate = parseFloat(item.value.rate) || 0
@@ -114,13 +121,13 @@ function onProductSelect(productId) {
 
       <div class="grid grid-cols-3 gap-2">
         <BaseInput
-          v-model.number="item.quantity"
+          :model-value="item.quantity"
           type="number"
           step="0.01"
           label="Qty"
           placeholder="0"
           enterkeyhint="next"
-          @input="updateAmount"
+          @update:model-value="updateField('quantity', $event)"
         >
           <template #after-input>
             <div class="flex flex-col justify-end gap-0.5 h-full">
@@ -140,22 +147,22 @@ function onProductSelect(productId) {
           </template>
         </BaseInput>
         <BaseInput
-          v-model.number="item.rate"
+          :model-value="item.rate"
           type="number"
           step="0.01"
           label="Rate"
           placeholder="0.00"
           enterkeyhint="next"
-          @input="updateAmount"
+          @update:model-value="updateField('rate', $event)"
         />
         <BaseInput
-          v-model.number="item.amount"
+          :model-value="item.amount"
           type="number"
           step="0.01"
           label="Amount"
           placeholder="0.00"
           enterkeyhint="done"
-          @input="updateQuantity"
+          @update:model-value="updateField('amount', $event)"
         />
       </div>
     </div>
