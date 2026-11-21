@@ -1,6 +1,8 @@
 <script setup>
 import { computed, ref, watch, onMounted, onUnmounted } from "vue"
 
+import { useDialog } from "@/composables/useDialog"
+
 import { useSettingsStore } from "@/store/settingsStore"
 import IconChevronLeft from "@/assets/icons/IconChevronLeft.vue"
 import IconChevronRight from "@/assets/icons/IconChevronRight.vue"
@@ -40,12 +42,8 @@ watch(
   { immediate: true },
 )
 
-watch(
-  () => props.modelValue,
-  (open) => {
-    document.body.style.overflow = open ? "hidden" : ""
-  },
-)
+const dialogRef = ref(null)
+const { isTop } = useDialog(dialogRef, () => props.modelValue, { close })
 
 function close() {
   emit("update:modelValue", false)
@@ -80,16 +78,14 @@ function onTouchEnd(event) {
 }
 
 function onKeydown(event) {
-  if (!props.modelValue) return
-  if (event.key === "Escape") close()
-  else if (event.key === "ArrowLeft") prev()
+  if (!props.modelValue || !isTop() || event.defaultPrevented) return
+  if (event.key === "ArrowLeft") prev()
   else if (event.key === "ArrowRight") next()
 }
 
 onMounted(() => window.addEventListener("keydown", onKeydown))
 onUnmounted(() => {
   window.removeEventListener("keydown", onKeydown)
-  if (props.modelValue) document.body.style.overflow = ""
 })
 </script>
 
@@ -105,6 +101,7 @@ onUnmounted(() => {
     >
       <div
         v-if="modelValue"
+        ref="dialogRef"
         class="fixed inset-0 z-[60] flex flex-col bg-black/95 text-white"
         role="dialog"
         aria-modal="true"

@@ -198,6 +198,8 @@ These are foundations to extend, rather than features to add from scratch. The s
 
 **Type:** Usability improvement. **Effort:** M. **Dependencies:** None; can accompany other UI work.
 
+**Implementation status:** Shared controls and main workflows implemented. Includes dialog/lock/gallery focus coordination, keyboard controls, persistent database recovery feedback, and app replacements for browser alerts/confirmation. Atomic restore and a comprehensive accessibility audit remain separate work.
+
 - **First version:** Improve dialog focus trapping/restoration, icon-button labels, keyboard navigation, nested-dialog behavior, and visible recovery actions for database failures. Replace remaining blocking browser alerts with consistent app feedback.
 - **Value and success:** Forms and dialogs are usable with a keyboard and screen reader; failures explain a next action and do not look like successful empty states.
 - **Starting points:** [Shared modal](src/components/common/BaseModal.vue), [backup UI](src/pages/settings/DatabaseBackup.vue).

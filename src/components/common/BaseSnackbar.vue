@@ -43,7 +43,7 @@ function startTimer() {
   }
 }
 
-watch(() => [props.show, props.revision], startTimer, { immediate: true })
+watch(() => [props.show, props.revision, props.message, props.duration], startTimer, { immediate: true })
 onUnmounted(clearTimer)
 
 function handleAction() {

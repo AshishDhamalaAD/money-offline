@@ -20,6 +20,8 @@ defineProps({
 
 <template>
   <button
+    type="button"
+    :aria-busy="loading || undefined"
     :class="[
       'inline-flex items-center justify-center rounded-sm font-medium transition-all duration-200 active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-1 dark:focus:ring-offset-gray-900',
       {

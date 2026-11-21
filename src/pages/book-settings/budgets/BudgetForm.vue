@@ -1,4 +1,8 @@
 <script setup>
+import { usePageFeedback } from "@/composables/usePageFeedback"
+import BaseError from "@/components/common/BaseError.vue"
+import ResourceState from "@/components/common/ResourceState.vue"
+
 import { ref, computed, onMounted } from "vue"
 import { useRoute, useRouter } from "vue-router"
 
@@ -14,6 +18,8 @@ import BaseToast from "@/components/common/BaseToast.vue"
 import FixedSaveButton from "@/components/common/FixedSaveButton.vue"
 import PageLayout from "@/components/layout/PageLayout.vue"
 import PageHeader from "@/components/layout/PageHeader.vue"
+
+const { operationError, operationBusy, operationReady, operationAction, retryOperation, runOperation } = usePageFeedback()
 
 const route = useRoute()
 const router = useRouter()
@@ -36,18 +42,21 @@ const toastMessage = ref("")
 const title = computed(() => (isNew ? "New Budget" : "Edit Budget"))
 
 onMounted(async () => {
-  budgetStore.watchBudgets(bookId)
-  categoryStore.watchCategories(bookId)
+  return runOperation(async () => {
+    budgetStore.watchBudgets(bookId)
+    categoryStore.watchCategories(bookId)
 
-  if (!isNew) {
-    const budget = await db.budgets.get(itemId)
-    if (budget) {
-      form.value = {
-        category_id: budget.category_id,
-        amount: budget.amount || 0,
+    if (!isNew) {
+      const budget = await db.budgets.get(itemId)
+      if (!budget) throw new Error('This budget is no longer available')
+      if (budget) {
+        form.value = {
+          category_id: budget.category_id,
+          amount: budget.amount || 0,
+        }
       }
     }
-  }
+  }, "Could not load budget.", true)
 })
 
 // A category can only have one budget, so hide categories that already have one.
@@ -62,19 +71,19 @@ const categoryOptions = computed(() => {
 })
 
 async function save() {
-  if (!form.value.category_id) {
-    toastMessage.value = "Choose a category for this budget."
-    showToast.value = true
-    return
-  }
+  return runOperation(async () => {
+    if (!form.value.category_id) {
+      toastMessage.value = "Choose a category for this budget."
+      showToast.value = true
+      return
+    }
 
-  if (!(parseFloat(form.value.amount) > 0)) {
-    toastMessage.value = "Enter a monthly limit greater than zero."
-    showToast.value = true
-    return
-  }
+    if (!(parseFloat(form.value.amount) > 0)) {
+      toastMessage.value = "Enter a monthly limit greater than zero."
+      showToast.value = true
+      return
+    }
 
-  try {
     const amount = roundAmount(form.value.amount)
 
     if (isNew) {
@@ -84,24 +93,15 @@ async function save() {
     }
 
     goBack()
-  } catch (error) {
-    console.error(error)
-    toastMessage.value = "Failed to save budget."
-    showToast.value = true
-  }
+  }, "Could not save budget.", false)
 }
 
 async function handleDelete() {
-  try {
+  return runOperation(async () => {
     await budgetStore.deleteBudget(itemId)
     showDelete.value = false
     goBack()
-  } catch (error) {
-    console.error(error)
-    toastMessage.value = "Failed to delete budget."
-    showToast.value = true
-    showDelete.value = false
-  }
+  }, "Could not delete budget.", false)
 }
 
 function goBack() {
@@ -125,6 +125,8 @@ function goBack() {
     </PageHeader>
 
     <main class="space-y-6 p-4">
+      <ResourceState :resources="[budgetStore, categoryStore]" />
+      <BaseError :message="operationError" :action-label="operationAction" :busy="operationBusy" @retry="retryOperation" />
       <div class="space-y-4 rounded-sm bg-white p-4 shadow-sm dark:border dark:border-gray-800 dark:bg-gray-900">
         <BaseSearchableSelect
           v-model="form.category_id"
@@ -151,16 +153,18 @@ function goBack() {
       </div>
     </main>
 
-    <FixedSaveButton @click="save" />
+    <FixedSaveButton :disabled="!operationReady || !budgetStore.ready || !!budgetStore.error || !categoryStore.ready || !!categoryStore.error" :loading="operationBusy" @click="save" />
 
-    <BaseConfirm
+    <BaseConfirm :loading="operationBusy"
       v-model="showDelete"
       title="Delete budget?"
       message="The category will stop showing budget progress. Transactions are not affected."
       confirm-label="Delete"
       variant="danger"
       @confirm="handleDelete"
-    />
+    >
+      <BaseError :message="operationError" :action-label="operationAction" :busy="operationBusy" @retry="retryOperation" />
+    </BaseConfirm>
 
     <BaseToast :show="showToast" :message="toastMessage" type="error" @close="showToast = false" />
   </PageLayout>

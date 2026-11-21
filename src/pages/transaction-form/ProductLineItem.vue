@@ -86,7 +86,7 @@ function onProductSelect(productId) {
 
 <template>
   <div :class="['relative py-4', productIndex === 0 ? '-mt-4' : '']">
-    <button
+    <button type="button" aria-label="Remove product line item"
       @click="$emit('remove')"
       class="absolute top-5 -right-4 p-2 text-red-500 z-10 hover:bg-red-50 rounded-full dark:hover:bg-red-900/20"
     >
@@ -124,13 +124,13 @@ function onProductSelect(productId) {
         >
           <template #after-input>
             <div class="flex flex-col justify-end gap-0.5 h-full">
-              <button
+              <button type="button" aria-label="Increase quantity"
                 class="border rounded-sm border-gray-200 p-1 w-8 flex items-center justify-center dark:border-gray-700 dark:hover:bg-gray-800"
                 @click.prevent="incrementQuantity"
               >
                 <IconPlus class="h-3 w-3" />
               </button>
-              <button
+              <button type="button" aria-label="Decrease quantity"
                 class="border rounded-sm border-gray-200 p-1 w-8 flex items-center justify-center dark:border-gray-700 dark:hover:bg-gray-800"
                 @click.prevent="decrementQuantity"
               >

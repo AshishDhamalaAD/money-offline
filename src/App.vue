@@ -7,6 +7,7 @@ import { useSyncStore } from "@/store/syncStore"
 import { useAppBadge } from "@/composables/useAppBadge"
 import { useReminders } from "@/composables/useReminders"
 import { useBackupHealth } from "@/composables/useBackupHealth"
+import BaseError from "@/components/common/BaseError.vue"
 import BiometricLock from "@/components/common/BiometricLock.vue"
 import PinLock from "@/components/common/PinLock.vue"
 import PwaUpdatePrompt from "@/components/common/PwaUpdatePrompt.vue"
@@ -21,6 +22,9 @@ const appBadge = useAppBadge()
 const reminders = useReminders()
 const backupHealth = useBackupHealth()
 const route = useRoute()
+let disposed = false
+const appReady = ref(false)
+const initializing = ref(false)
 const isLocked = ref(false)
 const lockType = ref(null) // 'biometric' | 'pin'
 const lastActive = ref(Date.now())
@@ -74,8 +78,13 @@ const onVisibilityChange = () => {
   }
 }
 
-onMounted(async () => {
-  await settingsStore.init()
+function reloadApp() { window.location.reload() }
+async function initializeApp() {
+  if (initializing.value || appReady.value) return
+  initializing.value = true
+  const loaded = await settingsStore.init()
+  initializing.value = false
+  if (!loaded || disposed) return
 
   // Initial lock
   if (settingsStore.biometricEnabled || settingsStore.pinEnabled) {
@@ -102,9 +111,14 @@ onMounted(async () => {
   // Watches local writes, flushes anything still pending and keeps the retry
   // timer alive across app opens.
   syncStore.start()
-})
+  appReady.value = true
+}
+onMounted(initializeApp)
 
 onUnmounted(() => {
+  disposed = true
+  for (const name of ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart']) window.removeEventListener(name, updateActivity)
+  document.removeEventListener('visibilitychange', onVisibilityChange)
   appBadge.stop()
   reminders.stop()
   backupHealth.stop()
@@ -125,20 +139,27 @@ function switchToPin() {
 
 <template>
   <div class="min-h-screen bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-50 transition-colors">
-    <StatusBanner v-if="settingsStore.initialized && !isLocked" />
+    <main v-if="settingsStore.loadError" class="mx-auto max-w-lg space-y-4 p-6">
+      <h1 class="text-xl font-semibold">Unable to open Money</h1>
+      <BaseError :message="settingsStore.loadError" :busy="initializing" @retry="initializeApp">
+        <button type="button" class="ml-3 rounded-sm px-2 py-1 font-semibold underline" @click="reloadApp">Reload app</button>
+      </BaseError>
+    </main>
+    <p v-else-if="!appReady" role="status" class="p-6">Loading Money...</p>
+    <StatusBanner v-if="appReady && !isLocked" />
 
     <template v-if="isLocked">
       <BiometricLock v-if="lockType === 'biometric'" @unlocked="onUnlocked" @use-pin="switchToPin" />
       <PinLock v-if="lockType === 'pin'" @unlocked="onUnlocked" />
     </template>
-    <RouterView />
+    <RouterView v-if="appReady" />
 
-    <BottomNav v-if="route.meta.tab && !isLocked" />
+    <BottomNav v-if="appReady && route.meta.tab && !isLocked" />
 
-    <RecurringDuePrompt v-if="!isLocked" />
+    <RecurringDuePrompt v-if="appReady && !isLocked" />
 
-    <InstallPrompt v-if="!isLocked" />
+    <InstallPrompt v-if="appReady && !isLocked" />
 
-    <PwaUpdatePrompt />
+    <PwaUpdatePrompt v-if="appReady && !isLocked" />
   </div>
 </template>

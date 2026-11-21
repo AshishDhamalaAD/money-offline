@@ -1,4 +1,5 @@
 <script setup>
+import { useId } from "vue"
 import BaseBottomSheet from "@/components/common/BaseBottomSheet.vue"
 import BaseButton from "@/components/common/BaseButton.vue"
 
@@ -31,6 +32,7 @@ defineProps({
   loading: Boolean,
 })
 
+const descriptionId = useId()
 const emit = defineEmits(["update:modelValue", "confirm", "cancel"])
 
 function close() {
@@ -51,17 +53,20 @@ function confirm() {
   <BaseBottomSheet
     :model-value="modelValue"
     :title="title"
+    :description-id="message ? descriptionId : undefined"
+    initial-focus="[data-dialog-cancel]"
+    :dismissible="!loading"
     @update:model-value="emit('update:modelValue', $event)"
   >
     <div class="space-y-5 pb-2">
-      <p v-if="message" class="text-sm text-gray-600 dark:text-gray-300">
+      <p :id="descriptionId" v-if="message" class="text-sm text-gray-600 dark:text-gray-300">
         {{ message }}
       </p>
 
       <slot />
 
       <div class="flex gap-3">
-        <BaseButton variant="secondary" block @click="cancel">{{ cancelLabel }}</BaseButton>
+        <BaseButton data-dialog-cancel variant="secondary" block :disabled="loading" @click="cancel">{{ cancelLabel }}</BaseButton>
         <BaseButton :variant="variant" block :loading="loading" @click="confirm">{{ confirmLabel }}</BaseButton>
       </div>
     </div>

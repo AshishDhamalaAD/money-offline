@@ -1,4 +1,8 @@
 <script setup>
+import { usePageFeedback } from "@/composables/usePageFeedback"
+import BaseError from "@/components/common/BaseError.vue"
+
+import ResourceState from "@/components/common/ResourceState.vue"
 import { ref, computed, onMounted } from "vue"
 import { useRoute, useRouter } from "vue-router"
 
@@ -12,6 +16,8 @@ import PageLayout from "@/components/layout/PageLayout.vue"
 import PageHeader from "@/components/layout/PageHeader.vue"
 import SettingsTabs from "../components/SettingsTabs.vue"
 
+const { operationError, operationBusy, operationReady, operationAction, retryOperation, runOperation, reportFailure } = usePageFeedback()
+
 const route = useRoute()
 const router = useRouter()
 const bookStore = useBookStore()
@@ -22,11 +28,13 @@ const bookId = parseInt(route.params.bookId)
 const book = ref(null)
 
 onMounted(async () => {
-  if (!bookId) return
+  return runOperation(async () => {
+    if (!bookId) return
 
-  book.value = await bookStore.getBook(bookId)
-  recurringStore.watchRecurring(bookId)
-  categoryStore.watchCategories(bookId)
+    book.value = await bookStore.getBook(bookId)
+    recurringStore.watchRecurring(bookId)
+    categoryStore.watchCategories(bookId)
+  }, "Could not load recurring transactions.", true)
 })
 
 function categoryNames(rule) {
@@ -58,7 +66,9 @@ function navigateToEdit(rule) {
 }
 
 async function toggle(rule) {
-  await recurringStore.toggleRule(rule)
+  return runOperation(async () => {
+    await recurringStore.toggleRule(rule)
+  }, "Could not update recurring transactions.", false)
 }
 </script>
 
@@ -70,6 +80,8 @@ async function toggle(rule) {
     />
 
     <main class="space-y-6 p-4">
+      <BaseError :message="operationError" :action-label="operationAction" :busy="operationBusy" @retry="retryOperation" />
+      <ResourceState :resources="[recurringStore, categoryStore]">
       <SettingsTabs :book-id="bookId" />
 
       <div class="space-y-4">
@@ -91,7 +103,7 @@ async function toggle(rule) {
             class="flex items-center justify-between gap-3 rounded-sm bg-white p-4 shadow-sm ring-1 ring-gray-100 transition-colors hover:bg-gray-50 dark:bg-gray-900 dark:ring-gray-800 dark:hover:bg-gray-800"
           >
             <div class="min-w-0">
-              <p class="truncate font-medium text-gray-900 dark:text-gray-100">{{ ruleTitle(rule) }}</p>
+              <p class="truncate font-medium text-gray-900 dark:text-gray-100"><button type="button" class="rounded-sm text-left" @click.stop="navigateToEdit(rule)">{{ ruleTitle(rule) }}</button></p>
               <p class="text-xs text-gray-500 dark:text-gray-400">
                 {{ frequencyLabel(rule.frequency) }} ·
                 <span v-if="rule.active">Next {{ formatDateOnly(rule.next_due_date) }}</span>
@@ -112,6 +124,10 @@ async function toggle(rule) {
                 {{ rule.type === "in" ? "+" : "-" }}{{ formatCurrency(rule.amount) }}
               </span>
               <button
+                type="button"
+                :disabled="operationBusy"
+                :aria-pressed="!!rule.active"
+                :aria-label="`${rule.active ? 'Pause' : 'Resume'} ${ruleTitle(rule)}`"
                 @click.stop="toggle(rule)"
                 :class="[
                   'rounded-full px-3 py-1.5 text-xs font-medium transition-colors',
@@ -130,6 +146,7 @@ async function toggle(rule) {
           </div>
         </div>
       </div>
+          </ResourceState>
     </main>
   </PageLayout>
 </template>

@@ -1,37 +1,27 @@
 <script setup>
-import { onMounted, onUnmounted, watch } from "vue"
+import { ref, useId } from "vue"
+import { useDialog } from "@/composables/useDialog"
 
 const props = defineProps({
   show: Boolean,
   title: String,
-  zIndex: {
-    type: String,
-    default: "z-50",
-  },
+  zIndex: { type: String, default: "z-50" },
+  initialFocus: String,
+  descriptionId: String,
+  ariaLabel: { type: String, default: "Dialog" },
+  dismissible: { type: Boolean, default: true },
 })
-
 const emit = defineEmits(["close"])
-
-// Lock body scroll when modal is open
-watch(
-  () => props.show,
-  (isOpen) => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden"
-    } else {
-      document.body.style.overflow = ""
-    }
-  }
-)
-
-function handleEscape(e) {
-  if (e.key === "Escape" && props.show) {
-    emit("close")
-  }
+const dialogRef = ref(null)
+const titleId = useId()
+const { isTop } = useDialog(dialogRef, () => props.show, {
+  close: () => emit("close"),
+  get initialFocus() { return props.initialFocus },
+  dismissible: () => props.dismissible,
+})
+function close() {
+  if (props.dismissible && isTop()) emit("close")
 }
-
-onMounted(() => document.addEventListener("keydown", handleEscape))
-onUnmounted(() => document.removeEventListener("keydown", handleEscape))
 </script>
 
 <template>
@@ -46,13 +36,17 @@ onUnmounted(() => document.removeEventListener("keydown", handleEscape))
     >
       <div
         v-if="show"
+        ref="dialogRef"
         class="fixed inset-0 flex items-center justify-center p-4 sm:p-6"
         :class="[zIndex]"
         role="dialog"
         aria-modal="true"
+        :aria-labelledby="title ? titleId : undefined"
+        :aria-describedby="descriptionId"
+        :aria-label="title ? undefined : ariaLabel"
       >
         <!-- Backdrop -->
-        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" @click="$emit('close')"></div>
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" @click="close"></div>
 
         <!-- Panel -->
         <Transition
@@ -64,15 +58,18 @@ onUnmounted(() => document.removeEventListener("keydown", handleEscape))
           leave-to-class="opacity-0 scale-95 translate-y-4"
         >
           <div
-            class="relative w-full max-w-lg transform overflow-hidden rounded-sm bg-white p-6 shadow-xl transition-all dark:bg-gray-900 dark:text-gray-100 dark:shadow-gray-900/40"
+            class="relative w-full max-w-lg transform max-h-[90vh] overflow-y-auto rounded-sm bg-white p-6 shadow-xl transition-all dark:bg-gray-900 dark:text-gray-100 dark:shadow-gray-900/40"
           >
             <div class="flex items-center justify-between mb-4">
-              <h3 v-if="title" class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ title }}</h3>
+              <h3 :id="titleId" v-if="title" class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ title }}</h3>
               <button
-                @click="$emit('close')"
+                v-if="dismissible"
+                type="button"
+                aria-label="Close dialog"
+                @click="close"
                 class="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-500 dark:text-gray-300 dark:hover:bg-gray-800"
               >
-                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg aria-hidden="true" focusable="false" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>

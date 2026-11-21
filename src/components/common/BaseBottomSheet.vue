@@ -1,86 +1,57 @@
 <script setup>
-import { onMounted, onUnmounted, ref, watch } from "vue"
+import { ref, useId, watch } from "vue"
+import IconX from "@/assets/icons/IconX.vue"
+import { useDialog } from "@/composables/useDialog"
 
 const props = defineProps({
-  modelValue: {
-    type: Boolean,
-    required: true,
-  },
-  title: {
-    type: String,
-    default: "",
-  },
+  modelValue: { type: Boolean, required: true },
+  title: { type: String, default: "" },
+  initialFocus: String,
+  descriptionId: String,
+  ariaLabel: { type: String, default: "Dialog" },
+  dismissible: { type: Boolean, default: true },
 })
-
 const emit = defineEmits(["update:modelValue", "close"])
-
-// A long-press that opens the sheet can end with a ghost click on the
-// backdrop. Ignore backdrop taps for a moment after opening.
+const dialogRef = ref(null)
+const titleId = useId()
 const openedAt = ref(0)
-
-watch(
-  () => props.modelValue,
-  (isOpen) => {
-    if (isOpen) openedAt.value = Date.now()
-  },
-)
-
+watch(() => props.modelValue, (open) => { if (open) openedAt.value = Date.now() }, { immediate: true })
+const { isTop } = useDialog(dialogRef, () => props.modelValue, {
+  close: () => close(),
+  get initialFocus() { return props.initialFocus },
+  dismissible: () => props.dismissible,
+})
 function close() {
+  if (!props.dismissible || !isTop()) return
   emit("update:modelValue", false)
   emit("close")
 }
-
 function onBackdropClick() {
-  if (Date.now() - openedAt.value < 350) return
-  close()
+  if (Date.now() - openedAt.value >= 350) close()
 }
-
-// Close on escape key
-function onEscape(e) {
-  if (e.key === "Escape" && props.modelValue) {
-    close()
-  }
-}
-
-onMounted(() => {
-  document.addEventListener("keydown", onEscape)
-})
-
-onUnmounted(() => {
-  document.removeEventListener("keydown", onEscape)
-})
-
-// Prevent body scroll when open
-watch(
-  () => props.modelValue,
-  (val) => {
-    if (val) {
-      document.body.style.overflow = "hidden"
-    } else {
-      document.body.style.overflow = ""
-    }
-  }
-)
 </script>
 
 <template>
   <Teleport to="body">
-    <div v-if="modelValue" class="relative z-50" role="dialog" aria-modal="true">
+    <div ref="dialogRef" v-if="modelValue" class="fixed inset-0 z-50 flex items-end justify-center md:items-center" role="dialog" aria-modal="true" :aria-describedby="descriptionId" :aria-labelledby="title ? titleId : undefined" :aria-label="title ? undefined : ariaLabel">
       <!-- Backdrop -->
       <div class="fixed inset-0 bg-black/50 transition-opacity" @click="onBackdropClick"></div>
 
       <!-- Sheet -->
       <div
-        class="fixed inset-x-0 bottom-0 z-50 transform transition-transform duration-300 ease-out bg-white dark:bg-gray-900 rounded-t-xl shadow-xl max-h-[90vh] overflow-y-auto w-full max-w-lg mx-auto md:relative md:rounded-xl md:bottom-auto md:top-1/2 md:-translate-y-1/2 md:max-w-md"
+        class="relative z-50 w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-t-xl bg-white shadow-xl dark:bg-gray-900 md:max-w-md md:rounded-xl"
       >
         <!-- Handle bar for mobile feel -->
-        <div class="md:hidden flex justify-center pt-3 pb-1" @click="close">
+        <div aria-hidden="true" class="md:hidden flex justify-center pt-3 pb-1">
           <div class="w-12 h-1.5 bg-gray-300 dark:bg-gray-700 rounded-full"></div>
         </div>
 
         <div class="p-4">
-          <div v-if="title" class="mb-4 text-center">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ title }}</h3>
+          <div v-if="title || dismissible" class="relative mb-4 min-h-8">
+            <h3 v-if="title" :id="titleId" class="mx-9 text-center text-lg font-semibold text-gray-900 dark:text-white">{{ title }}</h3>
+            <button v-if="dismissible" type="button" aria-label="Close dialog" class="absolute right-0 top-0 rounded-full p-1" @click="close">
+              <IconX class="h-5 w-5" />
+            </button>
           </div>
 
           <slot></slot>
@@ -89,7 +60,3 @@ watch(
     </div>
   </Teleport>
 </template>
-
-<style scoped>
-/* Optional: Add custom transition classes if not using utility classes for animation */
-</style>

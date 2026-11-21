@@ -26,6 +26,8 @@ const productStore = useProductStore()
       <span class="bg-gray-200 text-gray-800 text-sm px-2 py-1 rounded flex items-center dark:bg-gray-800 dark:text-gray-100">
         Category: {{ categoryStore.categories.find((c) => c.id === filters.category)?.name }}
         <button
+          type="button"
+          aria-label="Clear category filter"
           @click="$emit('clear', 'category')"
           class="ml-1 text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"
         >
@@ -37,6 +39,8 @@ const productStore = useProductStore()
       <span class="bg-gray-200 text-gray-800 text-sm px-2 py-1 rounded flex items-center dark:bg-gray-800 dark:text-gray-100">
         Payment: {{ paymentModeStore.paymentModes.find((p) => p.id === filters.paymentMode)?.name }}
         <button
+          type="button"
+          aria-label="Clear payment filter"
           @click="$emit('clear', 'payment')"
           class="ml-1 text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"
         >
@@ -48,6 +52,8 @@ const productStore = useProductStore()
       <span class="bg-gray-200 text-gray-800 text-sm px-2 py-1 rounded flex items-center dark:bg-gray-800 dark:text-gray-100">
         Contact: {{ contactStore.contacts.find((c) => c.id === filters.contact)?.name }}
         <button
+          type="button"
+          aria-label="Clear contact filter"
           @click="$emit('clear', 'contact')"
           class="ml-1 text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"
         >
@@ -59,6 +65,8 @@ const productStore = useProductStore()
       <span class="bg-gray-200 text-gray-800 text-sm px-2 py-1 rounded flex items-center dark:bg-gray-800 dark:text-gray-100">
         Product: {{ productStore.products.find((p) => p.id === filters.product)?.name }}
         <button
+          type="button"
+          aria-label="Clear product filter"
           @click="$emit('clear', 'product')"
           class="ml-1 text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"
         >

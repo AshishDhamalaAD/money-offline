@@ -1,6 +1,5 @@
-import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import { liveQuery } from 'dexie'
+import { useLiveResource } from '@/composables/useLiveResource'
 
 import { formatDateTimeForDB, roundAmount } from '@/utils/dateUtils'
 import { db } from '@/db/dexie'
@@ -8,22 +7,15 @@ import { recordDeletions } from '@/db/sync/dirty'
 import { resolveAttachmentRefs, discardUnusedUploads } from '@/services/uploadQueue'
 
 export const useProductStore = defineStore('product', () => {
-    const products = ref([])
-    let productSubscription = null
+    const resource = useLiveResource([], 'Could not load products.')
+    const products = resource.data
+    const { loading, error, ready, retry } = resource
 
     function watchProducts(bookId) {
-        if (productSubscription) productSubscription.unsubscribe()
-
-        if (!bookId) {
-            products.value = []
-            return
-        }
-
-        productSubscription = liveQuery(() =>
-            db.products.where('book_id').equals(bookId).toArray()
-        ).subscribe(data => {
-            products.value = data;
-        })
+        resource.start(bookId ? async () => {
+            const data = await db.products.where('book_id').equals(bookId).toArray()
+            return data
+        } : null, bookId)
     }
 
     async function addProduct(name, rate, description, quantityType, bookId, categoryId, attachments = []) {
@@ -155,6 +147,7 @@ export const useProductStore = defineStore('product', () => {
 
     return {
         products,
+        loading, error, ready, retry,
         watchProducts,
         addProduct,
         updateProduct,

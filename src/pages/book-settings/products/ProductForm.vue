@@ -1,4 +1,9 @@
 <script setup>
+import { usePageFeedback } from "@/composables/usePageFeedback"
+import BaseError from "@/components/common/BaseError.vue"
+import ResourceState from "@/components/common/ResourceState.vue"
+
+import { db } from "@/db/dexie"
 import { discardUnusedUploads } from "@/services/uploadQueue"
 import { ref, onMounted, computed, toRaw } from "vue"
 import { useRoute, useRouter } from "vue-router"
@@ -11,14 +16,16 @@ import IconTrash from "@/assets/icons/IconTrash.vue"
 import BaseButton from "@/components/common/BaseButton.vue"
 import BaseInput from "@/components/common/BaseInput.vue"
 import BaseSearchableSelect from "@/components/common/BaseSearchableSelect.vue"
+import BaseConfirm from "@/components/common/BaseConfirm.vue"
 import BaseModal from "@/components/common/BaseModal.vue"
-import BaseToast from "@/components/common/BaseToast.vue"
 import LightGallery from "@/components/common/LightGallery.vue"
 import FixedSaveButton from "@/components/common/FixedSaveButton.vue"
 import ProductHistoryButton from "@/components/common/ProductHistoryButton.vue"
 import ImageUpload from "@/components/common/LazyImageUpload.vue"
 import PageLayout from "@/components/layout/PageLayout.vue"
 import PageHeader from "@/components/layout/PageHeader.vue"
+
+const { operationError, operationBusy, operationReady, operationAction, retryOperation, runOperation } = usePageFeedback()
 
 const route = useRoute()
 const router = useRouter()
@@ -40,8 +47,6 @@ const form = ref({
 })
 
 const showDeleteModal = ref(false)
-const showToast = ref(false)
-const toastMessage = ref("")
 
 // Quick Add Category
 const showCategoryModal = ref(false)
@@ -49,18 +54,15 @@ const newCategoryName = ref("")
 const newCategoryDescription = ref("")
 
 async function saveNewCategory() {
-  if (!newCategoryName.value.trim()) return
+  return runOperation(async () => {
+    if (!newCategoryName.value.trim()) return
 
-  try {
     const id = await categoryStore.addCategory(newCategoryName.value, newCategoryDescription.value, bookId)
     form.value.category_id = id
     showCategoryModal.value = false
     newCategoryName.value = ""
     newCategoryDescription.value = ""
-  } catch (e) {
-    console.error(e)
-    alert("Failed to add category")
-  }
+  }, "Could not add category.", false)
 }
 
 const title = computed(() => {
@@ -68,24 +70,15 @@ const title = computed(() => {
 })
 
 onMounted(async () => {
-  productStore.watchProducts(bookId)
+  return runOperation(async () => {
+    productStore.watchProducts(bookId)
   categoryStore.watchCategories(bookId)
-
-  if (!isNew) {
-    // Hack: wait for data
-    const unsubscribe = productStore.$subscribe((mutation, state) => {
-      const list = state.products
-      const item = list.find((i) => i.id === itemId)
-      if (item) {
-        fillForm(item)
-      }
-    })
-
-    // Also try immediately
-    const list = productStore.products
-    const item = list.find((i) => i.id === itemId)
-    if (item) fillForm(item)
-  }
+    if (!isNew) {
+      const item = await db.products.get(itemId)
+      if (!item) throw new Error('This product is no longer available')
+      fillForm(item)
+    }
+  }, "Could not load product.", true)
 })
 
 function fillForm(item) {
@@ -104,49 +97,55 @@ function handleUpload(url) {
   attachments.value.push(url)
 }
 
-async function removeAttachment(index) {
-  if (confirm("Are you sure you want to delete this image?")) {
-    const removed = attachments.value.splice(index, 1)
-    await discardUnusedUploads(removed)
-  }
+const pendingAttachment = ref(null)
+const showRemoveAttachment = ref(false)
+function removeAttachment(index) {
+  pendingAttachment.value = index
+  showRemoveAttachment.value = true
+}
+async function confirmRemoveAttachment() {
+  return runOperation(async () => {
+      const index = pendingAttachment.value
+      await discardUnusedUploads([attachments.value[index]])
+      attachments.value.splice(index, 1)
+      showRemoveAttachment.value = false
+  }, 'Could not remove attachment.')
 }
 
 async function save() {
-  if (!form.value.name) return
+  return runOperation(async () => {
+    if (!form.value.name) return
 
-  if (isNew) {
-    await productStore.addProduct(
-      form.value.name,
-      form.value.rate,
-      form.value.description,
-      form.value.quantity_type,
-      bookId,
-      form.value.category_id,
-      toRaw(attachments.value)
-    )
-  } else {
-    await productStore.updateProduct(itemId, {
-      name: form.value.name,
-      rate: form.value.rate,
-      description: form.value.description,
-      quantity_type: form.value.quantity_type,
-      category_id: form.value.category_id,
-      attachments: toRaw(attachments.value),
-    })
-  }
+    if (isNew) {
+      await productStore.addProduct(
+        form.value.name,
+        form.value.rate,
+        form.value.description,
+        form.value.quantity_type,
+        bookId,
+        form.value.category_id,
+        toRaw(attachments.value)
+      )
+    } else {
+      await productStore.updateProduct(itemId, {
+        name: form.value.name,
+        rate: form.value.rate,
+        description: form.value.description,
+        quantity_type: form.value.quantity_type,
+        category_id: form.value.category_id,
+        attachments: toRaw(attachments.value),
+      })
+    }
 
-  goBack()
+    goBack()
+  }, "Could not save product.", false)
 }
 
 async function handleDelete() {
-  try {
+  return runOperation(async () => {
     await productStore.deleteProduct(itemId)
     goBack()
-  } catch (error) {
-    toastMessage.value = error.message
-    showToast.value = true
-    showDeleteModal.value = false
-  }
+  }, "Could not delete product.", false)
 }
 
 function goBack() {
@@ -162,7 +161,7 @@ function goBack() {
   <PageLayout>
     <PageHeader :title="title" :back-route="{ name: 'book-settings-products', params: { bookId }, query: route.query }">
       <template #actions>
-        <button
+        <button type="button" aria-label="Delete product"
           v-if="!isNew"
           @click="showDeleteModal = true"
           class="rounded-lg px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors dark:hover:bg-red-900/20"
@@ -175,6 +174,8 @@ function goBack() {
     </PageHeader>
 
     <main class="p-4 space-y-6">
+      <ResourceState :resources="[productStore, categoryStore]" />
+      <BaseError :message="operationError" :action-label="operationAction" :busy="operationBusy" @retry="retryOperation" />
       <div class="bg-white p-4 rounded-sm shadow-sm space-y-4 dark:bg-gray-900 dark:border dark:border-gray-800">
         <LightGallery :images="attachments" editable @delete="removeAttachment" />
         <ImageUpload @upload="handleUpload" from="products" />
@@ -200,7 +201,7 @@ function goBack() {
                 placeholder="Select Category"
               />
             </div>
-            <button
+            <button type="button" aria-label="Add category"
               @click="showCategoryModal = true"
               class="mb-0.5 flex h-[42px] w-[42px] items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 active:scale-95 transition-all dark:bg-indigo-900/40 dark:text-indigo-100 dark:hover:bg-indigo-900/60"
             >
@@ -213,34 +214,37 @@ function goBack() {
       </div>
     </main>
 
-    <FixedSaveButton @click="save" />
+    <FixedSaveButton :disabled="!operationReady || !productStore.ready || !!productStore.error || !categoryStore.ready || !!categoryStore.error" :loading="operationBusy" @click="save" />
 
     <!-- Add Category Modal -->
-    <BaseModal :show="showCategoryModal" title="Add New Category" @close="showCategoryModal = false">
+    <BaseModal :dismissible="!operationBusy" :show="showCategoryModal" title="Add New Category" @close="showCategoryModal = false">
+      <BaseError :message="operationError" :action-label="operationAction" :busy="operationBusy" @retry="retryOperation" />
       <div class="space-y-4">
         <BaseInput v-model="newCategoryName" label="Category Name" placeholder="e.g. Groceries" autoFocus />
 
         <BaseInput v-model="newCategoryDescription" label="Description" placeholder="Optional" />
 
         <div class="flex justify-end gap-3 mt-6">
-          <BaseButton variant="ghost" @click="showCategoryModal = false">Cancel</BaseButton>
-          <BaseButton @click="saveNewCategory">Add Category</BaseButton>
+          <BaseButton variant="ghost" :disabled="operationBusy" @click="showCategoryModal = false">Cancel</BaseButton>
+          <BaseButton :loading="operationBusy" @click="saveNewCategory">Add Category</BaseButton>
         </div>
       </div>
     </BaseModal>
 
     <!-- Delete Confirmation Modal -->
-    <BaseModal :show="showDeleteModal" title="Confirm Delete" @close="showDeleteModal = false">
+    <BaseModal :dismissible="!operationBusy" :show="showDeleteModal" title="Confirm Delete" @close="showDeleteModal = false">
+      <BaseError :message="operationError" :action-label="operationAction" :busy="operationBusy" @retry="retryOperation" />
       <p class="text-gray-600 dark:text-gray-300">
         Are you sure you want to delete this product? This action cannot be undone.
       </p>
       <div class="flex justify-end gap-3 mt-6">
-        <BaseButton variant="ghost" @click="showDeleteModal = false">Cancel</BaseButton>
-        <BaseButton variant="danger" @click="handleDelete">Delete</BaseButton>
+        <BaseButton variant="ghost" :disabled="operationBusy" @click="showDeleteModal = false">Cancel</BaseButton>
+        <BaseButton variant="danger" :loading="operationBusy" @click="handleDelete">Delete</BaseButton>
       </div>
     </BaseModal>
 
-    <!-- Toast Notification -->
-    <BaseToast :show="showToast" :message="toastMessage" type="error" @close="showToast = false" />
+    <BaseConfirm v-model="showRemoveAttachment" title="Remove attachment?" message="Remove this image from the product?" confirm-label="Remove" variant="danger" :loading="operationBusy" @confirm="confirmRemoveAttachment">
+      <BaseError :message="operationError" action-label="" />
+    </BaseConfirm>
   </PageLayout>
 </template>

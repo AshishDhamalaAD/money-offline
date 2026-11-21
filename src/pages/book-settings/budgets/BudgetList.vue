@@ -1,7 +1,11 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from "vue"
+import { usePageFeedback } from "@/composables/usePageFeedback"
+import BaseError from "@/components/common/BaseError.vue"
+
+import ResourceState from "@/components/common/ResourceState.vue"
+import { ref, computed, onMounted, onUnmounted, reactive } from "vue"
 import { useRoute, useRouter } from "vue-router"
-import { liveQuery } from "dexie"
+import { useLiveResource } from "@/composables/useLiveResource"
 
 import { db } from "@/db/dexie"
 import { formatCurrency } from "@/utils/moneyUtils"
@@ -14,6 +18,8 @@ import PageLayout from "@/components/layout/PageLayout.vue"
 import PageHeader from "@/components/layout/PageHeader.vue"
 import SettingsTabs from "../components/SettingsTabs.vue"
 
+const { operationError, operationBusy, operationReady, operationAction, retryOperation, runOperation, reportFailure } = usePageFeedback()
+
 const route = useRoute()
 const router = useRouter()
 const bookStore = useBookStore()
@@ -22,46 +28,35 @@ const categoryStore = useCategoryStore()
 
 const bookId = parseInt(route.params.bookId)
 const book = ref(null)
-const monthSpent = ref({})
-
-let transactionSubscription = null
+const spendState = reactive(useLiveResource({}, 'Could not load budget spending.'))
+const monthSpent = computed(() => spendState.data)
 
 onMounted(async () => {
-  if (!bookId) return
+  return runOperation(async () => {
+    if (!bookId) return
 
-  book.value = await bookStore.getBook(bookId)
-  budgetStore.watchBudgets(bookId)
-  categoryStore.watchCategories(bookId)
+    book.value = await bookStore.getBook(bookId)
+    budgetStore.watchBudgets(bookId)
+    categoryStore.watchCategories(bookId)
 
-  const monthStart = new Date()
-  monthStart.setDate(1)
-  monthStart.setHours(0, 0, 0, 0)
+    const monthStart = new Date()
+    monthStart.setDate(1)
+    monthStart.setHours(0, 0, 0, 0)
 
-  transactionSubscription = liveQuery(() =>
-    db.transactions.where("book_id").equals(bookId).toArray(),
-  ).subscribe({
-    next: (transactions) => {
+    spendState.start(async () => {
+      const transactions = await db.transactions.where('book_id').equals(bookId).toArray()
       const spent = {}
-
       for (const tx of transactions) {
-        if (tx.type !== "out") continue
-
+        if (tx.type !== 'out') continue
         const date = new Date(tx.date)
         if (Number.isNaN(date.getTime()) || date < monthStart) continue
-
         const amount = parseFloat(tx.amount) || 0
-        for (const categoryId of tx.category_ids || []) {
-          spent[categoryId] = (spent[categoryId] || 0) + amount
-        }
+        for (const categoryId of tx.category_ids || []) spent[categoryId] = (spent[categoryId] || 0) + amount
       }
-
-      monthSpent.value = spent
-    },
-    error: (error) => console.error("Failed to load budget spend", error),
-  })
+      return spent
+    }, bookId)
+  }, "Could not load budgets.", true)
 })
-
-onUnmounted(() => transactionSubscription?.unsubscribe())
 
 const rows = computed(() =>
   budgetStore.budgets
@@ -97,6 +92,8 @@ function navigateToEdit(budget) {
     />
 
     <main class="space-y-6 p-4">
+      <BaseError :message="operationError" :action-label="operationAction" :busy="operationBusy" @retry="retryOperation" />
+      <ResourceState :resources="[budgetStore, categoryStore, spendState]">
       <SettingsTabs :book-id="bookId" />
 
       <div class="space-y-4">
@@ -114,6 +111,10 @@ function navigateToEdit(budget) {
             v-for="row in rows"
             :key="row.id"
             @click="navigateToEdit(row)"
+            role="button"
+            tabindex="0"
+            @keydown.enter.self.prevent="navigateToEdit(row)"
+            @keydown.space.self.prevent="navigateToEdit(row)"
             class="flex items-center gap-4 rounded-sm bg-white p-4 shadow-sm ring-1 ring-gray-100 transition-colors hover:bg-gray-50 dark:bg-gray-900 dark:ring-gray-800 dark:hover:bg-gray-800"
           >
             <BudgetRing :percent="row.percent" :size="52" />
@@ -159,6 +160,7 @@ function navigateToEdit(budget) {
           </div>
         </div>
       </div>
+          </ResourceState>
     </main>
   </PageLayout>
 </template>

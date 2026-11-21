@@ -1,28 +1,20 @@
-import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import { liveQuery } from 'dexie'
+import { useLiveResource } from '@/composables/useLiveResource'
 
 import { formatDateTimeForDB } from '@/utils/dateUtils'
 import { db } from '@/db/dexie'
 import { recordDeletions } from '@/db/sync/dirty'
 
 export const useBudgetStore = defineStore('budget', () => {
-    const budgets = ref([])
-    let subscription = null
+    const resource = useLiveResource([], 'Could not load budgets.')
+    const budgets = resource.data
+    const { loading, error, ready, retry } = resource
 
     function watchBudgets(bookId) {
-        if (subscription) subscription.unsubscribe()
-
-        if (!bookId) {
-            budgets.value = []
-            return
-        }
-
-        subscription = liveQuery(() =>
-            db.budgets.where('book_id').equals(bookId).toArray()
-        ).subscribe(data => {
-            budgets.value = data
-        })
+        resource.start(bookId ? async () => {
+            const data = await db.budgets.where('book_id').equals(bookId).toArray()
+            return data
+        } : null, bookId)
     }
 
     async function findBudget(bookId, categoryId) {
@@ -66,6 +58,7 @@ export const useBudgetStore = defineStore('budget', () => {
 
     return {
         budgets,
+        loading, error, ready, retry,
         watchBudgets,
         findBudget,
         addBudget,

@@ -198,7 +198,7 @@ function onContextMenu() {
     >
       <button
         type="button"
-        tabindex="-1"
+        :tabindex="open ? 0 : -1"
         class="flex w-[76px] flex-col items-center justify-center gap-1 bg-indigo-600 text-[11px] font-medium text-white active:bg-indigo-700"
         @click="handleAction('edit')"
       >
@@ -207,7 +207,7 @@ function onContextMenu() {
       </button>
       <button
         type="button"
-        tabindex="-1"
+        :tabindex="open ? 0 : -1"
         class="flex w-[76px] flex-col items-center justify-center gap-1 bg-sky-600 text-[11px] font-medium text-white active:bg-sky-700"
         @click="handleAction('duplicate')"
       >
@@ -227,7 +227,7 @@ function onContextMenu() {
     >
       <button
         type="button"
-        tabindex="-1"
+        :tabindex="open ? 0 : -1"
         class="flex w-full flex-col items-center justify-center gap-1 bg-red-600 text-[11px] font-medium text-white active:bg-red-700"
         @click="handleAction('delete')"
       >
@@ -266,6 +266,10 @@ function onContextMenu() {
 
       <div class="min-w-0 flex-1">
         <slot />
+        <div v-if="!selecting" class="flex gap-3 px-4 py-2 text-sm">
+          <button type="button" :aria-label="`Open transaction ${transaction.description || transaction.id}`" class="rounded-sm px-2 py-1 text-indigo-700 dark:text-indigo-300" @click.stop="emit('select', transaction)">Open</button>
+          <button type="button" :aria-label="`Actions for transaction ${transaction.description || transaction.id}`" class="rounded-sm px-2 py-1 text-indigo-700 dark:text-indigo-300" @click.stop="emit('longpress', transaction)">Actions</button>
+        </div>
       </div>
     </div>
   </div>

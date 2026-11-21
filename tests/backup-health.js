@@ -170,7 +170,7 @@ export async function runBackupHealthTests() {
 
     db.books.toArray = async () => { throw new Error('test read failure') }
     exportButton.click()
-    await waitFor(() => host.textContent.includes('Failed to generate backup:'), 'export failure not visible')
+    await waitFor(() => host.textContent.includes('Could not generate a backup.'), 'export failure not visible')
     check(downloads === 1 && settings.lastBackupGeneratedAt === generatedAt, 'failed generation changed timestamp')
     db.books.toArray = originalBooksRead
 

@@ -1,26 +1,20 @@
-import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import { liveQuery } from 'dexie'
+import { useLiveResource } from '@/composables/useLiveResource'
 
 import { formatDateTimeForDB } from '@/utils/dateUtils'
 import { db } from '@/db/dexie'
 import { recordDeletions } from '@/db/sync/dirty'
 
 export const useCategoryStore = defineStore('category', () => {
-    const categories = ref([])
-    let categorySubscription = null
+    const resource = useLiveResource([], 'Could not load categories.')
+    const categories = resource.data
+    const { loading, error, ready, retry } = resource
 
     function watchCategories(bookId) {
-        if (categorySubscription) categorySubscription.unsubscribe()
-
-        if (!bookId) {
-            categories.value = []
-            return
-        }
-
-        categorySubscription = liveQuery(() =>
-            db.categories.where('book_id').equals(bookId).toArray()
-        ).subscribe(data => categories.value = data.sort((a, b) => a.sort - b.sort))
+        resource.start(bookId ? async () => {
+            const data = await db.categories.where('book_id').equals(bookId).toArray()
+            return data.sort((a, b) => a.sort - b.sort)
+        } : null, bookId)
     }
 
     async function addCategory(name, description, bookId) {
@@ -70,6 +64,7 @@ export const useCategoryStore = defineStore('category', () => {
 
     return {
         categories,
+        loading, error, ready, retry,
         watchCategories,
         addCategory,
         deleteCategory,

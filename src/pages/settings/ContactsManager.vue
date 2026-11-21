@@ -1,4 +1,5 @@
 <script setup>
+import ResourceState from "@/components/common/ResourceState.vue"
 import { ref, computed } from "vue"
 import { useRouter } from "vue-router"
 
@@ -29,6 +30,7 @@ function navigateToEdit(contact) {
 </script>
 
 <template>
+  <ResourceState :resources="[contactStore]">
   <div class="space-y-4">
     <div class="flex flex-col gap-4">
       <div class="flex justify-between items-center">
@@ -45,6 +47,10 @@ function navigateToEdit(contact) {
         v-for="item in filteredContacts"
         :key="item.id"
         @click="navigateToEdit(item)"
+            role="button"
+            tabindex="0"
+            @keydown.enter.self.prevent="navigateToEdit(item)"
+            @keydown.space.self.prevent="navigateToEdit(item)"
         class="flex justify-between items-center bg-white p-4 rounded-sm shadow-sm cursor-pointer hover:bg-gray-50 transition-colors dark:bg-gray-900 dark:hover:bg-gray-800 dark:border dark:border-gray-800"
       >
         <div>
@@ -60,4 +66,5 @@ function navigateToEdit(contact) {
       </div>
     </div>
   </div>
+</ResourceState>
 </template>

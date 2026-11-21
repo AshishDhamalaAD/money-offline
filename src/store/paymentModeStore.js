@@ -1,26 +1,20 @@
-import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import { liveQuery } from 'dexie'
+import { useLiveResource } from '@/composables/useLiveResource'
 
 import { formatDateTimeForDB } from '@/utils/dateUtils'
 import { db } from '@/db/dexie'
 import { recordDeletions } from '@/db/sync/dirty'
 
 export const usePaymentModeStore = defineStore('paymentMode', () => {
-    const paymentModes = ref([])
-    let paymentModeSubscription = null
+    const resource = useLiveResource([], 'Could not load payment methods.')
+    const paymentModes = resource.data
+    const { loading, error, ready, retry } = resource
 
     function watchPaymentModes(bookId) {
-        if (paymentModeSubscription) paymentModeSubscription.unsubscribe()
-
-        if (!bookId) {
-            paymentModes.value = []
-            return
-        }
-
-        paymentModeSubscription = liveQuery(() =>
-            db.payment_modes.where('book_id').equals(bookId).toArray()
-        ).subscribe(data => paymentModes.value = data)
+        resource.start(bookId ? async () => {
+            const data = await db.payment_modes.where('book_id').equals(bookId).toArray()
+            return data
+        } : null, bookId)
     }
 
     async function addPaymentMode(name, description, bookId) {
@@ -59,6 +53,7 @@ export const usePaymentModeStore = defineStore('paymentMode', () => {
 
     return {
         paymentModes,
+        loading, error, ready, retry,
         watchPaymentModes,
         addPaymentMode,
         deletePaymentMode,

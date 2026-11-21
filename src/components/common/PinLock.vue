@@ -1,5 +1,7 @@
 <script setup>
 import { ref, watch, computed, onMounted, onUnmounted } from "vue"
+import { useDialog } from "@/composables/useDialog"
+
 import { useSettingsStore } from "@/store/settingsStore"
 import IconLock from "@/assets/icons/IconLock.vue"
 import IconX from "@/assets/icons/IconX.vue"
@@ -21,6 +23,8 @@ const props = defineProps({
 
 const emit = defineEmits(["unlocked", "setup-complete", "cancel", "verified"])
 const settingsStore = useSettingsStore()
+const dialogRef = ref(null)
+useDialog(dialogRef, () => true, { close: () => {}, dismissible: () => false, priority: 100 })
 
 const pin = ref("")
 const error = ref(null)
@@ -110,6 +114,10 @@ function onCancel() {
 
 <template>
   <div
+    ref="dialogRef"
+    role="dialog"
+    aria-modal="true"
+    aria-label="PIN entry"
     :class="[
       'fixed inset-0 z-60 flex flex-col items-center justify-center transition-all duration-500',
       isUnlocking ? 'opacity-0 scale-110 pointer-events-none' : 'opacity-100 scale-100',
@@ -117,7 +125,7 @@ function onCancel() {
     ]"
   >
     <div v-if="mode !== 'unlock'" class="absolute top-4 right-4">
-      <button @click="onCancel" class="p-2 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full transition-colors">
+      <button type="button" aria-label="Cancel PIN entry" @click="onCancel" class="p-2 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full transition-colors">
         <IconX class="w-6 h-6 text-gray-500 dark:text-gray-400" />
       </button>
     </div>
@@ -139,8 +147,9 @@ function onCancel() {
         </p>
       </div>
 
-      <!-- PIN Display -->
-      <div class="flex justify-center gap-3">
+      <!-- Announce length only, never the digits. -->
+      <p class="sr-only" role="status">{{ pin.length }} of 6 digits entered</p>
+      <div aria-hidden="true" class="flex justify-center gap-3">
         <div
           v-for="i in 6"
           :key="i"
@@ -154,7 +163,7 @@ function onCancel() {
       </div>
 
       <div v-if="lockoutSeconds" role="status" class="text-red-600 dark:text-red-400 text-sm h-5 font-medium">Try again in {{ lockoutSeconds }} seconds</div>
-      <div v-else-if="error" class="text-red-600 dark:text-red-400 text-sm h-5 font-medium">
+      <div v-else-if="error" role="alert" class="text-red-600 dark:text-red-400 text-sm h-5 font-medium">
         {{ error }}
       </div>
       <div v-else class="h-5"></div>
@@ -164,6 +173,8 @@ function onCancel() {
         <button
           v-for="key in keypad"
           :key="key"
+          type="button"
+          :aria-label="key === 'backspace' ? 'Delete last digit' : String(key)"
           @click="handleKey(key)"
           :disabled="Boolean(lockoutSeconds || verifying || isUnlocking || error)"
           :class="[

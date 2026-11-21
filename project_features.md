@@ -107,3 +107,12 @@ Polished interface for a premium user experience.
 
 - **Device secret storage**: API tokens are encrypted on secure origins using a device-local key. Non-secure contexts show a legacy-storage warning. App records are not encrypted by this feature.
 - **Touch charts**: Larger tooltips and point hit areas make month/year charts easier to inspect on a phone.
+
+### Accessibility and recovery feedback
+
+- Shared dialogs, bottom sheets, attachment galleries, and lock overlays coordinate keyboard focus. Tab stays in the active dialog; Escape closes only its top dismissible layer. Closing restores focus, and background content stays inert until overlays close.
+- Searchable selects support keyboard opening, arrow/Home/End navigation, Enter selection, Escape, and Tab. Shared fields associate labels, required state, and error descriptions with their inputs. Icon actions have names and visible focus indicators in both themes.
+- Transactions offer keyboard-accessible Open and Actions buttons alongside gestures. Master-data rows and book navigation also have keyboard actions.
+- Database read failures show persistent recovery actions instead of successful empty states or initial zero totals. Read retries preserve filters and pagination; failed refreshes label retained data as potentially outdated. Failed forms keep their input and explain a next action.
+- Backup/reset and image deletion use app feedback and confirmations. Import success offers Reload app explicitly. Restore remains table-by-table: replacement failures may leave partial changes, and the message directs users to review records before retrying. This does not add atomic restore or a new backup format.
+- Device settings must load before routed content and background services start. A failed initialization offers Retry and Reload app.

@@ -1,5 +1,5 @@
 <template>
-  <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+  <svg aria-hidden="true" focusable="false" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 11l3 3L22 4" />
     <path
       stroke-linecap="round"

@@ -1,4 +1,5 @@
 <script setup>
+defineOptions({ inheritAttrs: false })
 import { ref, computed } from "vue"
 import IconEyeSlash from "@/assets/icons/IconEyeSlash.vue"
 import IconEye from "@/assets/icons/IconEye.vue"
@@ -62,6 +63,10 @@ const resolvedInputMode = computed(() => {
       {{ label }} <span v-if="required" class="text-red-500">*</span>
     </label>
     <textarea
+        v-bind="$attrs"
+        :required="required"
+        :aria-invalid="error ? true : undefined"
+        :aria-describedby="[error ? `${id}-error` : null, $attrs['aria-describedby']].filter(Boolean).join(' ') || undefined"
       v-if="type === 'textarea'"
       :id="id"
       :value="modelValue"
@@ -77,6 +82,10 @@ const resolvedInputMode = computed(() => {
     ></textarea>
     <div v-else :class="['relative', { 'flex items-center gap-1': $slots['after-input'] }]">
       <input
+        v-bind="$attrs"
+        :required="required"
+        :aria-invalid="error ? true : undefined"
+        :aria-describedby="[error ? `${id}-error` : null, $attrs['aria-describedby']].filter(Boolean).join(' ') || undefined"
         :id="id"
         :type="inputType"
         :value="modelValue"
@@ -99,6 +108,8 @@ const resolvedInputMode = computed(() => {
       <slot name="after-input" />
       <button
         v-if="type === 'password'"
+        :aria-label="showPassword ? 'Hide password' : 'Show password'"
+        :aria-pressed="showPassword"
         type="button"
         @click="showPassword = !showPassword"
         class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none dark:text-gray-300 dark:hover:text-gray-100"
@@ -107,6 +118,6 @@ const resolvedInputMode = computed(() => {
         <IconEye v-else />
       </button>
     </div>
-    <span v-if="error" class="text-xs text-red-500 ml-1">{{ error }}</span>
+    <span :id="`${id}-error`" v-if="error" class="text-xs text-red-500 ml-1">{{ error }}</span>
   </div>
 </template>

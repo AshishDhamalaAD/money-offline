@@ -1,10 +1,14 @@
 <script setup>
 import { ref, onMounted } from "vue"
+import { useDialog } from "@/composables/useDialog"
+
 import { useSettingsStore } from "@/store/settingsStore"
 import IconLock from "@/assets/icons/IconLock.vue"
 
 const emit = defineEmits(["unlocked", "use-pin"])
 const settingsStore = useSettingsStore()
+const dialogRef = ref(null)
+useDialog(dialogRef, () => true, { close: () => {}, dismissible: () => false, priority: 100 })
 const loading = ref(false)
 const error = ref(null)
 const isUnlocking = ref(false)
@@ -35,6 +39,10 @@ onMounted(() => {
 
 <template>
   <div
+    ref="dialogRef"
+    role="dialog"
+    aria-modal="true"
+    aria-label="App locked"
     :class="[
       'fixed inset-0 z-50 flex flex-col items-center justify-center transition-all duration-500',
       isUnlocking ? 'opacity-0 scale-110 pointer-events-none' : 'opacity-100 scale-100',
@@ -51,7 +59,7 @@ onMounted(() => {
         <p class="text-gray-500 dark:text-gray-400">Please authenticate to continue</p>
       </div>
 
-      <div v-if="error" class="text-red-600 dark:text-red-400 text-sm font-medium">
+      <div v-if="error" role="alert" class="text-red-600 dark:text-red-400 text-sm font-medium">
         {{ error }}
       </div>
 

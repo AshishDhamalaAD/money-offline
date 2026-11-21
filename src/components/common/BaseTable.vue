@@ -121,6 +121,7 @@ function prevPage() {
           <input
             v-model="searchQuery"
             type="text"
+            aria-label="Search table"
             placeholder="Search..."
             class="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
           />
@@ -143,6 +144,10 @@ function prevPage() {
             <th
               v-for="col in columns"
               :key="col.key"
+              :tabindex="col.sortable ? 0 : undefined"
+              :aria-sort="col.sortable && sortKey === col.key ? (sortDirection === 'asc' ? 'ascending' : 'descending') : undefined"
+              @keydown.enter.prevent="col.sortable ? toggleSort(col.key) : null"
+              @keydown.space.prevent="col.sortable ? toggleSort(col.key) : null"
               @click="col.sortable ? toggleSort(col.key) : null"
               :class="[
                 'px-4 py-3 select-none',
@@ -200,13 +205,14 @@ function prevPage() {
       <span class="text-xs text-gray-500 dark:text-gray-400"> Page {{ currentPage }} of {{ totalPages }} </span>
       <div class="flex gap-2">
         <button
+          aria-label="Previous page"
           @click="prevPage"
           :disabled="currentPage === 1"
           class="p-1 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed dark:hover:bg-gray-800 dark:text-gray-100"
         >
           <IconChevronLeft class="w-5 h-5 text-gray-600 dark:text-gray-200" />
         </button>
-        <button
+        <button type="button" aria-label="Next page"
           @click="nextPage"
           :disabled="currentPage === totalPages"
           class="p-1 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed dark:hover:bg-gray-800 dark:text-gray-100"

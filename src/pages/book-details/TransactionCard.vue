@@ -149,7 +149,7 @@ const allImages = computed(() => {
         aria-label="View attachment"
         @click.stop="emit('view-attachments', { images: allImages, index })"
       >
-        <img class="h-11 w-11 object-cover" :src="attachment" loading="lazy" />
+        <img alt="" class="h-11 w-11 object-cover" :src="attachment" loading="lazy" />
       </button>
     </div>
   </div>

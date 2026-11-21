@@ -239,6 +239,8 @@ async function retryPhotos() {
         </div>
 
         <button
+          role="switch"
+          :aria-checked="incrementalEnabled"
           @click="toggleSyncMode"
           :disabled="isSyncing"
           :class="[

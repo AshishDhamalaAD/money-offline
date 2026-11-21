@@ -1,4 +1,8 @@
 <script setup>
+import { usePageFeedback } from "@/composables/usePageFeedback"
+import BaseError from "@/components/common/BaseError.vue"
+import ResourceState from "@/components/common/ResourceState.vue"
+
 import { ref, onMounted, onUnmounted, computed, nextTick } from "vue"
 import { useRoute, useRouter, onBeforeRouteLeave } from "vue-router"
 
@@ -24,6 +28,8 @@ import PageLayout from "@/components/layout/PageLayout.vue"
 import PageHeader from "@/components/layout/PageHeader.vue"
 import TransactionFields from "@/pages/transaction-form/TransactionFields.vue"
 import ImageUpload from "@/components/common/LazyImageUpload.vue"
+
+const { operationError, operationBusy, operationReady, operationAction, retryOperation, runOperation, reportFailure } = usePageFeedback()
 
 const route = useRoute()
 const router = useRouter()
@@ -104,6 +110,7 @@ const toastMessage = ref("")
 const toastType = ref("error")
 
 function notify(message, type = "error") {
+  if (type === "error") reportFailure(message)
   toastMessage.value = message
   toastType.value = type
   showToast.value = true
@@ -123,10 +130,10 @@ function askConfirm({ title, message, confirmLabel = "Confirm", variant = "prima
   confirmState.value = { show: true, title, message, confirmLabel, variant, action }
 }
 
-function runConfirmedAction() {
+async function runConfirmedAction() {
   const action = confirmState.value.action
-  confirmState.value.show = false
-  if (typeof action === "function") action()
+  if (typeof action === 'function') await runOperation(action, 'Could not finish this action.')
+  if (!operationError.value) confirmState.value.show = false
 }
 
 function handleUpload(url) {
@@ -206,74 +213,77 @@ function handleBeforeUnload(event) {
 }
 
 onMounted(async () => {
-  window.addEventListener("beforeunload", handleBeforeUnload)
+  return runOperation(async () => {
+    window.addEventListener("beforeunload", handleBeforeUnload)
 
-  // Load categories, products, payment modes for this book
-  categoryStore.watchCategories(bookId)
-  paymentModeStore.watchPaymentModes(bookId)
-  productStore.watchProducts(bookId)
-  // Contacts are global
+    // Load categories, products, payment modes for this book
+    categoryStore.watchCategories(bookId)
+    paymentModeStore.watchPaymentModes(bookId)
+    productStore.watchProducts(bookId)
+    // Contacts are global
 
-  if (isEdit) {
-    const id = parseInt(route.params.id)
-    // The list screen only keeps a page of transactions in memory, so read the
-    // row straight from Dexie.
-    const t = await db.transactions.get(id)
-    if (t) {
-      if (t.attachments && t.attachments.length > 0) {
-        transactionAttachments.value = t.attachments
-      }
-
-      // Convert date from 'YYYY-MM-DD HH:mm:ss' to 'YYYY-MM-DDTHH:mm' for datetime-local input
-      const dateStr = t.date
-      if (dateStr) {
-        // Parse the date string and convert to datetime-local format
-        const dateParts = dateStr.split(" ")
-        const datePart = dateParts[0] // YYYY-MM-DD
-        const timePart = dateParts[1] ? dateParts[1].substring(0, 5) : "00:00" // HH:mm
-        t.date = `${datePart}T${timePart}`
-      }
-      if (t.description) {
-        t.description = descriptionToText(t.description)
-      }
-      form.value = { ...t }
-      // Handle migration/compatibility for old transactions with single category_id
-      if (t.category_id && (!t.category_ids || t.category_ids.length === 0)) {
-        form.value.category_ids = [t.category_id]
-      } else if (!form.value.category_ids) {
-        form.value.category_ids = []
-      }
-    }
-  } else {
-    // Check if we arrived here from a Duplicate or recurring action (prefill via router state)
-    const prefillRaw = history.state?.prefill
-    if (prefillRaw) {
-      try {
-        const prefill = JSON.parse(prefillRaw)
-        if (prefill.__recurring) {
-          recurringSource.value = prefill.__recurring
-          delete prefill.__recurring
+    if (isEdit) {
+      const id = parseInt(route.params.id)
+      // The list screen only keeps a page of transactions in memory, so read the
+      // row straight from Dexie.
+      const t = await db.transactions.get(id)
+      if (!t) throw new Error('This transaction is no longer available')
+      if (t) {
+        if (t.attachments && t.attachments.length > 0) {
+          transactionAttachments.value = t.attachments
         }
-        form.value = { ...form.value, ...prefill }
-        // Duplicates keep the line items; a recurring rule may have none.
-        if (!recurringSource.value && (!form.value.products || form.value.products.length === 0)) {
-          addProduct()
+
+        // Convert date from 'YYYY-MM-DD HH:mm:ss' to 'YYYY-MM-DDTHH:mm' for datetime-local input
+        const dateStr = t.date
+        if (dateStr) {
+          // Parse the date string and convert to datetime-local format
+          const dateParts = dateStr.split(" ")
+          const datePart = dateParts[0] // YYYY-MM-DD
+          const timePart = dateParts[1] ? dateParts[1].substring(0, 5) : "00:00" // HH:mm
+          t.date = `${datePart}T${timePart}`
         }
-      } catch (e) {
-        console.error("Failed to parse prefill state", e)
-        addProduct()
+        if (t.description) {
+          t.description = descriptionToText(t.description)
+        }
+        form.value = { ...t }
+        // Handle migration/compatibility for old transactions with single category_id
+        if (t.category_id && (!t.category_ids || t.category_ids.length === 0)) {
+          form.value.category_ids = [t.category_id]
+        } else if (!form.value.category_ids) {
+          form.value.category_ids = []
+        }
       }
     } else {
-      // Normal new transaction: start with just an amount so it can be entered
-      // in three taps, and reuse the previous entry's categories and accounts.
-      await new Promise((resolve) => setTimeout(resolve, 100))
-      await applyLastTransactionDefaults()
-    }
+      // Check if we arrived here from a Duplicate or recurring action (prefill via router state)
+      const prefillRaw = history.state?.prefill
+      if (prefillRaw) {
+        try {
+          const prefill = JSON.parse(prefillRaw)
+          if (prefill.__recurring) {
+            recurringSource.value = prefill.__recurring
+            delete prefill.__recurring
+          }
+          form.value = { ...form.value, ...prefill }
+          // Duplicates keep the line items; a recurring rule may have none.
+          if (!recurringSource.value && (!form.value.products || form.value.products.length === 0)) {
+            addProduct()
+          }
+        } catch (e) {
+          console.error("Failed to parse prefill state", e)
+          addProduct()
+        }
+      } else {
+        // Normal new transaction: start with just an amount so it can be entered
+        // in three taps, and reuse the previous entry's categories and accounts.
+        await new Promise((resolve) => setTimeout(resolve, 100))
+        await applyLastTransactionDefaults()
+      }
 
-    // Remember the starting state so we can warn before losing unsaved edits
-    await nextTick()
-    snapshot.value = serializeForm()
-  }
+      // Remember the starting state so we can warn before losing unsaved edits
+      await nextTick()
+      snapshot.value = serializeForm()
+    }
+  }, "Could not load transaction.", true)
 })
 
 onUnmounted(() => {
@@ -331,6 +341,7 @@ function addProduct() {
 }
 
 async function save() {
+  if (saving.value || saved.value || !operationReady.value) return
   // Validation
   if (form.value.products.length > 0) {
     for (const p of form.value.products) {
@@ -351,6 +362,7 @@ async function save() {
   }
 
   saving.value = true
+  let occurrenceSaved = false
   try {
     if (isEdit) {
       await transactionStore.updateTransaction(parseInt(route.params.id), {
@@ -364,6 +376,7 @@ async function save() {
         attachments: transactionAttachments.value,
       })
 
+      occurrenceSaved = true
       // The entry came from a due recurring rule: move that rule forward so it
       // is not offered again for the same period.
       if (recurringSource.value) {
@@ -374,7 +387,10 @@ async function save() {
     router.back()
   } catch (e) {
     console.error(e)
-    notify("Failed to save transaction")
+    if (occurrenceSaved) {
+      saved.value = true
+      notify('Transaction saved, but the recurring schedule could not be advanced. Review your transactions and schedule before adding another occurrence.')
+    } else notify('Could not save this transaction. Review your records before trying Save again. Your entered values have been kept.')
   } finally {
     saving.value = false
   }
@@ -382,12 +398,15 @@ async function save() {
 
 // Delete transaction
 const showDeleteModal = ref(false)
+const deleting = ref(false)
 
 async function confirmDelete() {
   showDeleteModal.value = true
 }
 
 async function deleteTransaction() {
+  if (deleting.value) return
+  deleting.value = true
   try {
     await transactionStore.deleteTransaction(parseInt(route.params.id))
     showDeleteModal.value = false
@@ -395,8 +414,8 @@ async function deleteTransaction() {
     router.back()
   } catch (e) {
     console.error(e)
-    notify("Failed to delete transaction")
-  }
+    notify('Could not delete this transaction. Review your records before trying Delete again.')
+  } finally { deleting.value = false }
 }
 
 </script>
@@ -419,6 +438,9 @@ async function deleteTransaction() {
     </PageHeader>
 
     <main class="p-4 space-y-6">
+      <BaseError :message="operationError" :action-label="operationAction" :busy="operationBusy" @retry="retryOperation" />
+      <ResourceState :resources="[categoryStore, productStore, paymentModeStore, contactStore]" />
+      <BaseButton v-if="saved && operationError" variant="secondary" @click="router.push({ name: 'book-details', params: { id: bookId } })">Review transactions</BaseButton>
       <TransactionFields :book-id="bookId" :form="form" :initial-show-products="initialShowProducts">
         <template #schedule>
           <BaseInput v-model="form.date" type="datetime-local" label="Date" required />
@@ -444,10 +466,11 @@ async function deleteTransaction() {
       </TransactionFields>
     </main>
 
-    <FixedSaveButton @click="save" />
+    <FixedSaveButton :loading="saving" :disabled="!operationReady || saved || !categoryStore.ready || !!categoryStore.error || !productStore.ready || !!productStore.error || !paymentModeStore.ready || !!paymentModeStore.error || !contactStore.ready || !!contactStore.error" @click="save" />
 
     <!-- Delete Confirmation Modal -->
-    <BaseModal :show="showDeleteModal" title="Delete Transaction" @close="showDeleteModal = false">
+    <BaseModal :show="showDeleteModal" title="Delete Transaction" :dismissible="!deleting" initial-focus="[data-dialog-cancel]" @close="showDeleteModal = false">
+      <BaseError :message="operationError" :action-label="operationAction" :busy="operationBusy" @retry="retryOperation" />
       <div class="space-y-4">
         <p class="text-gray-600 dark:text-gray-300">
           Move this transaction to Trash? You can restore it from Book Settings for 30 days.
@@ -460,8 +483,8 @@ async function deleteTransaction() {
         </div>
 
         <div class="flex justify-end gap-3 mt-6">
-          <BaseButton variant="ghost" @click="showDeleteModal = false">Cancel</BaseButton>
-          <BaseButton variant="danger" @click="deleteTransaction">Delete Transaction</BaseButton>
+          <BaseButton data-dialog-cancel :disabled="deleting" variant="ghost" @click="showDeleteModal = false">Cancel</BaseButton>
+          <BaseButton :loading="deleting" variant="danger" @click="deleteTransaction">Delete Transaction</BaseButton>
         </div>
       </div>
     </BaseModal>
@@ -473,8 +496,11 @@ async function deleteTransaction() {
       :message="confirmState.message"
       :confirm-label="confirmState.confirmLabel"
       :variant="confirmState.variant"
+      :loading="operationBusy"
       @confirm="runConfirmedAction"
-    />
+    >
+      <BaseError :message="operationError" action-label="" />
+    </BaseConfirm>
 
     <BaseToast :show="showToast" :message="toastMessage" :type="toastType" @close="showToast = false" />
   </PageLayout>

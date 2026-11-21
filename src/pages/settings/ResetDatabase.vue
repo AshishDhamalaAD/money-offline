@@ -2,20 +2,24 @@
 import { ref } from "vue"
 
 import { db } from "@/db/dexie"
+import BaseError from "@/components/common/BaseError.vue"
 import BaseButton from "@/components/common/BaseButton.vue"
 import Modal from "@/components/common/BaseModal.vue"
 
 const showResetModal = ref(false)
 const resetting = ref(false)
+const resetError = ref('')
 
 async function resetDatabase() {
+  if (resetting.value) return
   resetting.value = true
+  resetError.value = ''
   try {
     await db.delete()
     window.location.reload()
   } catch (e) {
     console.error("Failed to reset database:", e)
-    alert("Failed to reset database")
+    resetError.value = 'Could not reset the database. Close other Money tabs, then retry, or cancel to review your records.'
     resetting.value = false
   }
 }
@@ -37,8 +41,9 @@ async function resetDatabase() {
     </div>
 
     <!-- Reset Confirmation Modal -->
-    <Modal :show="showResetModal" title="Reset Database" @close="showResetModal = false">
+    <Modal :show="showResetModal" title="Reset Database" :dismissible="!resetting" initial-focus="[data-dialog-cancel]" @close="showResetModal = false">
       <div class="space-y-4">
+        <BaseError :message="resetError" :busy="resetting" @retry="resetDatabase" />
         <p class="text-gray-600 dark:text-gray-300">
           Are you sure you want to reset the database? This will wipe all your data including books, transactions,
           contacts, and settings.
@@ -49,7 +54,7 @@ async function resetDatabase() {
         </div>
 
         <div class="flex justify-end gap-3 mt-6">
-          <BaseButton variant="ghost" @click="showResetModal = false">Cancel</BaseButton>
+          <BaseButton data-dialog-cancel :disabled="resetting" variant="ghost" @click="showResetModal = false">Cancel</BaseButton>
           <BaseButton variant="danger" :loading="resetting" @click="resetDatabase">Yes, Reset Everything</BaseButton>
         </div>
       </div>

@@ -1,7 +1,7 @@
 <script setup></script>
 
 <template>
-  <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+  <svg aria-hidden="true" focusable="false" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
     <path
       stroke-linecap="round"
       stroke-linejoin="round"

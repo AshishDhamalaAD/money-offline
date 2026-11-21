@@ -66,7 +66,7 @@ function notNow() {
       >
         <div
           class="mx-auto flex max-w-lg items-start gap-3 rounded-xl bg-white p-4 shadow-lg ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800"
-          role="dialog"
+          role="region"
           aria-label="Install Money Manager"
         >
           <img src="/android-chrome-192x192.png" alt="" class="h-11 w-11 shrink-0 rounded-lg" />

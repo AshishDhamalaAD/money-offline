@@ -1,7 +1,7 @@
 import { withSyncLock } from '@/db/sync/lock'
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import { liveQuery } from 'dexie'
+import { useLiveResource } from '@/composables/useLiveResource'
 import { db } from '@/db/dexie'
 import { recordDeletions } from '@/db/sync/dirty'
 import { discardQueuedUploads } from '@/services/uploadQueue'
@@ -9,20 +9,13 @@ import { formatDateTimeForDB } from '@/utils/dateUtils'
 import { getLastBookId, setLastBookId } from '@/utils/lastBook'
 
 export const useBookStore = defineStore('book', () => {
-    const books = ref([])
-
-    // Live query to keep books in sync
-    db.books.orderBy('created_at').reverse().toArray().then(data => {
-        books.value = data
-    })
-
-    // Subscribe to changes
-    liveQuery(() => db.books.orderBy('created_at').reverse().toArray()).subscribe(data => {
-        books.value = data
-    })
+    const resource = useLiveResource([], 'Could not load books.')
+    const books = resource.data
+    const { loading, error, ready, retry } = resource
+    resource.start(() => db.books.orderBy('created_at').reverse().toArray())
 
     const sortedBooks = computed(() => {
-        return books.value.sort((a, b) => a.id - b.id)
+        return [...books.value].sort((a, b) => a.id - b.id)
     });
 
     async function createBook(name) {
@@ -95,7 +88,9 @@ export const useBookStore = defineStore('book', () => {
     }
 
     async function getBook(id) {
-        return await db.books.get(id)
+        const book = await db.books.get(id)
+        if (!book) throw new Error('This book is no longer available')
+        return book
     }
 
     async function updateBook(id, updates) {
@@ -108,6 +103,7 @@ export const useBookStore = defineStore('book', () => {
 
     return {
         books,
+        loading, error, ready, retry,
         sortedBooks,
         createBook,
         deleteBook,

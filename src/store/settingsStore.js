@@ -27,6 +27,8 @@ export const useSettingsStore = defineStore('settings', () => {
     let verifyingPin = null
     const autoLockTimeout = ref(0) // 0 means immediate/on-startup, others are minutes
     const initialized = ref(false)
+    const loadError = ref('')
+    let initialization = null
     const themePreference = ref("system")
     const remindersEnabled = ref(false)
     const reminderTime = ref("09:00")
@@ -81,8 +83,14 @@ export const useSettingsStore = defineStore('settings', () => {
         return saveBackupSettings({ storageWarningSnoozedUntil: Date.now() + DAY_MS })
     }
 
-    async function init() {
-        if (initialized.value) return
+    function init() {
+        if (initialized.value) return Promise.resolve(true)
+        if (!initialization) initialization = loadSettings().finally(() => { initialization = null })
+        return initialization
+    }
+
+    async function loadSettings() {
+        loadError.value = ''
         try {
             await migrateSecrets().catch(error => { securityWarning.value = error.message })
             const [endpoint, token, bioEnabled, bioCredId, pinEn, pin, timeout, theme, reminders, reminderAt, reminderShown, mode, savedLocale, savedCalendar] = await Promise.all([
@@ -121,10 +129,12 @@ export const useSettingsStore = defineStore('settings', () => {
             applyCalendarSystem(savedCalendar?.value)
 
             applyTheme(themePreference.value)
+            initialized.value = true
+            return true
         } catch (e) {
             console.error("Failed to load settings", e)
-        } finally {
-            initialized.value = true
+            loadError.value = 'Could not load device settings. Retry loading or reload the app. Your records have not been reset.'
+            return false
         }
     }
 
@@ -438,6 +448,7 @@ export const useSettingsStore = defineStore('settings', () => {
         securityWarning,
         autoLockTimeout,
         initialized,
+        loadError,
         themePreference,
         locale: appLocale,
         calendarSystem,

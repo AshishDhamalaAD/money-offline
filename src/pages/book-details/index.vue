@@ -1,4 +1,6 @@
 <script setup>
+import { usePageFeedback } from "@/composables/usePageFeedback"
+
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from "vue"
 import { useRoute, useRouter } from "vue-router"
 
@@ -6,6 +8,8 @@ import { formatDate, formatMonthShort, formatMonthYear, getMonthKey, getNepalDat
 import { descriptionToText } from "@/utils/description"
 import { formatCurrency } from "@/utils/moneyUtils"
 import { setLastBookId } from "@/utils/lastBook"
+import BaseError from "@/components/common/BaseError.vue"
+import ResourceState from "@/components/common/ResourceState.vue"
 import { useBookStore } from "@/store/bookStore"
 import { useTransactionStore } from "@/store/transactionStore"
 import { useSyncStore } from "@/store/syncStore"
@@ -40,6 +44,8 @@ import DateRangeTabs from "@/components/common/DateRangeTabs.vue"
 import PeriodNavigator from "@/components/common/PeriodNavigator.vue"
 import ActiveFilterChips from "@/components/common/ActiveFilterChips.vue"
 import BaseBottomSheet from "@/components/common/BaseBottomSheet.vue"
+
+const { operationError, operationBusy, operationReady, operationAction, retryOperation, runOperation, reportFailure } = usePageFeedback()
 
 const route = useRoute()
 const router = useRouter()
@@ -76,6 +82,9 @@ const periodAnchor = ref(currentPeriodAnchor())
 // record or after the current month, because there would be nothing to show.
 const firstTransactionDate = ref("")
 const periodBoundsReady = ref(false)
+const periodError = ref('')
+const statsError = ref('')
+const statsReady = ref(false)
 
 function currentPeriodAnchor() {
   const now = getNepalDate()
@@ -121,6 +130,7 @@ const otherBooks = computed(() => {
 const selectedIdSet = computed(() => new Set(selectedIds.value))
 
 function showToastMessage(message, type = "error") {
+  if (type === "error") reportFailure(`${message} Review your records before trying this action again.`)
   showToast.value = false
   toastMessage.value = message
   toastType.value = type
@@ -361,49 +371,51 @@ function jumpToMonth(key) {
 }
 
 onMounted(async () => {
-  const bookIdParam = parseInt(route.params.id)
-  if (!bookIdParam) return
+  return runOperation(async () => {
+    const bookIdParam = parseInt(route.params.id)
+    if (!bookIdParam) return
 
-  bookId.value = bookIdParam
-  setLastBookId(bookIdParam)
-  book.value = await bookStore.getBook(bookId.value)
-  await refreshPeriodBounds()
+    bookId.value = bookIdParam
+    setLastBookId(bookIdParam)
+    book.value = await bookStore.getBook(bookId.value)
+    await refreshPeriodBounds()
 
-  categoryStore.watchCategories(bookId.value)
-  paymentModeStore.watchPaymentModes(bookId.value)
-  productStore.watchProducts(bookId.value)
-  // Contacts are global, already watched/loaded in store
+    categoryStore.watchCategories(bookId.value)
+    paymentModeStore.watchPaymentModes(bookId.value)
+    productStore.watchProducts(bookId.value)
+    // Contacts are global, already watched/loaded in store
 
-  // Restore filters from the query the page was opened with. Reading
-  // route.query here would see the URL the sync watcher has already rewritten.
-  const query = initialQuery
-  if (FILTER_VALUES.includes(query.filter)) selectedFilter.value = query.filter
-  if (query.startDate) startDate.value = query.startDate
-  if (query.endDate) endDate.value = query.endDate
-  if (["all", "month", "year"].includes(query.period)) periodMode.value = query.period
-  if (typeof query.periodAnchor === "string" && /^\d{4}-\d{2}$/.test(query.periodAnchor)) {
-    periodAnchor.value = query.periodAnchor
-  }
-  if (query.category) filterCategory.value = parseInt(query.category)
-  if (query.paymentMode) filterPaymentMode.value = parseInt(query.paymentMode)
-  if (query.contact) filterContact.value = parseInt(query.contact)
-  if (query.product) filterProduct.value = parseInt(query.product)
-  if (query.search) searchQuery.value = query.search
+    // Restore filters from the query the page was opened with. Reading
+    // route.query here would see the URL the sync watcher has already rewritten.
+    const query = initialQuery
+    if (FILTER_VALUES.includes(query.filter)) selectedFilter.value = query.filter
+    if (query.startDate) startDate.value = query.startDate
+    if (query.endDate) endDate.value = query.endDate
+    if (["all", "month", "year"].includes(query.period)) periodMode.value = query.period
+    if (typeof query.periodAnchor === "string" && /^\d{4}-\d{2}$/.test(query.periodAnchor)) {
+      periodAnchor.value = query.periodAnchor
+    }
+    if (query.category) filterCategory.value = parseInt(query.category)
+    if (query.paymentMode) filterPaymentMode.value = parseInt(query.paymentMode)
+    if (query.contact) filterContact.value = parseInt(query.contact)
+    if (query.product) filterProduct.value = parseInt(query.product)
+    if (query.search) searchQuery.value = query.search
 
-  // A stale or hand-edited link may point at a period the book never had.
-  clampPeriodAnchor()
+    // A stale or hand-edited link may point at a period the book never had.
+    clampPeriodAnchor()
 
-  // The list itself is paged: Dexie reads only the loaded window, so the page
-  // never holds the whole book in memory.
-  transactionStore.openTransactionList(pageFilters.value)
+    // The list itself is paged: Dexie reads only the loaded window, so the page
+    // never holds the whole book in memory.
+    transactionStore.openTransactionList(pageFilters.value)
 
-  await nextTick()
-  measureHeader()
-  updateActiveMonth()
+    await nextTick()
+    measureHeader()
+    updateActiveMonth()
 
-  window.addEventListener("scroll", onPageScroll, { passive: true })
-  window.addEventListener("resize", measureHeader)
-  window.addEventListener("status-banner-resize", measureHeader)
+    window.addEventListener("scroll", onPageScroll, { passive: true })
+    window.addEventListener("resize", measureHeader)
+    window.addEventListener("status-banner-resize", measureHeader)
+  }, "Could not load book.", true)
 })
 
 onUnmounted(() => {
@@ -613,9 +625,10 @@ async function refreshPeriodBounds() {
   try {
     const { first } = await transactionStore.getBookDateBounds(bookId.value)
     firstTransactionDate.value = first
+    periodError.value = ''
   } catch (error) {
     console.error("Could not read the book's date range:", error)
-    firstTransactionDate.value = ""
+    periodError.value = 'Could not load the available date range. Try loading it again.'
   } finally {
     periodBoundsReady.value = true
   }
@@ -729,6 +742,8 @@ let statsRequest = 0
 
 async function refreshStats() {
   const request = ++statsRequest
+  statsReady.value = false
+  statsError.value = ''
   const filters = pageFilters.value
   if (!filters.bookId) return
 
@@ -740,6 +755,7 @@ async function refreshStats() {
 
     if (request !== statsRequest) return
 
+    statsReady.value = true
     filteredStats.value = {
       totalIn: totals.totalIn,
       totalOut: totals.totalOut,
@@ -748,7 +764,9 @@ async function refreshStats() {
       closingBalance: openingBalance + totals.netBalance,
     }
   } catch (e) {
+    if (request !== statsRequest) return
     console.error("Failed to calculate transaction stats:", e)
+    statsError.value = 'Could not calculate totals for these filters. Try loading totals again.'
   }
 }
 
@@ -765,10 +783,12 @@ function openEditBook() {
 }
 
 async function saveBookName() {
-  if (!editBookName.value.trim()) return
-  await bookStore.updateBook(bookId.value, { name: editBookName.value })
-  book.value.name = editBookName.value
-  showEditBookModal.value = false
+  return runOperation(async () => {
+    if (!editBookName.value.trim()) return
+    await bookStore.updateBook(bookId.value, { name: editBookName.value })
+    book.value.name = editBookName.value
+    showEditBookModal.value = false
+  }, "Could not update book.", false)
 }
 
 // Selection mode
@@ -880,18 +900,20 @@ async function handleRefresh() {
     <PageHeader :title="book?.name || 'Book Details'" :back-route="{ name: 'dashboard' }">
       <template #actions>
         <button
+          aria-label="View book charts"
           @click="router.push({ name: 'book-charts', params: { bookId } })"
           class="rounded-full bg-gray-100 p-2 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
         >
           <IconChartBar class="h-5 w-5" />
         </button>
         <button
+          aria-label="Open book settings"
           @click="router.push({ name: 'book-settings-products', params: { bookId } })"
           class="rounded-full bg-gray-100 p-2 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
         >
           <IconSettings />
         </button>
-        <button
+        <button type="button" aria-label="Rename book"
           @click="openEditBook"
           class="rounded-full bg-gray-100 p-2 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
         >
@@ -902,6 +924,7 @@ async function handleRefresh() {
 
     <!-- Content -->
     <main class="pl-4 pt-4" :class="[hasScrubber ? 'pr-14' : 'pr-4', isSelecting ? 'pb-44' : 'pb-24']">
+      <BaseError :message="operationError" :action-label="operationAction" :busy="operationBusy" @retry="retryOperation" />
       <PullToRefresh :on-refresh="handleRefresh" :disabled="isSelecting">
         <div class="space-y-4">
           <!-- Stats Toggle -->
@@ -921,7 +944,8 @@ async function handleRefresh() {
 
           <!-- Stats -->
           <div v-show="showStats" class="transition-all duration-300 ease-in-out">
-            <StatsSummary :stats="filteredStats" />
+            <BaseError :message="statsError" @retry="refreshStats" />
+            <StatsSummary v-if="statsReady" :stats="filteredStats" />
           </div>
 
           <!-- Date Filters -->
@@ -980,9 +1004,12 @@ async function handleRefresh() {
             @clear="clearFilter"
           />
 
+          <BaseError :message="transactionStore.listError" :busy="transactionStore.listLoading" @retry="transactionStore.retryTransactionList" />
+          <BaseError :message="periodError" @retry="refreshPeriodBounds" />
+          <ResourceState :resources="[categoryStore, paymentModeStore, productStore, contactStore]" />
           <!-- Transactions -->
           <div class="space-y-6">
-            <div v-if="monthGroups.length === 0" class="py-10 text-center text-gray-500 dark:text-gray-400">
+            <div v-if="monthGroups.length === 0 && !transactionStore.listError" class="py-10 text-center text-gray-500 dark:text-gray-400">
               {{ transactionStore.listLoading ? "Loading transactions..." : "No transactions found." }}
             </div>
 
@@ -1035,7 +1062,7 @@ async function handleRefresh() {
             </section>
 
             <!-- Load More Button -->
-            <div v-if="hasMoreTransactions" class="flex justify-center py-4">
+            <div v-if="hasMoreTransactions && !transactionStore.listError" class="flex justify-center py-4">
               <BaseButton variant="secondary" @click="loadMore"> Load More </BaseButton>
             </div>
           </div>
@@ -1115,6 +1142,7 @@ async function handleRefresh() {
 
     <!-- Transaction Action Sheet -->
     <BaseBottomSheet v-model="showActionSheet" :title="'Transaction Options'">
+      <BaseError :message="operationError" :action-label="operationAction" :busy="operationBusy" @retry="retryOperation" />
       <div class="flex flex-col gap-2">
         <button
           @click="initiateCopy"
@@ -1159,6 +1187,7 @@ async function handleRefresh() {
       "
       @close="closeTargetBookModal"
     >
+      <BaseError :message="operationError" :action-label="operationAction" :busy="operationBusy" @retry="retryOperation" />
       <div class="space-y-4">
         <p class="text-sm text-gray-600 dark:text-gray-400">
           Select the book where you want to {{ targetAction }}
@@ -1205,6 +1234,7 @@ async function handleRefresh() {
       title="Duplicate Description"
       @close="showDuplicateDescriptionModal = false"
     >
+      <BaseError :message="operationError" :action-label="operationAction" :busy="operationBusy" @retry="retryOperation" />
       <p class="text-gray-600 dark:text-gray-300">
         Do you want to duplicate the description as well?
       </p>
@@ -1217,6 +1247,7 @@ async function handleRefresh() {
 
     <!-- Edit Book Modal -->
     <BaseModal :show="showEditBookModal" title="Edit Book Name" @close="showEditBookModal = false">
+      <BaseError :message="operationError" :action-label="operationAction" :busy="operationBusy" @retry="retryOperation" />
       <div class="space-y-4">
         <BaseInput v-model="editBookName" label="Book Name" autoFocus />
         <div class="flex justify-end gap-3 mt-6">
@@ -1228,6 +1259,7 @@ async function handleRefresh() {
 
     <!-- Filter Modal -->
     <BaseModal :show="showFilterModal" title="Filter Transactions" @close="showFilterModal = false">
+      <BaseError :message="operationError" :action-label="operationAction" :busy="operationBusy" @retry="retryOperation" />
       <div class="space-y-4 max-h-[70vh] overflow-y-auto p-1">
         <BaseSearchableSelect
           v-model="tempFilterCategory"

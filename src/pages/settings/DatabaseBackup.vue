@@ -1,13 +1,16 @@
 <script setup>
-import { computed, ref } from "vue"
+import { computed, ref, nextTick } from "vue"
 
 import { db } from "@/db/dexie"
 import { useDatabaseExport } from "@/composables/useDatabaseExport"
 import { useBackupHealth } from "@/composables/useBackupHealth"
 import { useSettingsStore } from "@/store/settingsStore"
 import { formatDateTime } from "@/utils/dateUtils"
+import BaseError from "@/components/common/BaseError.vue"
 import BaseButton from "@/components/common/BaseButton.vue"
 import Modal from "@/components/common/BaseModal.vue"
+
+function reloadApp() { window.location.reload() }
 
 const { getDatabaseDump } = useDatabaseExport()
 const settings = useSettingsStore()
@@ -35,6 +38,7 @@ const isImporting = ref(false)
 const exportProgress = ref(0)
 const importProgress = ref(0)
 const importError = ref("")
+const importComplete = ref(false)
 const showImportModal = ref(false)
 const selectedFile = ref(null)
 const fileInput = ref(null)
@@ -75,7 +79,7 @@ async function exportDatabase() {
   } catch (error) {
     console.error("Export failed:", error)
     exportFeedbackError.value = true
-    exportFeedback.value = `Failed to generate backup: ${error.message}`
+    exportFeedback.value = 'Could not generate a backup. Check available device storage and try Export again.'
   } finally {
     isExporting.value = false
     exportProgress.value = 0
@@ -83,6 +87,7 @@ async function exportDatabase() {
 }
 
 function openImportDialog() {
+  importComplete.value = false
   importError.value = ""
   selectedFile.value = null
   showImportModal.value = true
@@ -97,6 +102,7 @@ function handleFileSelect(event) {
 }
 
 function cancelImport() {
+  if (isImporting.value || importComplete.value) return
   showImportModal.value = false
   selectedFile.value = null
   importError.value = ""
@@ -106,6 +112,7 @@ function cancelImport() {
 }
 
 async function startImport() {
+  if (isImporting.value || importComplete.value) return
   if (!selectedFile.value) {
     importError.value = "Please select a file first"
     return
@@ -115,6 +122,7 @@ async function startImport() {
   importProgress.value = 0
   importError.value = ""
 
+  let replacementStarted = false
   try {
     const text = await selectedFile.value.text()
     const importData = JSON.parse(text)
@@ -134,6 +142,7 @@ async function startImport() {
 
       if (db[tableName]) {
         // Clear existing data
+        replacementStarted = true
         await db[tableName].clear()
 
         // Import new data
@@ -149,16 +158,15 @@ async function startImport() {
 
     importProgress.value = 100
 
-    setTimeout(() => {
-      isImporting.value = false
-      importProgress.value = 0
-      showImportModal.value = false
-      selectedFile.value = null
-      alert("Database imported successfully! The page will reload.")
-      window.location.reload()
-    }, 1000)
+    importComplete.value = true
+    isImporting.value = false
+    await nextTick()
+    document.getElementById('reload-after-import')?.focus()
   } catch (error) {
-    importError.value = "Failed to import database: " + error.message
+    console.error('Import failed', error)
+    importError.value = replacementStarted
+      ? 'Import stopped while replacing data. Some tables may already have changed. Review your records before choosing a trusted backup and trying again.'
+      : 'Could not read this backup file. Choose a readable Money JSON backup and try again. No replacement was started.'
     isImporting.value = false
     importProgress.value = 0
   }
@@ -226,7 +234,7 @@ async function startImport() {
             <span class="text-gray-600 dark:text-gray-300">Exporting data...</span>
             <span class="font-medium text-indigo-600 dark:text-indigo-300">{{ exportProgress }}%</span>
           </div>
-          <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
+          <div role="progressbar" aria-valuemin="0" aria-valuemax="100" :aria-valuenow="exportProgress" aria-label="Export progress" class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
             <div
               class="bg-indigo-600 h-2 rounded-full transition-all duration-300"
               :style="{ width: exportProgress + '%' }"
@@ -270,8 +278,12 @@ async function startImport() {
     </div>
 
     <!-- Import Modal -->
-    <Modal :show="showImportModal" title="Import Database" @close="cancelImport">
-      <div class="space-y-4">
+    <Modal :show="showImportModal" title="Import Database" :dismissible="!isImporting && !importComplete" initial-focus="#backup-file" @close="cancelImport">
+      <div v-if="importComplete" class="space-y-4">
+        <p role="status">Database imported successfully. Reload the app to finish.</p>
+        <BaseButton id="reload-after-import" @click="reloadApp">Reload app</BaseButton>
+      </div>
+      <div v-else class="space-y-4">
         <p class="text-gray-600 dark:text-gray-300">Select a backup file to import. This will replace all existing data.</p>
 
         <div class="bg-red-50 border border-red-200 rounded-sm p-3 dark:bg-red-900/40 dark:border-red-800">
@@ -282,9 +294,13 @@ async function startImport() {
 
         <!-- File Input -->
         <div class="space-y-2">
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Select Backup File</label>
+          <label for="backup-file" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Select Backup File</label>
           <input
+            id="backup-file"
             ref="fileInput"
+            :disabled="isImporting"
+            :aria-invalid="importError ? true : undefined"
+            :aria-describedby="importError ? 'backup-import-error' : undefined"
             type="file"
             accept=".json"
             @change="handleFileSelect"
@@ -299,7 +315,7 @@ async function startImport() {
             <span class="text-gray-600 dark:text-gray-300">Importing data...</span>
             <span class="font-medium text-indigo-600 dark:text-indigo-300">{{ importProgress }}%</span>
           </div>
-          <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
+          <div role="progressbar" aria-valuemin="0" aria-valuemax="100" :aria-valuenow="importProgress" aria-label="Import progress" class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
             <div
               class="bg-indigo-600 h-2 rounded-full transition-all duration-300"
               :style="{ width: importProgress + '%' }"
@@ -308,8 +324,10 @@ async function startImport() {
         </div>
 
         <!-- Import Error -->
-        <div v-if="importError" class="text-sm text-red-600 bg-red-50 p-3 rounded-sm dark:bg-red-900/40 dark:text-red-200">
+        <div id="backup-import-error" role="alert" v-if="importError" class="text-sm text-red-600 bg-red-50 p-3 rounded-sm dark:bg-red-900/40 dark:text-red-200">
           {{ importError }}
+          <button type="button" class="mt-2 block rounded-sm px-2 py-1 font-semibold underline" @click="fileInput?.click()">Choose another backup</button>
+          <button type="button" class="mt-2 rounded-sm px-2 py-1 font-semibold underline" @click="cancelImport">Review records</button>
         </div>
 
         <div class="flex justify-end gap-3 mt-6">

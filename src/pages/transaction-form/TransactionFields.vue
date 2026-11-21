@@ -1,4 +1,6 @@
 <script setup>
+import BaseError from "@/components/common/BaseError.vue"
+import { usePageFeedback } from "@/composables/usePageFeedback"
 import { ref, watch, toRaw } from "vue"
 
 import { QUANTITY_TYPES, DEFAULT_QUANTITY_TYPE } from "@/constants"
@@ -13,7 +15,6 @@ import BaseButton from "@/components/common/BaseButton.vue"
 import BaseInput from "@/components/common/BaseInput.vue"
 import BaseModal from "@/components/common/BaseModal.vue"
 import BaseSearchableSelect from "@/components/common/BaseSearchableSelect.vue"
-import BaseToast from "@/components/common/BaseToast.vue"
 import LightGallery from "@/components/common/LightGallery.vue"
 import ImageUpload from "@/components/common/LazyImageUpload.vue"
 import ProductLineItem from "@/pages/transaction-form/ProductLineItem.vue"
@@ -35,6 +36,8 @@ const props = defineProps({
   },
 })
 
+const { operationError, operationBusy, runOperation } = usePageFeedback()
+
 const categoryStore = useCategoryStore()
 const contactStore = useContactStore()
 const paymentModeStore = usePaymentModeStore()
@@ -42,13 +45,7 @@ const productStore = useProductStore()
 
 const showProducts = ref(props.initialShowProducts)
 
-const showToast = ref(false)
-const toastMessage = ref("")
 
-function notify(message) {
-  toastMessage.value = message
-  showToast.value = true
-}
 
 function addProduct() {
   props.form.products.push({
@@ -104,9 +101,9 @@ const newCategoryDescription = ref("")
 const addingCategoryForProduct = ref(false)
 
 async function saveNewCategory() {
-  if (!newCategoryName.value.trim()) return
+  return runOperation(async () => {
+    if (!newCategoryName.value.trim()) return
 
-  try {
     const id = await categoryStore.addCategory(newCategoryName.value, newCategoryDescription.value, props.bookId)
 
     if (addingCategoryForProduct.value) {
@@ -119,10 +116,7 @@ async function saveNewCategory() {
     newCategoryName.value = ""
     newCategoryDescription.value = ""
     addingCategoryForProduct.value = false
-  } catch (e) {
-    console.error(e)
-    notify("Failed to add category")
-  }
+  }, 'Could not add category.')
 }
 
 // Quick Add Payment Mode
@@ -131,18 +125,15 @@ const newPaymentModeName = ref("")
 const newPaymentModeDescription = ref("")
 
 async function saveNewPaymentMode() {
-  if (!newPaymentModeName.value.trim()) return
+  return runOperation(async () => {
+    if (!newPaymentModeName.value.trim()) return
 
-  try {
     const id = await paymentModeStore.addPaymentMode(newPaymentModeName.value, newPaymentModeDescription.value, props.bookId)
     props.form.payment_mode_id = id
     showPaymentModeModal.value = false
     newPaymentModeName.value = ""
     newPaymentModeDescription.value = ""
-  } catch (e) {
-    console.error(e)
-    notify("Failed to add payment mode")
-  }
+  }, 'Could not add payment method.')
 }
 
 // Quick Add Product
@@ -155,9 +146,9 @@ const newProductAttachments = ref([])
 const newProductCategoryId = ref("")
 
 async function saveNewProduct() {
-  if (!newProductName.value.trim()) return
+  return runOperation(async () => {
+    if (!newProductName.value.trim()) return
 
-  try {
     const id = await productStore.addProduct(
       newProductName.value,
       roundAmount(newProductRate.value),
@@ -180,10 +171,7 @@ async function saveNewProduct() {
 
     showProductModal.value = false
     resetNewProductForm()
-  } catch (e) {
-    console.error(e)
-    notify("Failed to add product")
-  }
+  }, 'Could not add product.')
 }
 
 function handleNewProductUpload(url) {
@@ -209,6 +197,7 @@ function openProductModal() {
 }
 
 function closeProductModal() {
+  if (operationBusy.value) return
   showProductModal.value = false
   resetNewProductForm()
 }
@@ -231,6 +220,7 @@ defineExpose({ calculateTotal })
     <!-- Type Selection -->
     <div class="flex rounded-sm bg-gray-200 p-1 dark:bg-gray-800">
       <button
+        :aria-pressed="form.type === 'in'"
         @click="form.type = 'in'"
         :class="[
           'flex-1 rounded-sm py-2 text-sm font-medium transition-all',
@@ -242,6 +232,7 @@ defineExpose({ calculateTotal })
         Cash In (+)
       </button>
       <button
+        :aria-pressed="form.type === 'out'"
         @click="form.type = 'out'"
         :class="[
           'flex-1 rounded-sm py-2 text-sm font-medium transition-all',
@@ -295,6 +286,7 @@ defineExpose({ calculateTotal })
           />
         </div>
         <button
+          aria-label="Add category"
           @click="openCategoryModalForTransaction"
           class="mb-0.5 flex h-[42px] w-[42px] items-center justify-center rounded-sm bg-indigo-50 text-indigo-600 hover:bg-indigo-100 active:scale-95 transition-all dark:bg-indigo-900/40 dark:text-indigo-100 dark:hover:bg-indigo-900/60"
         >
@@ -315,7 +307,7 @@ defineExpose({ calculateTotal })
             required
           />
         </div>
-        <button
+        <button type="button" aria-label="Add payment method"
           @click="showPaymentModeModal = true"
           class="mb-0.5 flex h-[42px] w-[42px] items-center justify-center rounded-sm bg-indigo-50 text-indigo-600 hover:bg-indigo-100 active:scale-95 transition-all dark:bg-indigo-900/40 dark:text-indigo-100 dark:hover:bg-indigo-900/60"
         >
@@ -336,7 +328,8 @@ defineExpose({ calculateTotal })
       <div class="flex items-center justify-between gap-2">
         <button
           type="button"
-          @click="showProducts = !showProducts"
+          :aria-expanded="showProducts"
+        @click="showProducts = !showProducts"
           class="flex flex-1 items-center gap-2 text-left"
         >
           <h3 class="font-medium text-gray-900 dark:text-gray-100">Products</h3>
@@ -352,7 +345,7 @@ defineExpose({ calculateTotal })
           />
         </button>
         <div class="flex gap-2">
-          <button
+          <button type="button" aria-label="Add product"
             @click="openProductModal"
             class="mb-0.5 flex h-[42px] w-[42px] items-center justify-center rounded-sm bg-indigo-50 text-indigo-600 hover:bg-indigo-100 active:scale-95 transition-all dark:bg-indigo-900/40 dark:text-indigo-100 dark:hover:bg-indigo-900/60"
           >
@@ -425,21 +418,23 @@ defineExpose({ calculateTotal })
     <slot name="after-description" />
 
     <!-- Add Category Modal -->
-    <BaseModal :show="showCategoryModal" title="Add New Category" z-index="z-[60]" @close="showCategoryModal = false">
+    <BaseModal :dismissible="!operationBusy" :show="showCategoryModal" title="Add New Category" z-index="z-[60]" @close="showCategoryModal = false">
+      <BaseError :message="operationError" action-label="" />
       <div class="space-y-4">
         <BaseInput v-model="newCategoryName" label="Category Name" placeholder="e.g. Groceries" autoFocus />
 
         <BaseInput v-model="newCategoryDescription" label="Description" placeholder="Optional" />
 
         <div class="flex justify-end gap-3 mt-6">
-          <BaseButton variant="ghost" @click="showCategoryModal = false">Cancel</BaseButton>
-          <BaseButton @click="saveNewCategory">Add Category</BaseButton>
+          <BaseButton variant="ghost" :disabled="operationBusy" @click="showCategoryModal = false">Cancel</BaseButton>
+          <BaseButton :loading="operationBusy" @click="saveNewCategory">Add Category</BaseButton>
         </div>
       </div>
     </BaseModal>
 
     <!-- Add Product Modal -->
-    <BaseModal :show="showProductModal" title="Add New Product" @close="closeProductModal">
+    <BaseModal :dismissible="!operationBusy" :show="showProductModal" title="Add New Product" @close="closeProductModal">
+      <BaseError :message="operationError" action-label="" />
       <div class="space-y-4 max-h-[70vh] overflow-y-auto">
         <LightGallery :images="newProductAttachments" editable @delete="removeNewProductAttachment" />
         <ImageUpload @upload="handleNewProductUpload" from="products" />
@@ -465,7 +460,7 @@ defineExpose({ calculateTotal })
               placeholder="Select Category"
             />
           </div>
-          <button
+          <button type="button" aria-label="Add category for product"
             @click="openCategoryModalForProduct"
             class="mb-0.5 flex h-[42px] w-[42px] items-center justify-center rounded-sm bg-indigo-50 text-indigo-600 hover:bg-indigo-100 active:scale-95 transition-all dark:bg-indigo-900/40 dark:text-indigo-100 dark:hover:bg-indigo-900/60"
           >
@@ -476,14 +471,15 @@ defineExpose({ calculateTotal })
         <BaseInput v-model="newProductDescription" label="Description" placeholder="Optional" />
 
         <div class="flex justify-end gap-3 mt-6">
-          <BaseButton variant="ghost" @click="closeProductModal">Cancel</BaseButton>
-          <BaseButton @click="saveNewProduct">Add Product</BaseButton>
+          <BaseButton variant="ghost" :disabled="operationBusy" @click="closeProductModal">Cancel</BaseButton>
+          <BaseButton :loading="operationBusy" @click="saveNewProduct">Add Product</BaseButton>
         </div>
       </div>
     </BaseModal>
 
     <!-- Add Payment Mode Modal -->
-    <BaseModal :show="showPaymentModeModal" title="Add New Payment Mode" @close="showPaymentModeModal = false">
+    <BaseModal :dismissible="!operationBusy" :show="showPaymentModeModal" title="Add New Payment Mode" @close="showPaymentModeModal = false">
+      <BaseError :message="operationError" action-label="" />
       <div class="space-y-4">
         <BaseInput
           v-model="newPaymentModeName"
@@ -496,12 +492,11 @@ defineExpose({ calculateTotal })
         <BaseInput v-model="newPaymentModeDescription" label="Description" placeholder="Optional" />
 
         <div class="flex justify-end gap-3 mt-6">
-          <BaseButton variant="ghost" @click="showPaymentModeModal = false">Cancel</BaseButton>
-          <BaseButton @click="saveNewPaymentMode">Add Payment Mode</BaseButton>
+          <BaseButton variant="ghost" :disabled="operationBusy" @click="showPaymentModeModal = false">Cancel</BaseButton>
+          <BaseButton :loading="operationBusy" @click="saveNewPaymentMode">Add Payment Mode</BaseButton>
         </div>
       </div>
     </BaseModal>
 
-    <BaseToast :show="showToast" :message="toastMessage" type="error" @close="showToast = false" />
   </div>
 </template>

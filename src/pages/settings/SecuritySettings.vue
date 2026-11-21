@@ -98,6 +98,8 @@ function onPinVerifyCancel() {
       </div>
 
       <button
+        role="switch"
+        :aria-checked="isPinEnabled"
         @click="togglePin"
         :disabled="loading"
         :class="[
@@ -124,6 +126,8 @@ function onPinVerifyCancel() {
       </div>
 
       <button
+        role="switch"
+        :aria-checked="isBiometricEnabled"
         @click="toggleBiometric"
         :disabled="loading || !isPinEnabled"
         :class="[
@@ -163,7 +167,7 @@ function onPinVerifyCancel() {
       </select>
     </div>
 
-    <div v-if="error" class="p-4 bg-red-50 text-red-700 rounded-md text-sm dark:bg-red-900/30 dark:text-red-200">
+    <div role="alert" v-if="error" class="p-4 bg-red-50 text-red-700 rounded-md text-sm dark:bg-red-900/30 dark:text-red-200">
       {{ error }}
     </div>
 

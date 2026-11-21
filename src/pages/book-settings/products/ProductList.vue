@@ -1,4 +1,8 @@
 <script setup>
+import { usePageFeedback } from "@/composables/usePageFeedback"
+import BaseError from "@/components/common/BaseError.vue"
+
+import ResourceState from "@/components/common/ResourceState.vue"
 import { ref, onMounted, computed, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
 
@@ -14,6 +18,8 @@ import PageLayout from "@/components/layout/PageLayout.vue"
 import PageHeader from "@/components/layout/PageHeader.vue"
 import SettingsTabs from "../components/SettingsTabs.vue"
 
+const { operationError, operationBusy, operationReady, operationAction, retryOperation, runOperation, reportFailure } = usePageFeedback()
+
 const route = useRoute()
 const router = useRouter()
 const bookStore = useBookStore()
@@ -23,9 +29,11 @@ const bookId = parseInt(route.params.bookId)
 const book = ref(null)
 
 onMounted(async () => {
-  if (!bookId) return
-  book.value = await bookStore.getBook(bookId)
-  productStore.watchProducts(bookId)
+  return runOperation(async () => {
+    if (!bookId) return
+    book.value = await bookStore.getBook(bookId)
+    productStore.watchProducts(bookId)
+  }, "Could not load products.", true)
 })
 
 const searchQuery = ref(route.query.search || "")
@@ -111,6 +119,8 @@ function navigateToEdit(item) {
     <PageHeader :title="`${book?.name || ''}`" :back-route="{ name: 'book-details', params: { id: bookId } }" />
 
     <main class="p-4 space-y-6">
+      <BaseError :message="operationError" :action-label="operationAction" :busy="operationBusy" @retry="retryOperation" />
+      <ResourceState :resources="[productStore]">
       <SettingsTabs :book-id="bookId" />
 
       <div class="space-y-4">
@@ -151,7 +161,7 @@ function navigateToEdit(item) {
                 />
               </div>
               <div>
-                <p class="font-medium text-gray-900 dark:text-gray-100">{{ item.name }}</p>
+                <p class="font-medium text-gray-900 dark:text-gray-100"><button type="button" class="rounded-sm text-left" @click.stop="navigateToEdit(item)">{{ item.name }}</button></p>
                 <p class="text-xs text-gray-500 dark:text-gray-400">Rate: {{ formatCurrency(item.rate) }}</p>
                 <p class="text-xs text-gray-400 dark:text-gray-500">{{ item.description }}</p>
               </div>
@@ -170,6 +180,7 @@ function navigateToEdit(item) {
           </div>
         </div>
       </div>
+          </ResourceState>
     </main>
   </PageLayout>
 </template>

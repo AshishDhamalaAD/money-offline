@@ -1,4 +1,8 @@
 <script setup>
+import { usePageFeedback } from "@/composables/usePageFeedback"
+import BaseError from "@/components/common/BaseError.vue"
+import ResourceState from "@/components/common/ResourceState.vue"
+
 import { ref, computed, onMounted, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
 
@@ -23,6 +27,8 @@ import IconFilter from "@/assets/icons/IconFilter.vue"
 import IconX from "@/assets/icons/IconX.vue"
 import ActiveFilterChips from "@/components/common/ActiveFilterChips.vue"
 import DateRangeTabs from "@/components/common/DateRangeTabs.vue"
+
+const { operationError, operationBusy, operationReady, operationAction, retryOperation, runOperation, reportFailure } = usePageFeedback()
 
 const route = useRoute()
 const router = useRouter()
@@ -61,17 +67,19 @@ const tempFilters = ref({
 })
 
 onMounted(async () => {
-  const bookIdParam = parseInt(route.params.bookId)
-  if (!bookIdParam) return
+  return runOperation(async () => {
+    const bookIdParam = parseInt(route.params.bookId)
+    if (!bookIdParam) return
 
-  bookId.value = bookIdParam
-  setLastBookId(bookIdParam)
-  book.value = await bookStore.getBook(bookId.value)
-  transactionStore.setBookId(bookId.value)
+    bookId.value = bookIdParam
+    setLastBookId(bookIdParam)
+    book.value = await bookStore.getBook(bookId.value)
+    transactionStore.setBookId(bookId.value)
 
-  categoryStore.watchCategories(bookId.value)
-  paymentModeStore.watchPaymentModes(bookId.value)
-  productStore.watchProducts(bookId.value)
+    categoryStore.watchCategories(bookId.value)
+    paymentModeStore.watchPaymentModes(bookId.value)
+    productStore.watchProducts(bookId.value)
+  }, "Could not load charts.", true)
 })
 
 function toggleFilters() {
@@ -192,6 +200,8 @@ function removeExcludeProduct(id) {
     </PageHeader>
 
     <main class="p-4 space-y-6 pb-24">
+      <BaseError :message="operationError" :action-label="operationAction" :busy="operationBusy" @retry="retryOperation" />
+      <ResourceState :resources="[transactionStore, categoryStore, productStore]">
       <!-- Top Filter Section -->
       <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100 space-y-4 dark:bg-gray-900 dark:border-gray-800">
         <div class="flex justify-between items-center">
@@ -369,6 +379,7 @@ function removeExcludeProduct(id) {
       <LazyRender min-height="300px">
         <CategorySummaryTable :transactions="baseTransactions" :global-filter="globalFilterObj" />
       </LazyRender>
+          </ResourceState>
     </main>
   </PageLayout>
 </template>

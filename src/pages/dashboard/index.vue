@@ -1,7 +1,9 @@
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from "vue"
+import { ref, computed, watch, onMounted, onUnmounted, reactive } from "vue"
 import { useRouter } from "vue-router"
-import { liveQuery } from "dexie"
+import { useLiveResource } from "@/composables/useLiveResource"
+import ResourceState from "@/components/common/ResourceState.vue"
+import BaseError from "@/components/common/BaseError.vue"
 
 import { db } from "@/db/dexie"
 import { useBookStore } from "@/store/bookStore"
@@ -36,7 +38,8 @@ const summaries = ref({})
 const overview = ref({ balance: 0, monthIn: 0, monthOut: 0 })
 const categoryMonthSpend = ref({})
 
-let subscription = null
+const summaryState = reactive(useLiveResource([], 'Could not load dashboard totals.'))
+const createError = ref('')
 
 function dayStart(date) {
   const value = new Date(date)
@@ -100,16 +103,8 @@ function buildSummaries(transactions) {
   categoryMonthSpend.value = spendByBook
 }
 
-onMounted(() => {
-  subscription = liveQuery(() => db.transactions.toArray()).subscribe({
-    next: buildSummaries,
-    error: (error) => console.error("Failed to load dashboard totals", error),
-  })
-})
-
-onUnmounted(() => {
-  subscription?.unsubscribe()
-})
+onMounted(() => summaryState.start(() => db.transactions.toArray()))
+watch(() => summaryState.data, buildSummaries)
 
 // Budgets are per book, so the dashboard shows the book the user opened last.
 const rememberedBookId = ref(getLastBookId())
@@ -168,11 +163,15 @@ function openBudgets() {
 async function handleCreateBook() {
   if (!newBookName.value.trim()) return
 
+  createError.value = ''
   creating.value = true
   try {
     await bookStore.createBook(newBookName.value)
     showCreateModal.value = false
     newBookName.value = ""
+  } catch (error) {
+    console.error('Could not create book', error)
+    createError.value = 'Could not create this book. Review your books before trying Create again. The name has been kept.'
   } finally {
     creating.value = false
   }
@@ -209,6 +208,7 @@ function quickAddTransaction() {
 
     <!-- Content -->
     <main class="space-y-4 p-4">
+      <ResourceState :resources="[bookStore]">
       <div v-if="bookStore.books.length === 0" class="mt-10 flex flex-col items-center justify-center text-center">
         <div class="mb-4 rounded-full bg-indigo-50 p-4 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-100">
           <IconBook class="h-10 w-10" />
@@ -220,7 +220,7 @@ function quickAddTransaction() {
         </div>
       </div>
 
-      <template v-else>
+      <ResourceState v-else :resources="[summaryState]">
         <!-- Combined balance across every book -->
         <section
           class="rounded-sm bg-indigo-600 p-5 text-white shadow-sm dark:bg-indigo-700"
@@ -246,6 +246,7 @@ function quickAddTransaction() {
         </section>
 
         <!-- Budget progress for the last-used book -->
+        <ResourceState v-if="budgetBook" :resources="[budgetStore, categoryStore]">
         <section
           v-if="budgetRows.length > 0"
           class="rounded-sm bg-white p-4 shadow-sm ring-1 ring-gray-100 dark:bg-gray-900 dark:ring-gray-800"
@@ -300,6 +301,7 @@ function quickAddTransaction() {
             </div>
           </div>
         </section>
+        </ResourceState>
 
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <BookCard
@@ -309,7 +311,8 @@ function quickAddTransaction() {
             :summary="summaries[book.id]"
           />
         </div>
-      </template>
+      </ResourceState>
+      </ResourceState>
     </main>
 
     <!-- FAB (Floating Action Button) -->
@@ -320,11 +323,12 @@ function quickAddTransaction() {
     />
 
     <!-- Create Book Modal -->
-    <BaseModal :show="showCreateModal" title="Create New Book" @close="showCreateModal = false">
+    <BaseModal :show="showCreateModal" title="Create New Book" :dismissible="!creating" @close="showCreateModal = false">
       <div class="space-y-4">
+        <BaseError :message="createError" action-label="" />
         <BaseInput v-model="newBookName" label="Book Name" placeholder="e.g. Personal Expenses" autoFocus />
         <div class="flex justify-end gap-3 mt-6">
-          <BaseButton variant="ghost" @click="showCreateModal = false">Cancel</BaseButton>
+          <BaseButton :disabled="creating" variant="ghost" @click="showCreateModal = false">Cancel</BaseButton>
           <BaseButton :loading="creating" @click="handleCreateBook">Create</BaseButton>
         </div>
       </div>

@@ -1,5 +1,6 @@
 <script setup>
-import { computed, ref } from "vue"
+import { computed, ref, nextTick, onUnmounted, useId } from "vue"
+import { registerDialog } from "@/composables/useDialog"
 import { LightGallery } from "@lightgallery/vue"
 import Thumbnail from "@lightgallery/vue/plugins/thumbnail"
 import Zoom from "@lightgallery/vue/plugins/zoom"
@@ -24,6 +25,28 @@ const props = defineProps({
 
 const galleryRef = ref(null)
 
+const galleryClass = `money-gallery-${useId().replace(/[^a-zA-Z0-9-]/g, '')}`
+let release
+let galleryRoot
+async function onGalleryOpen() {
+  await nextTick()
+  galleryRoot = document.querySelector(`.${galleryClass}`)
+  if (!galleryRoot) return
+  release?.()
+  release = registerDialog({ root: galleryRoot, close: () => galleryRef.value?.closeGallery() })
+  galleryRoot.addEventListener('keydown', onGalleryKey)
+}
+function onGalleryKey(event) {
+  if (event.key === 'ArrowLeft') { event.preventDefault(); galleryRef.value?.prevSlide() }
+  if (event.key === 'ArrowRight') { event.preventDefault(); galleryRef.value?.nextSlide() }
+}
+function onGalleryClose() {
+  galleryRoot?.removeEventListener('keydown', onGalleryKey)
+  release?.()
+  release = null
+}
+onUnmounted(onGalleryClose)
+
 const plugins = [Thumbnail, Zoom]
 
 const fullImageUrls = computed(() => {
@@ -40,7 +63,7 @@ function openGallery(index) {
 
 <template>
   <div v-if="images.length > 0">
-    <LightGallery ref="galleryRef" :slides="fullImageUrls" :plugins="plugins" :speed="500" />
+    <LightGallery ref="galleryRef" :slides="fullImageUrls" :plugins="plugins" :speed="500" :class-name="galleryClass" :trap-focus="false" :esc-key="false" :key-press="false" @after-open="onGalleryOpen" @after-close="onGalleryClose" />
     <div>
       <div v-for="(image, index) in fullImageUrls" :key="index" class="relative inline-block mr-2 mb-2">
         <a
@@ -48,10 +71,12 @@ function openGallery(index) {
           class="gallery-item block rounded-lg overflow-hidden border border-gray-200 hover:opacity-90 transition-opacity dark:border-gray-700"
           @click.prevent="openGallery(index)"
         >
-          <img :src="image.thumb" class="w-24 h-24 object-cover" />
+          <img :alt="`Attachment ${index + 1}`" :src="image.thumb" class="w-24 h-24 object-cover" />
         </a>
         <button
           v-if="editable"
+          type="button"
+          :aria-label="`Delete attachment ${index + 1}`"
           @click.stop="$emit('delete', index)"
           class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 focus:outline-none z-10"
         >

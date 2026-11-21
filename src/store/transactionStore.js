@@ -1,6 +1,7 @@
-import { ref, computed } from 'vue'
+import { ref, computed, onScopeDispose } from 'vue'
 import { defineStore } from 'pinia'
 import { liveQuery } from 'dexie'
+import { useLiveResource } from '@/composables/useLiveResource'
 
 import { formatDateTimeForDB, getNepalDate, roundAmount } from '@/utils/dateUtils'
 import { descriptionToText } from '@/utils/description'
@@ -41,7 +42,9 @@ function sameListFilters(a, b) {
 export const useTransactionStore = defineStore('transaction', () => {
     // Full book load. Charts need every row in memory to aggregate; the list
     // screen uses the paged query below instead.
-    const transactions = ref([])
+    const fullResource = useLiveResource([], 'Could not load chart transactions.')
+    const transactions = fullResource.data
+    const { loading, error, ready, retry } = fullResource
     const currentBookId = ref(null)
     const productStore = useProductStore()
 
@@ -49,19 +52,19 @@ export const useTransactionStore = defineStore('transaction', () => {
     // memory; date ranges and filters are evaluated inside Dexie.
     const listTransactions = ref([])
     const listLoading = ref(false)
+    const listError = ref('')
+    const listReady = ref(false)
+    let listGeneration = 0
     const listHasMore = ref(false)
     const listVersion = ref(0)
 
-    let subscription = null
     let listSubscription = null
     let listFilters = null
     let listLimit = LIST_PAGE_SIZE
 
     function setBookId(bookId) {
         currentBookId.value = bookId
-        if (subscription) subscription.unsubscribe()
-
-        subscription = liveQuery(async () => {
+        fullResource.start(async () => {
             const settingsStore = useSettingsStore()
             await settingsStore.init()
 
@@ -87,9 +90,7 @@ export const useTransactionStore = defineStore('transaction', () => {
                 }
                 return tx
             })
-        }).subscribe(data => {
-            transactions.value = data;
-        })
+        }, bookId)
     }
 
     // --- Paged list -------------------------------------------------------
@@ -178,6 +179,7 @@ export const useTransactionStore = defineStore('transaction', () => {
 
     function startListQuery() {
         listSubscription?.unsubscribe()
+        const generation = ++listGeneration
 
         const filters = listFilters
         const limit = listLimit
@@ -185,12 +187,17 @@ export const useTransactionStore = defineStore('transaction', () => {
         listLoading.value = true
         listSubscription = liveQuery(() => fetchListWindow(filters, limit)).subscribe({
             next: ({ rows, hasMore }) => {
+                if (generation !== listGeneration) return
+                listReady.value = true
+                listError.value = ''
                 listTransactions.value = rows
                 listHasMore.value = hasMore
                 listLoading.value = false
                 listVersion.value += 1
             },
             error: error => {
+                if (generation !== listGeneration) return
+                listError.value = `Could not load transactions. ${listReady.value ? 'Displayed data may be outdated. ' : ''}Try again.`
                 listLoading.value = false
                 console.error('Failed to load transactions', error)
             }
@@ -201,6 +208,9 @@ export const useTransactionStore = defineStore('transaction', () => {
         if (!filters?.bookId) return
 
         currentBookId.value = filters.bookId
+        listTransactions.value = []
+        listError.value = ''
+        listReady.value = false
         listFilters = { ...filters }
         listLimit = LIST_PAGE_SIZE
         startListQuery()
@@ -210,19 +220,29 @@ export const useTransactionStore = defineStore('transaction', () => {
         if (!filters?.bookId) return
         if (listFilters && sameListFilters(listFilters, filters)) return
 
+        listTransactions.value = []
+        listError.value = ''
+        listReady.value = false
         listFilters = { ...filters }
         listLimit = LIST_PAGE_SIZE
         startListQuery()
     }
 
+    function retryTransactionList() {
+        if (listFilters && !listLoading.value) startListQuery()
+    }
+
     function loadMoreTransactions() {
-        if (!listFilters || !listHasMore.value) return
+        if (!listFilters || !listHasMore.value || listLoading.value || listError.value) return
 
         listLimit += LIST_PAGE_SIZE
         startListQuery()
     }
 
     function closeTransactionList() {
+        listGeneration++
+        listError.value = ''
+        listReady.value = false
         listSubscription?.unsubscribe()
         listSubscription = null
         listFilters = null
@@ -231,6 +251,8 @@ export const useTransactionStore = defineStore('transaction', () => {
         listHasMore.value = false
         listLoading.value = false
     }
+
+    onScopeDispose(closeTransactionList)
 
     // Totals for the whole filter window, streamed row by row so the list can
     // show period stats without keeping every transaction in memory.
@@ -512,11 +534,11 @@ export const useTransactionStore = defineStore('transaction', () => {
         };
 
         // Reuse createTransaction to handle proper adding and validation
-        // But createTransaction expects a simplified object usually coming from form, 
+        // But createTransaction expects a simplified object usually coming from form,
         // passing fully formed object might need slight adjustment or we call db directly.
-        // Let's call db directly to avoid 'createTransaction' side effects like rounding that are already done, 
-        // though rounding again doesn't hurt. 
-        // However, 'createTransaction' expects 'setBookId' to be the current book. 
+        // Let's call db directly to avoid 'createTransaction' side effects like rounding that are already done,
+        // though rounding again doesn't hurt.
+        // However, 'createTransaction' expects 'setBookId' to be the current book.
         // Since we are copying TO another book, we can't rely on 'currentBookId' inside 'createTransaction'.
 
         // Manual Add:
@@ -589,6 +611,8 @@ export const useTransactionStore = defineStore('transaction', () => {
 
     return {
         transactions,
+        loading, error, ready, retry,
+        listError, listReady, retryTransactionList,
         currentBookId,
         setBookId,
         listTransactions,

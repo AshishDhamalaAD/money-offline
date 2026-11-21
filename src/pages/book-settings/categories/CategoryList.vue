@@ -1,4 +1,8 @@
 <script setup>
+import { usePageFeedback } from "@/composables/usePageFeedback"
+import BaseError from "@/components/common/BaseError.vue"
+
+import ResourceState from "@/components/common/ResourceState.vue"
 import { ref, onMounted, computed, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
 
@@ -11,6 +15,8 @@ import PageLayout from "@/components/layout/PageLayout.vue"
 import PageHeader from "@/components/layout/PageHeader.vue"
 import SettingsTabs from "../components/SettingsTabs.vue"
 
+const { operationError, operationBusy, operationReady, operationAction, retryOperation, runOperation, reportFailure } = usePageFeedback()
+
 const route = useRoute()
 const router = useRouter()
 const bookStore = useBookStore()
@@ -20,9 +26,11 @@ const bookId = parseInt(route.params.bookId)
 const book = ref(null)
 
 onMounted(async () => {
-  if (!bookId) return
-  book.value = await bookStore.getBook(bookId)
-  categoryStore.watchCategories(bookId)
+  return runOperation(async () => {
+    if (!bookId) return
+    book.value = await bookStore.getBook(bookId)
+    categoryStore.watchCategories(bookId)
+  }, "Could not load categories.", true)
 })
 
 const searchQuery = ref(route.query.search || "")
@@ -108,6 +116,8 @@ function navigateToEdit(item) {
     <PageHeader :title="`${book?.name || 'Book'}`" :back-route="{ name: 'book-details', params: { id: bookId } }" />
 
     <main class="p-4 space-y-6">
+      <BaseError :message="operationError" :action-label="operationAction" :busy="operationBusy" @retry="retryOperation" />
+      <ResourceState :resources="[categoryStore]">
       <SettingsTabs :book-id="bookId" />
 
       <div class="space-y-4">
@@ -132,6 +142,10 @@ function navigateToEdit(item) {
             v-for="item in paginatedItems"
             :key="item.id"
             @click="navigateToEdit(item)"
+            role="button"
+            tabindex="0"
+            @keydown.enter.self.prevent="navigateToEdit(item)"
+            @keydown.space.self.prevent="navigateToEdit(item)"
             class="flex justify-between items-center bg-white p-4 rounded-sm shadow-sm cursor-pointer hover:bg-gray-50 transition-colors dark:bg-gray-900 dark:hover:bg-gray-800 dark:border dark:border-gray-800"
           >
             <div>
@@ -148,6 +162,7 @@ function navigateToEdit(item) {
           </div>
         </div>
       </div>
+          </ResourceState>
     </main>
   </PageLayout>
 </template>

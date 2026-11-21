@@ -1,4 +1,5 @@
 <script setup>
+defineOptions({ inheritAttrs: false })
 const props = defineProps({
   modelValue: {
     type: String,
@@ -30,6 +31,8 @@ function clear() {
       </svg>
     </div>
     <input
+      v-bind="$attrs"
+      :aria-label="$attrs['aria-label'] || placeholder"
       :value="modelValue"
       @input="$emit('update:modelValue', $event.target.value)"
       type="text"
@@ -38,6 +41,8 @@ function clear() {
     />
     <button
       v-if="modelValue"
+      type="button"
+      aria-label="Clear search"
       @click="clear"
       class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-200"
     >

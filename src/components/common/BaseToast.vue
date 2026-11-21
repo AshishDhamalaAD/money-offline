@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from "vue"
+import { watch, onUnmounted } from "vue"
 
 const props = defineProps({
   show: {
@@ -22,19 +22,13 @@ const props = defineProps({
 
 const emit = defineEmits(["close"])
 
-const isVisible = ref(props.show)
-
-watch(
-  () => props.show,
-  (newVal) => {
-    isVisible.value = newVal
-    if (newVal && props.duration > 0) {
-      setTimeout(() => {
-        emit("close")
-      }, props.duration)
-    }
-  }
-)
+let timer
+function clearTimer() { clearTimeout(timer) }
+watch(() => [props.show, props.message, props.type, props.duration], () => {
+  clearTimer()
+  if (props.show && props.duration > 0 && props.type !== 'error') timer = setTimeout(() => emit('close'), props.duration)
+}, { immediate: true })
+onUnmounted(clearTimer)
 
 const bgColor = {
   error: "bg-red-500 dark:bg-red-600",
@@ -53,10 +47,10 @@ const bgColor = {
       leave-from-class="translate-y-0 opacity-100"
       leave-to-class="translate-y-2 opacity-0"
     >
-      <div v-if="isVisible" class="fixed top-4 left-1/2 -translate-x-1/2 z-9999 max-w-md w-full px-4">
+      <div v-if="show" class="fixed top-4 left-1/2 -translate-x-1/2 z-9999 max-w-md w-full px-4">
         <div :class="[bgColor[type], 'rounded-lg shadow-lg p-4 flex items-start gap-3 text-white dark:shadow-black/30']">
           <!-- Icon -->
-          <div class="shrink-0">
+          <div aria-hidden="true" class="shrink-0">
             <svg v-if="type === 'error'" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
                 stroke-linecap="round"
@@ -79,10 +73,10 @@ const bgColor = {
           </div>
 
           <!-- Message -->
-          <p class="flex-1 text-sm font-medium text-white">{{ message }}</p>
+          <p :role="type === 'error' ? 'alert' : 'status'" aria-atomic="true" class="flex-1 text-sm font-medium text-white">{{ message }}</p>
 
           <!-- Close button -->
-          <button @click="emit('close')" class="shrink-0 hover:bg-white/20 rounded p-1 transition-colors">
+          <button type="button" aria-label="Dismiss notification" @click="emit('close')" class="shrink-0 hover:bg-white/20 rounded p-1 transition-colors">
             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>

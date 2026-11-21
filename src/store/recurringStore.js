@@ -1,6 +1,5 @@
-import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import { liveQuery } from 'dexie'
+import { useLiveResource } from '@/composables/useLiveResource'
 
 import { formatDateTimeForDB } from '@/utils/dateUtils'
 import { addPeriod } from '@/utils/recurrence'
@@ -8,26 +7,16 @@ import { db } from '@/db/dexie'
 import { recordDeletions } from '@/db/sync/dirty'
 
 export const useRecurringStore = defineStore('recurring', () => {
-    const rules = ref([])
-    let subscription = null
+    const resource = useLiveResource([], 'Could not load recurring transactions.')
+    const rules = resource.data
+    const { loading, error, ready, retry } = resource
 
     function watchRecurring(bookId) {
-        if (subscription) subscription.unsubscribe()
-
-        if (!bookId) {
-            rules.value = []
-            return
-        }
-
-        subscription = liveQuery(() =>
-            db.recurring_transactions.where('book_id').equals(bookId).toArray()
-        ).subscribe(data => {
-            rules.value = data.sort((a, b) => String(a.next_due_date).localeCompare(String(b.next_due_date)))
-        })
+        resource.start(bookId ? async () => {
+            const data = await db.recurring_transactions.where('book_id').equals(bookId).toArray()
+            return data.sort((a, b) => String(a.next_due_date).localeCompare(String(b.next_due_date)))
+        } : null, bookId)
     }
-
-    // Forms pass reactive arrays (category_ids), which IndexedDB refuses to clone.
-    const toPlain = (value) => JSON.parse(JSON.stringify(value))
 
     async function addRule(rule, bookId) {
         return await db.recurring_transactions.add(toPlain({
@@ -73,6 +62,7 @@ export const useRecurringStore = defineStore('recurring', () => {
 
     return {
         rules,
+        loading, error, ready, retry,
         watchRecurring,
         addRule,
         updateRule,

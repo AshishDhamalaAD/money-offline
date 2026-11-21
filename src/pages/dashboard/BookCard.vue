@@ -58,7 +58,7 @@ const formattedDate = computed(() => {
         <button
           @click.stop="openCharts"
           class="rounded-full p-2 text-gray-400 hover:text-indigo-600 hover:bg-gray-100 transition-colors dark:text-gray-300 dark:hover:bg-gray-800"
-          title="View Charts"
+          aria-label="View Charts" title="View Charts"
         >
           <IconChartBar class="h-5 w-5" />
         </button>
@@ -66,7 +66,7 @@ const formattedDate = computed(() => {
     </div>
 
     <div class="mt-4">
-      <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ book.name }}</h3>
+      <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100"><button type="button" class="rounded-sm text-left" @click.stop="openBook">{{ book.name }}</button></h3>
 
       <p
         :class="[

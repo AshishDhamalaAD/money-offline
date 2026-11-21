@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch, nextTick } from "vue"
+import { ref, computed, watch, nextTick, useId, onUnmounted } from "vue"
 import { onClickOutside } from "@vueuse/core"
 import IconX from "@/assets/icons/IconX.vue"
 
@@ -13,6 +13,8 @@ const props = defineProps({
   placeholder: String,
   error: String,
   required: Boolean,
+  disabled: Boolean,
+  id: String,
   limit: {
     type: Number,
     default: 20,
@@ -30,6 +32,36 @@ const isOpen = ref(false)
 const searchQuery = ref("")
 const containerRef = ref(null)
 const inputRef = ref(null)
+const triggerRef = ref(null)
+const generatedId = useId()
+const controlId = computed(() => props.id || generatedId)
+const activeIndex = ref(0)
+let tabCloseTimer
+onUnmounted(() => clearTimeout(tabCloseTimer))
+const optionId = index => `${controlId.value}-option-${index}`
+function onKeydown(event) {
+  if (event.key === 'Escape' && isOpen.value) {
+    event.preventDefault()
+    event.stopPropagation()
+    close(true)
+  } else if (event.key === 'Tab') {
+    // Let the browser move focus before removing the focused search input.
+    clearTimeout(tabCloseTimer)
+    tabCloseTimer = setTimeout(() => close(), 0)
+  }
+  else if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
+    event.preventDefault()
+    if (!isOpen.value) open()
+    else if (event.key === 'Home') activeIndex.value = 0
+    else if (event.key === 'End') activeIndex.value = filteredOptions.value.length - 1
+    else activeIndex.value = Math.max(0, Math.min(filteredOptions.value.length - 1, activeIndex.value + (event.key === 'ArrowDown' ? 1 : -1)))
+    nextTick(() => document.getElementById(optionId(activeIndex.value))?.scrollIntoView({ block: 'nearest' }))
+  } else if (event.key === 'Enter' && isOpen.value) {
+    event.preventDefault()
+    const option = filteredOptions.value[activeIndex.value]
+    if (option) select(option)
+  }
+}
 
 // Find selected option label
 const selectedLabel = computed(() => {
@@ -79,7 +111,10 @@ const filteredOptions = computed(() => {
   return options.slice(0, props.limit)
 })
 
+watch(filteredOptions, () => { activeIndex.value = 0 })
+
 function open() {
+  if (props.disabled) return
   isOpen.value = true
   searchQuery.value = ""
   nextTick(() => {
@@ -87,9 +122,10 @@ function open() {
   })
 }
 
-function close() {
+function close(restoreFocus = false) {
   isOpen.value = false
   searchQuery.value = ""
+  if (restoreFocus === true) nextTick(() => triggerRef.value?.focus())
 }
 
 function select(option) {
@@ -107,7 +143,7 @@ function select(option) {
   } else {
     emit("update:modelValue", option.value)
   }
-  close()
+  close(true)
 }
 
 function removeOption(value) {
@@ -125,7 +161,7 @@ function clearSelection() {
   }
   // Keep open to allow re-selection if desired, or focus input
   nextTick(() => {
-    inputRef.value?.focus()
+    triggerRef.value?.focus()
   })
 }
 
@@ -143,68 +179,35 @@ onClickOutside(containerRef, close, {
 
 <template>
   <div class="flex flex-col gap-1.5" ref="containerRef">
-    <label v-if="label" class="text-sm font-medium text-gray-700 ml-1 dark:text-gray-200">
+    <label :id="`${controlId}-label`" :for="controlId" v-if="label" class="text-sm font-medium text-gray-700 ml-1 dark:text-gray-200">
       {{ label }} <span v-if="required" class="text-red-500">*</span>
     </label>
 
     <div class="relative">
-      <!-- Trigger / Display -->
-      <div
-        @click="isOpen ? close() : open()"
-        :class="[
-          'w-full rounded-sm border-gray-200 bg-gray-50 px-4 py-2.5 text-left transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 flex justify-between items-center min-h-[42px] dark:border-gray-700 dark:bg-gray-800',
-          {
-            'border-red-500': error,
-            'text-gray-400 dark:text-gray-500': !hasSelection,
-            'text-gray-900 dark:text-gray-200': hasSelection,
-          },
-        ]"
-      >
-        <div class="flex flex-wrap gap-1.5 overflow-hidden">
-          <template v-if="multiple && selectedOptions.length > 0">
-            <span
-              v-for="opt in selectedOptions"
-              :key="opt.value"
-              class="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-100"
-              @click.stop
-            >
-              {{ opt.label }}
-              <button
-                type="button"
-                @click.stop="removeOption(opt.value)"
-                class="ml-0.5 inline-flex h-3 w-3 shrink-0 items-center justify-center rounded-full text-indigo-400 hover:bg-indigo-200 hover:text-indigo-500 focus:bg-indigo-500 focus:text-white focus:outline-none dark:hover:bg-indigo-800"
-              >
-                <span class="sr-only">Remove {{ opt.label }}</span>
-                <IconX class="h-2.5 w-2.5" />
-              </button>
-            </span>
-          </template>
-          <span v-else class="truncate">{{ selectedLabel || placeholder || "Select..." }}</span>
-        </div>
-
-        <!-- Icons: Clear vs Chevron -->
-        <div class="flex items-center ml-2 shrink-0">
-          <!-- Clear Button (Visible when Open + Has Selection) -->
-          <button
-            v-if="hasSelection"
-            @click.stop="clearSelection"
-            class="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-200 transition-colors dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
-            title="Clear All"
-          >
-            <IconX class="h-4 w-4" />
-          </button>
-
-          <!-- Dropdown Chevron -->
-          <svg
-            v-else
-            class="h-5 w-5 text-gray-400 dark:text-gray-500"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-          </svg>
-        </div>
+      <div class="flex min-h-[42px] items-center gap-2 rounded-sm bg-gray-50 px-3 dark:bg-gray-800">
+        <button
+          ref="triggerRef"
+          :id="controlId"
+          type="button"
+          :disabled="disabled"
+          class="min-w-0 flex-1 rounded-sm py-2.5 text-left"
+          aria-haspopup="listbox"
+          :aria-expanded="isOpen"
+          :aria-controls="isOpen ? `${controlId}-list` : undefined"
+          :aria-labelledby="label ? `${controlId}-label` : undefined"
+          :aria-label="label ? undefined : placeholder || 'Select options'"
+          :aria-invalid="error ? true : undefined"
+          :aria-required="required"
+          :aria-describedby="error ? `${controlId}-error` : undefined"
+          @keydown="onKeydown"
+          @click="isOpen ? close(true) : open()"
+        >
+          {{ multiple ? (selectedOptions.map(option => option.label).join(', ') || placeholder || 'Select...') : selectedLabel || placeholder || 'Select...' }}
+        </button>
+        <button v-if="hasSelection" :disabled="disabled" type="button" :aria-label="`Clear ${label || 'selection'}`" class="rounded-sm p-2" @click="clearSelection"><IconX aria-hidden="true" class="h-4 w-4" /></button>
+      </div>
+      <div v-if="multiple && selectedOptions.length" class="mt-2 flex flex-wrap gap-2">
+        <button v-for="option in selectedOptions" :key="option.value" type="button" :disabled="disabled" :aria-label="`Remove ${option.label}`" class="rounded-sm bg-indigo-50 px-2 py-1 text-sm dark:bg-indigo-950" @click="removeOption(option.value)">{{ option.label }} <span aria-hidden="true">x</span></button>
       </div>
 
       <!-- Dropdown -->
@@ -216,6 +219,13 @@ onClickOutside(containerRef, close, {
         <div class="p-2 border-b border-gray-100 dark:border-gray-800">
           <input
             ref="inputRef"
+            role="combobox"
+            aria-autocomplete="list"
+            :aria-label="`Search ${label || placeholder || 'options'}`"
+            :aria-expanded="isOpen"
+            :aria-controls="`${controlId}-list`"
+            :aria-activedescendant="filteredOptions.length ? optionId(activeIndex) : undefined"
+            @keydown="onKeydown"
             v-model="searchQuery"
             type="text"
             class="w-full rounded-sm bg-gray-50 px-3 py-1.5 text focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
@@ -224,20 +234,21 @@ onClickOutside(containerRef, close, {
         </div>
 
         <!-- Options List -->
-        <ul class="max-h-60 overflow-auto py-1">
-          <li v-if="filteredOptions.length === 0" class="px-4 py-2 text-gray-500 text-center dark:text-gray-400">
+        <ul :id="`${controlId}-list`" role="listbox" :aria-label="label || placeholder || 'Options'" :aria-multiselectable="multiple || undefined" class="max-h-60 overflow-auto py-1">
+          <li role="presentation" v-if="filteredOptions.length === 0" class="px-4 py-2 text-gray-500 text-center dark:text-gray-400">
             No results found
           </li>
           <li
-            v-for="option in filteredOptions"
+            v-for="(option, index) in filteredOptions"
+            :id="optionId(index)"
+            role="option"
+            :aria-selected="isSelected(option.value)"
             :key="option.value"
             @click="select(option)"
             :class="[
               'cursor-pointer px-4 py-2 hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-900/40 dark:hover:text-indigo-200',
               {
-                'bg-indigo-50 text-indigo-600 font-medium dark:bg-indigo-900/50 dark:text-indigo-100': isSelected(
-                  option.value
-                ),
+                'bg-indigo-50 text-indigo-600 font-medium dark:bg-indigo-900/50 dark:text-indigo-100': index === activeIndex || isSelected(option.value),
               },
             ]"
           >
@@ -251,6 +262,6 @@ onClickOutside(containerRef, close, {
         </ul>
       </div>
     </div>
-    <span v-if="error" class="text-xs text-red-500 ml-1">{{ error }}</span>
+    <span :id="`${controlId}-error`" v-if="error" class="text-xs text-red-500 ml-1">{{ error }}</span>
   </div>
 </template>

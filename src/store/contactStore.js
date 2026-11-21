@@ -1,16 +1,15 @@
-import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import { liveQuery } from 'dexie'
+import { useLiveResource } from '@/composables/useLiveResource'
 
 import { formatDateTimeForDB } from '@/utils/dateUtils'
 import { db } from '@/db/dexie'
 import { recordDeletions } from '@/db/sync/dirty'
 
 export const useContactStore = defineStore('contact', () => {
-    const contacts = ref([])
-
-    // Contacts are global
-    liveQuery(() => db.contacts.toArray()).subscribe(data => contacts.value = data)
+    const resource = useLiveResource([], 'Could not load contacts.')
+    const contacts = resource.data
+    const { loading, error, ready, retry } = resource
+    resource.start(() => db.contacts.toArray())
 
     async function addContact(name, phone) {
         return await db.contacts.add({
@@ -47,6 +46,7 @@ export const useContactStore = defineStore('contact', () => {
 
     return {
         contacts,
+        loading, error, ready, retry,
         addContact,
         updateContact,
         deleteContact

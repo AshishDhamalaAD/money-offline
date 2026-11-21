@@ -302,3 +302,14 @@ Browser regression coverage includes interval/snooze boundaries, cross-document 
 manual-download failures, report/sync exclusion, storage API fallbacks, persistence requests,
 stacked banner layout, and biometric/PIN/inactivity lock gates. Use `CHROME_PATH` with
 `npm run test:browser` for another Chromium binary.
+
+## Accessibility and clearer errors
+
+- `useDialog` owns the shared overlay stack, focus trapping/restoration, background inert/ARIA state, and scroll locking. Modal and bottom-sheet APIs retain their existing visibility/events and add `initialFocus`, `ariaLabel`, `descriptionId`, and `dismissible`. Confirmations initially focus Cancel and block dismissal while loading. Lock overlays take priority; LightGallery registers its portal through lifecycle events and retains zoom/thumbnails.
+- `useLiveResource` supplies independent data/loading/error/ready state, recreates failed Dexie subscriptions on Retry, ignores obsolete results, and unsubscribes on scope disposal. Shared master-data stores expose loading/error/ready/retry. The paged transaction store exposes separate listError/listReady/retryTransactionList state and preserves the current page window on retry.
+- `ResourceState` gates initial empty states and aggregates read errors. `BaseError` keeps recovery actions visible. `usePageFeedback` catches page-owned reads/writes, retains form values and failed confirmations, and only offers direct Retry for reads. Multi-step write failures direct users to review records before repeating an action; writes are never retried automatically.
+- `settingsStore.init()` shares concurrent initialization and resolves to a success boolean. A load failure leaves initialized false and sets loadError; App gates routes and service startup until a successful retry. PIN/biometric rules and data encryption are unchanged.
+- Restore success no longer reloads automatically. Busy restore/reset dialogs cannot be dismissed. Restore error copy distinguishes pre-replacement failures from possible partial replacement; table selection, backup validation, schema, and restore atomicity are unchanged.
+- Toasts announce errors/status, keep errors visible until dismissal, and clean up timers on replacement/unmount. Searchable selects use labelled combobox/listbox semantics with native trigger/clear/remove buttons.
+
+The isolated browser harness detects installed Chrome, Edge, Brave, or Linux Chromium binaries; CHROME_PATH overrides detection. Accessibility regressions use Chrome DevTools Protocol key events for actual browser Tab/Enter/Escape behavior, plus injected database failures. Run `npm run test:browser` and `npm run build`. Automated checks do not replace a VoiceOver review or a full contrast/reflow/chart-alternative audit.

@@ -1,4 +1,5 @@
 <script setup>
+defineOptions({ inheritAttrs: false })
 defineProps({
   modelValue: [String, Number],
   label: String,
@@ -8,6 +9,7 @@ defineProps({
   },
   placeholder: String,
   error: String,
+  required: Boolean,
   id: {
     type: String,
     default: () => "select-" + Math.random().toString(36).substr(2, 9),
@@ -24,6 +26,10 @@ defineEmits(["update:modelValue"])
     </label>
     <div class="relative">
       <select
+        v-bind="$attrs"
+        :required="required"
+        :aria-invalid="error ? true : undefined"
+        :aria-describedby="[error ? `${id}-error` : null, $attrs['aria-describedby']].filter(Boolean).join(' ') || undefined"
         :id="id"
         :value="modelValue"
         @change="$emit('update:modelValue', $event.target.value)"
@@ -48,6 +54,6 @@ defineEmits(["update:modelValue"])
         </svg>
       </div>
     </div>
-    <span v-if="error" class="text-xs text-red-500 ml-1">{{ error }}</span>
+    <span :id="`${id}-error`" v-if="error" class="text-xs text-red-500 ml-1">{{ error }}</span>
   </div>
 </template>
