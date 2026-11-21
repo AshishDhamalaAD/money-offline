@@ -8,6 +8,7 @@ The application follows an **Offline-First** architecture, built as a **Progress
 
 - **Client-Side Storage**: The primary source of truth is the local IndexedDB database (managed via Dexie.js).
 - **Reactivity**: The UI reacts to changes in the local database.
+- **My Books Ordering**: The dashboard reuses its live transaction query to sort book cards by each book's latest transaction `updated_at`, falling back to `created_at` for invalid or missing update timestamps. Books without valid activity sort last; ties use book `created_at` then ID descending. This is display-only, requires no schema changes, and leaves book selection defaults unchanged.
 - **Synchronization**: Data is synchronized with a backend server via a custom sync protocol (Client Push).
 - **PWA**: The app is installable and fully functional offline, using a service worker for asset caching.
 

@@ -21,6 +21,7 @@ import { runBackupHealthTests } from './backup-health.js'
 import { runAccessibilityTests } from './accessibility.js'
 import { runAccessibilityRouteTests } from './accessibility-routes.js'
 import { runTransactionTrashTests } from './transaction-trash.js'
+import { runBookActivityTests } from './book-activity.js'
 
 function check(value, message) { if (!value) throw new Error(message) }
 export async function runDataTests() {
@@ -192,6 +193,7 @@ export async function runDataTests() {
   passed.push('atomic trash delete, undo, synced and uncertain restore IDs, retention, book cleanup and backup exclusion')
   passed.push(...await runBackupHealthTests())
   passed.push(...await runTransactionTrashTests())
+  passed.push(...await runBookActivityTests())
   passed.push(...await runAccessibilityTests())
   passed.push(...await runAccessibilityRouteTests())
   return passed

@@ -7,6 +7,7 @@ This document provides a crystal clear and detailed overview of the features imp
 The application is designed around the concept of "Books" (ledgers) to manage finances for different contexts (e.g., Personal, Business, Travel).
 
 - **Multi-Book Management**: Users can create and switch between multiple independent books.
+- **My Books Order**: Books with the most recently added or edited transactions appear first, regardless of the transaction date. Books without transaction activity appear last; ties use book creation date, then ID, newest first. Deleting or restoring transactions recalculates the order from current transactions.
 - **Dashboard**: A central hub providing an overview of the current book's financial status.
 
 ## 2. Transaction Management

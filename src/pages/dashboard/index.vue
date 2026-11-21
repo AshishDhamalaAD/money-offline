@@ -12,6 +12,7 @@ import { useCategoryStore } from "@/store/categoryStore"
 import { formatCurrency } from "@/utils/moneyUtils"
 import { getNepalDate } from "@/utils/dateUtils"
 import { getLastBookId } from "@/utils/lastBook"
+import { sortBooksByActivity } from "@/utils/bookActivity"
 import IconPlus from "@/assets/icons/IconPlus.vue"
 import IconBook from "@/assets/icons/IconBook.vue"
 import BaseButton from "@/components/common/BaseButton.vue"
@@ -39,6 +40,7 @@ const overview = ref({ balance: 0, monthIn: 0, monthOut: 0 })
 const categoryMonthSpend = ref({})
 
 const summaryState = reactive(useLiveResource([], 'Could not load dashboard totals.'))
+const activitySortedBooks = computed(() => sortBooksByActivity(bookStore.books, summaryState.data))
 const createError = ref('')
 
 function dayStart(date) {
@@ -305,7 +307,7 @@ function quickAddTransaction() {
 
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <BookCard
-            v-for="book in bookStore.books"
+            v-for="book in activitySortedBooks"
             :key="book.id"
             :book="book"
             :summary="summaries[book.id]"

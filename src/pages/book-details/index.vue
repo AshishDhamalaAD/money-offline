@@ -968,7 +968,7 @@ async function handleRefresh() {
 
           <!-- Search & Advanced Filters -->
           <div class="flex gap-2">
-            <BaseSearchInput v-model="searchQuery" placeholder="Search transactions..." class="flex-1" />
+            <BaseSearchInput v-model="searchQuery" placeholder="Search transactions..." class="min-w-0 flex-1" />
             <button
               @click="enterSelection"
               :disabled="filteredTransactions.length === 0"
