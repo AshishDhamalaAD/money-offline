@@ -15,6 +15,8 @@ The application is designed around the concept of "Books" (ledgers) to manage fi
 Comprehensive tools for recording and managing financial transactions.
 
 - **Record Transactions**: Support for both Income and Expense entries.
+- **New Transaction Items**: New transactions and new recurring transactions start with one blank product item (quantity 1) and the Products section expanded, ready for entry.
+- **Recurring Review Preview**: Due recurring transactions show their product names beneath the title so entries can be identified before opening Review. Multiple product names wrap onto additional lines.
 - **Detailed Entry Fields**:
   - **Date**: Transaction date.
   - **Amount**: Total transaction value.

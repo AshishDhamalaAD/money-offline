@@ -47,8 +47,7 @@ const isEdit = !!route.params.id
 // advances that rule to its next occurrence.
 const recurringSource = ref(null)
 
-// A prefilled form (duplicate or recurring review) opens its line items so
-// they are visible without an extra tap.
+// Open line items immediately for a new entry or an existing itemized form.
 const prefillProductCount = (() => {
   try {
     return JSON.parse(history.state?.prefill || "null")?.products?.length || 0
@@ -56,7 +55,7 @@ const prefillProductCount = (() => {
     return 0
   }
 })()
-const initialShowProducts = ref(isEdit || prefillProductCount > 0)
+const initialShowProducts = ref(isEdit || !history.state?.prefill || prefillProductCount > 0)
 
 // Any entry made for a book makes it the default for quick add and the nav.
 if (Number.isFinite(bookId)) {
@@ -273,8 +272,9 @@ onMounted(async () => {
           addProduct()
         }
       } else {
-        // Normal new transaction: start with just an amount so it can be entered
-        // in three taps, and reuse the previous entry's categories and accounts.
+        // Start with one visible item and reuse the previous entry's categories
+        // and accounts.
+        addProduct()
         await new Promise((resolve) => setTimeout(resolve, 100))
         await applyLastTransactionDefaults()
       }

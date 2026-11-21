@@ -44,7 +44,7 @@ const form = ref({
   category_ids: [],
   contact_id: "",
   payment_mode_id: "",
-  products: [],
+  products: isNew ? [{ id: Date.now(), name: "", quantity: 1, rate: 0, amount: 0 }] : [],
   discount: 0,
   charge: 0,
   frequency: "monthly",
@@ -184,7 +184,7 @@ function goBack() {
     <main class="space-y-6 p-4">
       <ResourceState :resources="[categoryStore, paymentModeStore, productStore]" />
       <BaseError :message="operationError" :action-label="operationAction" :busy="operationBusy" @retry="retryOperation" />
-      <TransactionFields :book-id="bookId" :form="form" :initial-show-products="!isNew">
+      <TransactionFields :book-id="bookId" :form="form" initial-show-products>
         <template #schedule>
           <BaseSearchableSelect
             v-model="form.frequency"

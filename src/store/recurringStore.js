@@ -6,6 +6,11 @@ import { addPeriod } from '@/utils/recurrence'
 import { db } from '@/db/dexie'
 import { recordDeletions } from '@/db/sync/dirty'
 
+// IndexedDB cannot clone Vue proxies, including nested product/category arrays.
+function toPlain(value) {
+    return JSON.parse(JSON.stringify(value))
+}
+
 export const useRecurringStore = defineStore('recurring', () => {
     const resource = useLiveResource([], 'Could not load recurring transactions.')
     const rules = resource.data

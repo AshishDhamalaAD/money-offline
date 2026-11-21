@@ -66,6 +66,7 @@ const rows = computed(() =>
       dueDate: dates[0] || rule.next_due_date,
       lastDate: dates[dates.length - 1] || rule.next_due_date,
       bookName: bookStore.books.find((book) => book.id === rule.book_id)?.name || "",
+      productNames: (rule.products || []).map((product) => product.name?.trim()).filter(Boolean).join(", "),
     }
   }),
 )
@@ -111,6 +112,9 @@ function review(row) {
           <div class="min-w-0">
             <p class="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
               {{ row.rule.description || (row.rule.type === "in" ? "Recurring income" : "Recurring expense") }}
+            </p>
+            <p v-if="row.productNames" class="break-words text-sm text-gray-700 dark:text-gray-200">
+              {{ row.productNames }}
             </p>
             <p class="truncate text-xs text-gray-500 dark:text-gray-400">
               {{ row.bookName }} · {{ frequencyLabel(row.rule.frequency) }}

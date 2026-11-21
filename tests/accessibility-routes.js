@@ -43,6 +43,7 @@ export async function runAccessibilityRouteTests() {
     ['book-settings-payment-modes-edit', { bookId, id: paymentId }, 'Edit Payment'],
     ['book-settings-budgets-edit', { bookId, id: budgetId }, 'Edit Budget'],
     ['book-settings-recurring-edit', { bookId, id: recurringId }, 'Edit Recurring'],
+    ['book-settings-recurring-new', { bookId }, 'New Recurring Transaction'],
     ['edit-contact', { id: contactId }, 'Edit Contact'],
     ['edit-transaction', { bookId, id: transactionId }, 'Edit Transaction'],
     ['create-transaction', { bookId }, 'New Transaction'],
@@ -66,6 +67,13 @@ export async function runAccessibilityRouteTests() {
       app.use(pinia); app.use(router); app.mount(host)
       await waitFor(() => host.textContent.includes(expected), `${name} did not render expected content (${host.textContent.slice(0, 100)})`)
       await waitFor(() => !host.textContent.includes('Loading data...'), `${name} did not finish loading`)
+      if (name === 'create-transaction' || name === 'book-settings-recurring-new') {
+        await waitFor(() => host.querySelectorAll('[aria-label="Remove product line item"]').length === 1, 'New transaction must start with exactly one product item')
+        const item = host.querySelector('[aria-label="Remove product line item"]')
+        check(item.getClientRects().length > 0, 'Initial product item must be visible without expanding Products')
+        const quantity = [...host.querySelectorAll('label')].find(label => label.textContent.includes('Qty'))
+        check(host.querySelector(`#${quantity.htmlFor}`).value === '1', 'Initial product quantity must be one')
+      }
       check(!warnings.length, `${name}: ${warnings.join('; ')}`)
       check(!errors.length, `${name}: ${errors.map(error => error.message).join('; ')}`)
       check(!host.querySelector('[role="alert"]'), `${name} rendered a failure on valid fixture data`)
