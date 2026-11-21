@@ -150,6 +150,7 @@ function removeOption(value) {
   if (props.multiple && Array.isArray(props.modelValue)) {
     const current = props.modelValue.filter((v) => v !== value)
     emit("update:modelValue", current)
+    nextTick(() => triggerRef.value?.focus())
   }
 }
 
@@ -184,30 +185,48 @@ onClickOutside(containerRef, close, {
     </label>
 
     <div class="relative">
-      <div class="flex min-h-[42px] items-center gap-2 rounded-sm bg-gray-50 px-3 dark:bg-gray-800">
+      <div class="relative flex min-h-[42px] items-center gap-2 rounded-sm bg-gray-50 px-4 py-2.5 dark:bg-gray-800">
         <button
           ref="triggerRef"
           :id="controlId"
           type="button"
           :disabled="disabled"
-          class="min-w-0 flex-1 rounded-sm py-2.5 text-left"
+          class="absolute inset-0 w-full rounded-sm text-left focus:outline-none focus:ring-2 focus:ring-indigo-500"
           aria-haspopup="listbox"
           :aria-expanded="isOpen"
           :aria-controls="isOpen ? `${controlId}-list` : undefined"
-          :aria-labelledby="label ? `${controlId}-label` : undefined"
-          :aria-label="label ? undefined : placeholder || 'Select options'"
+          :aria-labelledby="label ? `${controlId}-label ${controlId}-value` : `${controlId}-value`"
           :aria-invalid="error ? true : undefined"
           :aria-required="required"
           :aria-describedby="error ? `${controlId}-error` : undefined"
           @keydown="onKeydown"
           @click="isOpen ? close(true) : open()"
         >
-          {{ multiple ? (selectedOptions.map(option => option.label).join(', ') || placeholder || 'Select...') : selectedLabel || placeholder || 'Select...' }}
+          <span :id="`${controlId}-value`" class="sr-only">{{ multiple ? (selectedOptions.map(option => option.label).join(', ') || placeholder || 'Select...') : selectedLabel || placeholder || 'Select...' }}</span>
         </button>
-        <button v-if="hasSelection" :disabled="disabled" type="button" :aria-label="`Clear ${label || 'selection'}`" class="rounded-sm p-2" @click="clearSelection"><IconX aria-hidden="true" class="h-4 w-4" /></button>
-      </div>
-      <div v-if="multiple && selectedOptions.length" class="mt-2 flex flex-wrap gap-2">
-        <button v-for="option in selectedOptions" :key="option.value" type="button" :disabled="disabled" :aria-label="`Remove ${option.label}`" class="rounded-sm bg-indigo-50 px-2 py-1 text-sm dark:bg-indigo-950" @click="removeOption(option.value)">{{ option.label }} <span aria-hidden="true">x</span></button>
+        <!-- Keep chips inside the field, with remove buttons beside the trigger. -->
+        <div class="pointer-events-none relative flex min-w-0 flex-1 flex-wrap gap-1.5">
+          <template v-if="multiple && selectedOptions.length">
+            <span
+              v-for="option in selectedOptions"
+              :key="option.value"
+              class="inline-flex max-w-full items-center gap-1 rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-100"
+            >
+              <span class="truncate">{{ option.label }}</span>
+              <button
+                type="button"
+                :disabled="disabled"
+                :aria-label="`Remove ${option.label}`"
+                class="pointer-events-auto inline-flex h-3 w-3 shrink-0 items-center justify-center rounded-full text-indigo-400 hover:bg-indigo-200 hover:text-indigo-500 dark:hover:bg-indigo-800"
+                @click.stop="removeOption(option.value)"
+              >
+                <IconX class="h-2.5 w-2.5" />
+              </button>
+            </span>
+          </template>
+          <span v-else :class="hasSelection ? 'text-gray-900 dark:text-gray-200' : 'text-gray-400 dark:text-gray-500'" class="truncate">{{ selectedLabel || placeholder || 'Select...' }}</span>
+        </div>
+        <button v-if="hasSelection" :disabled="disabled" type="button" :aria-label="`Clear ${label || 'selection'}`" class="relative shrink-0 rounded-full p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-600 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white" @click.stop="clearSelection"><IconX class="h-4 w-4" /></button>
       </div>
 
       <!-- Dropdown -->
