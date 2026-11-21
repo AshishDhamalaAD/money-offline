@@ -852,7 +852,7 @@ function queueUndo(snapshots) {
 
   pendingDeletes.value = [...pendingDeletes.value, ...snapshots]
   const count = pendingDeletes.value.length
-  snackbarMessage.value = count === 1 ? "Transaction deleted" : `${count} transactions deleted`
+  snackbarMessage.value = count === 1 ? "Transaction moved to Trash" : `${count} transactions moved to Trash`
   snackbarRevision.value += 1
   showSnackbar.value = true
 }

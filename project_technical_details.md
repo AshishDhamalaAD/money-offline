@@ -232,7 +232,8 @@ The Settings → Import / Export tab offers CSV and PDF exports of transactions 
 - Descriptions use safe Vue interpolation and descriptionToText for legacy block markup, line
   breaks and entities. Search, CSV/PDF export and editing use the same helper. Version 15 rewrites
   existing descriptions with change tracking suspended and leaves sync status unchanged.
-- Transaction deletion atomically saves a Trash snapshot and tombstone before deleting the active
+- Swipe Delete, long-press Delete, edit-page Delete and bulk Delete all use the transaction store's
+  shared deletion actions. Transaction deletion atomically saves a Trash snapshot and tombstone before deleting the active
   record. Trash is local, transactions-only and retained for 30 days, with expiry purged at startup
   and when opening Trash. Restore drops the snapshot and marks the row pending. Unsent
   deletion tombstones are removed when the original ID is restored; uncertain deletes remain queued
