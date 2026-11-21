@@ -80,6 +80,7 @@ State is managed using Pinia stores with the Composition API pattern. Stores typ
 ### Key Stores
 
 - `transactionStore`: Manages transactions, filtering, and stats.
+- `SwipeableTransaction.vue`: Reveals a 76px Duplicate tray on the left when swiping right and an 84px Delete tray on the right when swiping left.
 - `productStore`: Manages products and rate history.
 - `settingsStore`: Manages API configuration and sync settings.
 - `syncStore`: Handles the synchronization process.

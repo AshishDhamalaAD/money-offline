@@ -1,7 +1,6 @@
 <script setup>
 import { ref, watch } from "vue"
 
-import IconEdit from "@/assets/icons/IconEdit.vue"
 import IconTrash from "@/assets/icons/IconTrash.vue"
 
 const props = defineProps({
@@ -23,16 +22,16 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(["open", "close", "edit", "duplicate", "delete", "longpress", "toggle-select", "select"])
+const emit = defineEmits(["open", "close", "duplicate", "delete", "longpress", "toggle-select", "select"])
 
 // Widths of the action trays revealed behind the card.
-const LEFT_WIDTH = 152
+const LEFT_WIDTH = 76
 const RIGHT_WIDTH = 84
 const LONG_PRESS_MS = 500
 
 const offset = ref(0)
 const dragging = ref(false)
-const direction = ref(null) // 'left' = edit tray, 'right' = delete tray
+const direction = ref(null) // 'left' = duplicate tray, 'right' = delete tray
 
 let startX = 0
 let startY = 0
@@ -167,8 +166,7 @@ function onContentClick() {
 
 function handleAction(action) {
   resetRow(true)
-  if (action === "edit") emit("edit", props.transaction)
-  else if (action === "duplicate") emit("duplicate", props.transaction)
+  if (action === "duplicate") emit("duplicate", props.transaction)
   else if (action === "delete") emit("delete", props.transaction)
 }
 
@@ -190,21 +188,12 @@ function onContextMenu() {
     @touchcancel="onTouchEnd"
     @contextmenu.prevent="onContextMenu"
   >
-    <!-- Swipe right: edit / duplicate -->
+    <!-- Swipe right: duplicate -->
     <div
       class="absolute inset-y-0 left-0 flex"
       :style="{ width: `${LEFT_WIDTH}px` }"
       :aria-hidden="!open || direction !== 'left'"
     >
-      <button
-        type="button"
-        :tabindex="open ? 0 : -1"
-        class="flex w-[76px] flex-col items-center justify-center gap-1 bg-indigo-600 text-[11px] font-medium text-white active:bg-indigo-700"
-        @click="handleAction('edit')"
-      >
-        <IconEdit class="h-5 w-5" />
-        Edit
-      </button>
       <button
         type="button"
         :tabindex="open ? 0 : -1"

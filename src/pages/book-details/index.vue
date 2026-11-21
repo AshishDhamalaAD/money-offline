@@ -1050,7 +1050,6 @@ async function handleRefresh() {
                   @open="openSwipeId = $event"
                   @close="onSwipeClose"
                   @select="onTransactionTap"
-                  @edit="onTransactionEdit"
                   @duplicate="onTransactionDuplicate"
                   @delete="handleDeleteTransaction"
                   @longpress="openTransactionActionSheet"
