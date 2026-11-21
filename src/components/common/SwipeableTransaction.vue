@@ -255,7 +255,7 @@ function onContextMenu() {
 
       <div class="min-w-0 flex-1">
         <slot />
-        <div v-if="!selecting" class="flex gap-3 px-4 py-2 text-sm">
+        <div v-if="!selecting" class="hidden">
           <button type="button" :aria-label="`Open transaction ${transaction.description || transaction.id}`" class="rounded-sm px-2 py-1 text-indigo-700 dark:text-indigo-300" @click.stop="emit('select', transaction)">Open</button>
           <button type="button" :aria-label="`Actions for transaction ${transaction.description || transaction.id}`" class="rounded-sm px-2 py-1 text-indigo-700 dark:text-indigo-300" @click.stop="emit('longpress', transaction)">Actions</button>
         </div>
