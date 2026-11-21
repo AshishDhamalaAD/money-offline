@@ -1,5 +1,15 @@
 <script setup>
+import { useAttrs } from "vue"
+
 defineOptions({ inheritAttrs: false })
+const attrs = useAttrs()
+
+function inputAttrs() {
+  const input = { ...attrs }
+  delete input.class
+  return input
+}
+
 const props = defineProps({
   modelValue: {
     type: String,
@@ -19,7 +29,7 @@ function clear() {
 </script>
 
 <template>
-  <div class="relative">
+  <div class="relative" :class="$attrs.class">
     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
       <svg class="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path
@@ -31,7 +41,7 @@ function clear() {
       </svg>
     </div>
     <input
-      v-bind="$attrs"
+      v-bind="inputAttrs()"
       :aria-label="$attrs['aria-label'] || placeholder"
       :value="modelValue"
       @input="$emit('update:modelValue', $event.target.value)"
